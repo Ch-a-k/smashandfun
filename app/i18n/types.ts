@@ -3,6 +3,15 @@ export interface FAQ {
   a: string;
 }
 
+export interface BlogPost {
+  title: string;
+  subtitle: string;
+  date: string;
+  author: string;
+  content: string;
+  readTime: string;
+}
+
 export interface Translations {
   nav: {
     home: string;
@@ -48,5 +57,10 @@ export interface Translations {
     schedule: string;
     discounts: string[];
     cta: string;
+  };
+  blog: {
+    title: string;
+    subtitle: string;
+    stressAtWork: BlogPost;
   };
 }

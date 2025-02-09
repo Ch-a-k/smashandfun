@@ -232,13 +232,25 @@ export const translations: Record<string, Translations> = {
       ]
     },
     blog: {
-      title: 'Blog',
-      readMore: 'Read More',
-      backToBlog: 'Back to Blog',
+      title: 'Our Blog',
+      subtitle: 'Latest articles and insights',
       stressAtWork: {
-        title: 'Stress at Work - How to Get Rid of It?',
-        excerpt: 'Life is generally stressful, but work-related stress can be particularly challenging. Discover how our Rage Room can help you manage and release workplace stress in a safe and controlled environment.',
-        content: 'In today\'s fast-paced world, workplace stress has become an increasingly common challenge that affects millions of people. From tight deadlines to difficult colleagues, the sources of stress seem endless. But what if there was a unique and effective way to release all that tension?\n\nOur Rage Room offers a revolutionary approach to stress management. Instead of bottling up your frustrations or taking them home with you, you can release them in a controlled, safe environment. The act of physically breaking things triggers the release of endorphins - your body\'s natural stress relievers.\n\nHere\'s how our Rage Room helps combat workplace stress:\n\n1. Physical Release: The act of smashing objects provides an immediate physical outlet for pent-up frustrations.\n\n2. Emotional Catharsis: Express your emotions freely without judgment or consequences.\n\n3. Stress Reset: Leave feeling lighter and more balanced, ready to face workplace challenges with renewed energy.\n\n4. Fun Factor: Transform stress relief into an enjoyable experience - who knew breaking things could be so therapeutic?\n\nRemember, while our Rage Room provides an excellent outlet for stress relief, it\'s also important to address the root causes of workplace stress. Consider combining your Rage Room sessions with other stress management techniques like meditation, exercise, or professional counseling.\n\nReady to try this unique approach to stress relief? Book your session today and experience the therapeutic benefits of our Rage Room firsthand.'
+        title: 'How to Deal with Stress at Work',
+        subtitle: 'Effective strategies for managing workplace stress',
+        date: '2025-02-09',
+        author: 'Anna Kowalska',
+        readTime: '5 min read',
+        content: `Stress at work is a common issue that affects many professionals. Understanding how to manage it effectively is crucial for maintaining both mental and physical health.
+
+In today's fast-paced work environment, it's essential to recognize the signs of stress and take proactive steps to address them. Some common symptoms include difficulty concentrating, irritability, and physical tension.
+
+One effective way to combat workplace stress is through physical activity. This is where our smash room comes in - it provides a unique and cathartic way to release tension and frustration in a safe, controlled environment.
+
+Regular breaks and stress-relief activities are crucial for maintaining productivity and mental well-being. Our smash room sessions offer a perfect opportunity to take a break from work and release built-up tension in a fun and therapeutic way.
+
+Remember, it's not just about destroying things - it's about giving yourself permission to let go of stress and negative emotions in a healthy, controlled manner. Our trained staff ensures that every session is both safe and therapeutic.
+
+We've seen numerous professionals benefit from regular smash room sessions as part of their stress management routine. It's an unconventional but effective approach to dealing with workplace stress.`
       }
     },
     voucher: {
@@ -253,13 +265,14 @@ export const translations: Record<string, Translations> = {
       cta: 'Get a Voucher'
     },
     happyHours: {
-      title: 'Happy Hours at Smash&Fun!',
-      schedule: 'Monday–Friday, 14:00–16:00',
+      title: 'Happy Hours',
+      schedule: 'Monday to Friday, 11:00 - 16:00',
       discounts: [
-        '20% off all rates!',
-        '5 pcs. of glass / 1 pc. of electronics as a gift!'
+        '20% off on all packages',
+        'Free protective gear rental',
+        'Complimentary photos of your session'
       ],
-      cta: 'Don\'t miss out on great fun!'
+      cta: 'Book Happy Hour Session'
     },
     social: {
       followUs: 'Follow Us'
@@ -524,13 +537,14 @@ export const translations: Record<string, Translations> = {
       cta: 'Zdobądź Voucher'
     },
     happyHours: {
-      title: 'Happy Hours w Smash&Fun!',
-      schedule: 'Poniedziałek–Piątek, 14:00–16:00',
+      title: 'Happy Hours',
+      schedule: 'Monday to Friday, 11:00 - 16:00',
       discounts: [
-        '20% na wszystkie taryfy!',
-        '5 szt. szkła / 1 szt. elektroniki w prezencie!'
+        '20% off on all packages',
+        'Free protective gear rental',
+        'Complimentary photos of your session'
       ],
-      cta: 'Nie przegap okazji na świetną zabawę!'
+      cta: 'Book Happy Hour Session'
     },
     social: {
       followUs: 'Obserwuj nas'

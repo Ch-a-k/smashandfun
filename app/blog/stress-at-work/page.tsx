@@ -5,15 +5,17 @@ import { motion } from 'framer-motion';
 import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import PageHeader from '../../components/PageHeader';
+import { BlogPost } from '../../i18n/types';
 
 export default function StressAtWork() {
   const { t } = useLanguage();
+  const post = t('blog.stressAtWork') as BlogPost;
 
   return (
     <main>
       <PageHeader 
-        title={t('blog.stressAtWork.title')} 
-        subtitle={t('blog.stressAtWork.subtitle')} 
+        title={post.title} 
+        subtitle={post.subtitle} 
       />
 
       {/* Hero Section */}
@@ -48,7 +50,7 @@ export default function StressAtWork() {
             animate={{ y: 0, opacity: 1 }}
             className="text-4xl md:text-6xl font-bold mb-8 text-[#ff5a00]"
           >
-            {t('blog.stressAtWork.title')}
+            {post.title}
           </motion.h1>
 
           <div className="flex items-center space-x-4 text-sm text-gray-400">
@@ -76,7 +78,7 @@ export default function StressAtWork() {
           </div>
 
           <div className="space-y-6 text-gray-300">
-            {t('blog.stressAtWork.content').split('\n\n').map((paragraph, index) => (
+            {post.content.split('\n\n').map((paragraph: string, index: number) => (
               <p key={index} className="text-lg leading-relaxed">
                 {paragraph}
               </p>

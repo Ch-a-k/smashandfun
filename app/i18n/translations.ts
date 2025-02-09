@@ -187,8 +187,7 @@ export const translations: Record<string, Translations> = {
     },
     cta: {
       title: 'Ready to Release Your Stress?',
-      subtitle: 'Join thousands of satisfied customers who have experienced the ultimate stress relief',
-      button: 'Book Your Session Now'
+      subtitle: 'Join thousands of satisfied customers who have experienced the ultimate stress relief'
     },
     faq: {
       title: 'Frequently Asked Questions',
@@ -475,8 +474,7 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
     },
     cta: {
       title: 'Gotowy na Uwolnienie Stresu?',
-      subtitle: 'Dołącz do tysięcy zadowolonych klientów, którzy doświadczyli najlepszego sposobu na odstresowanie',
-      button: 'Zarezerwuj Swoją Sesję Teraz'
+      subtitle: 'Dołącz do tysięcy zadowolonych klientów'
     },
     faq: {
       title: 'Często Zadawane Pytania',
@@ -521,7 +519,8 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
           q: 'Jaka jest cena sesji?',
           a: 'Ceny zależą od wybranego pakietu oraz liczby uczestników. Szczegółowy cennik znajdziesz w zakładce "Oferta" na naszej stronie internetowej. Oferujemy także zniżki na większe grupy i specjalne okazje.'
         }
-      ]
+      ],
+      subtitle: ''
     },
     blog: {
       title: 'Blog',

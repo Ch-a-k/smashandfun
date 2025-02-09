@@ -2,7 +2,7 @@
 
 import { useLanguage } from '../i18n/LanguageProvider';
 import { motion } from 'framer-motion';
-import { Clock, Hammer, Star } from 'lucide-react';
+import { Clock, Hammer, DollarSign } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
 const services = [
@@ -161,7 +161,7 @@ export default function Services() {
                       </div>
                       
                       <div className="flex items-center space-x-2 text-gray-400">
-                        <Star className="w-4 h-4 text-[#ff5a00]" />
+                        <DollarSign className="w-4 h-4 text-[#ff5a00]" />
                         <span>{service.price === '0.00 zł' ? t('services.free') : service.price}</span>
                       </div>
                       
@@ -230,7 +230,7 @@ export default function Services() {
                       </div>
                       
                       <div className="flex items-center space-x-2 text-gray-400">
-                        <Star className="w-4 h-4 text-blue-500" />
+                        <DollarSign className="w-4 h-4 text-blue-500" />
                         <span>{t('services.free')}</span>
                       </div>
                     </div>

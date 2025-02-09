@@ -16,7 +16,7 @@ export default function Blog() {
         subtitle={t('blog.subtitle')} 
       />
       {/* Hero Section */}
-      <section className="relative py-32 overflow-hidden">
+      {/* <section className="relative py-32 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-gradient-to-b from-black via-black/90 to-black"></div>
           <motion.div
@@ -42,7 +42,7 @@ export default function Blog() {
             {t('blog.title')}
           </motion.h1>
         </div>
-      </section>
+      </section> */}
 
       {/* Blog Posts Grid */}
       <section className="py-20 bg-zinc-900/50">

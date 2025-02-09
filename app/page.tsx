@@ -6,6 +6,7 @@ import { Hammer, Shield, Clock, Star, Users, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import ReviewsSection from './components/ReviewsSection';
+import FlagIcon from './components/FlagIcon';
 
 interface Review {
   id: string;
@@ -165,11 +166,29 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [reviews.length]);
 
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showHappyHours) {
+        setShowHappyHours(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscKey);
+    return () => window.removeEventListener('keydown', handleEscKey);
+  }, [showHappyHours]);
+
   return (
     <div className="overflow-hidden">
       {/* Happy Hours Popup */}
       {showHappyHours && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowHappyHours(false);
+            }
+          }}
+        >
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -187,8 +206,9 @@ export default function Home() {
             <div className="flex justify-end mb-4">
               <button
                 onClick={() => setLanguage(language === 'en' ? 'pl' : 'en')}
-                className="px-3 py-1 rounded border border-[#ff5a00] text-[#ff5a00] hover:bg-[#ff5a00] hover:text-white transition"
+                className="px-3 py-1 rounded border border-[#ff5a00] text-[#ff5a00] hover:bg-[#ff5a00] hover:text-white transition flex items-center gap-2"
               >
+                <FlagIcon country={language === 'en' ? 'us' : 'pl'} />
                 {language === 'en' ? 'PL' : 'EN'}
               </button>
             </div>
@@ -241,7 +261,7 @@ export default function Home() {
             transition={{ duration: 1 }}
             className="mb-8 transform scale-150"
           >
-            <Hammer className="w-96 h-96 text-[#ff5a00] mx-auto mb-6" />
+            <Hammer className="w-32 h-32 text-[#ff5a00] mx-auto mb-6" />
           </motion.div>
           
           <motion.h1 
@@ -348,7 +368,7 @@ export default function Home() {
                 whileHover={{ scale: 1.05 }}
                 className="relative group"
               >
-                <div className="bg-black/50 backdrop-blur-sm rounded-xl p-8 border border-[#ff5a00]/20 hover:border-[#ff5a00] transition-all duration-300">
+                <div className="bg-black/50 backdrop-blur-sm rounded-xl p-8 border border-[#ff5a00]/20 hover:border-[#ff5a00] transition-all duration-300 h-[250px] flex flex-col">
                   <div className="w-16 h-16 mb-6 bg-[#ff5a00] rounded-lg flex items-center justify-center transform group-hover:rotate-12 transition-all duration-300">
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>

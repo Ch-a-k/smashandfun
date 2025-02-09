@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star } from 'lucide-react';
+import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageProvider';
 
 interface Review {
@@ -197,93 +197,135 @@ const reviews: Review[] = [
 ];
 
 export default function ReviewsSection() {
-  const { t, language } = useLanguage();
-  const [currentReviewIndex, setCurrentReviewIndex] = useState(0);
+  const { language } = useLanguage();
+  const [currentReview, setCurrentReview] = useState(0);
+  const [direction, setDirection] = useState(0);
+
+  const slideVariants = {
+    enter: (direction: number) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction: number) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
+  };
+
+  const swipeConfidenceThreshold = 10000;
+  const swipePower = (offset: number, velocity: number) => {
+    return Math.abs(offset) * velocity;
+  };
+
+  const paginate = (newDirection: number) => {
+    setDirection(newDirection);
+    setCurrentReview((prev) => (prev + newDirection + reviews.length) % reviews.length);
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentReviewIndex((prev) => (prev + 1) % reviews.length);
+      paginate(1);
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
-  const currentReview = reviews[currentReviewIndex];
-
   return (
-    <section className="py-20 bg-black relative overflow-hidden">
-      <div className="absolute inset-0 bg-[url('/images/noise.png')] opacity-5"></div>
-      <div className="max-w-4xl mx-auto px-4">
+    <section className="py-20 bg-zinc-900 relative">
+      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926')] opacity-5"></div>
+      <div className="max-w-7xl mx-auto px-4">
         <motion.h2
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="text-3xl md:text-4xl font-bold text-center mb-12 text-[#ff5a00]"
+          className="text-4xl md:text-5xl font-bold text-center mb-16 text-[#ff5a00]"
         >
-          {t('reviews.title')}
+          {language === 'en' ? 'What Our Clients Say' : 'Co Mówią Nasi Klienci'}
         </motion.h2>
 
-        <div className="relative">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentReviewIndex}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-              className="bg-zinc-900/50 backdrop-blur-sm rounded-xl p-8 border border-[#ff5a00]/10"
-            >
-              <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
-                <div className="flex-shrink-0">
-                  <img
-                    src={currentReview.image}
-                    alt={currentReview.author}
-                    className="w-16 h-16 rounded-full border-2 border-[#ff5a00]/20"
-                  />
-                </div>
-                <div className="flex-grow">
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                    <h3 className="text-xl font-protest text-white mb-2 md:mb-0">
-                      {currentReview.author}
-                    </h3>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex">
-                        {Array.from({ length: currentReview.rating }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className="w-5 h-5 text-[#ff5a00] fill-[#ff5a00]"
-                          />
+        <div className="relative max-w-4xl mx-auto">
+          <div className="relative h-[300px] overflow-hidden">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.div
+                key={currentReview}
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                  opacity: { duration: 0.2 }
+                }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={1}
+                onDragEnd={(e, { offset, velocity }) => {
+                  const swipe = swipePower(offset.x, velocity.x);
+
+                  if (swipe < -swipeConfidenceThreshold) {
+                    paginate(1);
+                  } else if (swipe > swipeConfidenceThreshold) {
+                    paginate(-1);
+                  }
+                }}
+                className="absolute w-full"
+              >
+                <div className="bg-black/50 backdrop-blur-sm rounded-xl p-8 border border-[#ff5a00]/20">
+                  <div className="flex items-start gap-4">
+                    <img
+                      src={reviews[currentReview].image}
+                      alt={reviews[currentReview].author}
+                      className="w-16 h-16 rounded-full object-cover"
+                    />
+                    <div>
+                      <h3 className="text-xl font-bold text-white mb-2">{reviews[currentReview].author}</h3>
+                      <div className="flex mb-4">
+                        {[...Array(reviews[currentReview].rating)].map((_, i) => (
+                          <Star key={i} className="w-5 h-5 text-[#ff5a00]" fill="#ff5a00" />
                         ))}
                       </div>
-                      <span className="text-gray-400 text-sm">
-                        {new Date(currentReview.date).toLocaleDateString(
-                          language === 'pl' ? 'pl-PL' : 'en-US',
-                          { year: 'numeric', month: 'long', day: 'numeric' }
-                        )}
-                      </span>
+                      <p className="text-gray-300">{reviews[currentReview].text[language]}</p>
+                      <p className="text-gray-500 mt-4">{reviews[currentReview].date}</p>
                     </div>
                   </div>
-                  <p className="text-gray-300 leading-relaxed">
-                    {currentReview.text[language]}
-                  </p>
                 </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-          <div className="flex justify-center mt-8 space-x-2">
-            {reviews.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentReviewIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentReviewIndex
-                    ? 'bg-[#ff5a00] w-6'
-                    : 'bg-gray-600 hover:bg-[#ff5a00]/50'
-                }`}
-                aria-label={`Go to review ${index + 1}`}
-              />
-            ))}
+          <div className="flex justify-center mt-0 gap-4">
+            <button
+              onClick={() => paginate(-1)}
+              className="p-2 rounded-full border border-[#ff5a00] text-[#ff5a00] hover:bg-[#ff5a00] hover:text-white transition-all"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            <div className="flex gap-2 items-center">
+              {reviews.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setDirection(index > currentReview ? 1 : -1);
+                    setCurrentReview(index);
+                  }}
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    index === currentReview ? 'bg-[#ff5a00] w-4' : 'bg-gray-500'
+                  }`}
+                />
+              ))}
+            </div>
+            <button
+              onClick={() => paginate(1)}
+              className="p-2 rounded-full border border-[#ff5a00] text-[#ff5a00] hover:bg-[#ff5a00] hover:text-white transition-all"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
           </div>
         </div>
       </div>

@@ -25,7 +25,7 @@ export default function Contact() {
               className="space-y-12"
             >
               {/* Contact Cards */}
-              <div className="grid grid-cols-1 gap-8">
+              <div className="grid grid-cols-1 gap-4">
                 <div className="bg-black/80 backdrop-blur-sm p-8 rounded-xl border border-[#ff5a00]/20 hover:border-[#ff5a00] transition-all duration-300">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-[#ff5a00] rounded-lg flex items-center justify-center flex-shrink-0">
@@ -33,7 +33,14 @@ export default function Contact() {
                     </div>
                     <div>
                       <h3 className="font-bold text-xl mb-2 text-white">{t('contact.address')}</h3>
-                      <p className="text-gray-400">ul. Example 123<br />00-000 Warsaw, Poland</p>
+                      <a 
+                        href="https://maps.app.goo.gl/E9q1cjys8dQYgusA8" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-[#ff5a00] transition-colors"
+                      >
+                        ul. Postępu 19/4<br />02-676 Warszawa
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -45,7 +52,12 @@ export default function Contact() {
                     </div>
                     <div>
                       <h3 className="font-bold text-xl mb-2 text-white">{t('contact.phone')}</h3>
-                      <p className="text-gray-400">+48 123 456 789</p>
+                      <a 
+                        href="tel:+48881281313" 
+                        className="text-gray-400 hover:text-[#ff5a00] transition-colors"
+                      >
+                        +48 881 281 313
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -57,7 +69,12 @@ export default function Contact() {
                     </div>
                     <div>
                       <h3 className="font-bold text-xl mb-2 text-white">{t('contact.email')}</h3>
-                      <p className="text-gray-400">contact@smashandfun.pl</p>
+                      <a 
+                        href="mailto:hello@smashandfun.pl"
+                        className="text-gray-400 hover:text-[#ff5a00] transition-colors"
+                      >
+                        hello@smashandfun.pl
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -68,7 +85,7 @@ export default function Contact() {
                       <Clock className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-xl mb-2 text-white">Opening Hours</h3>
+                      <h3 className="font-bold text-xl mb-2 text-white">{t('contact.openingHours')}</h3>
                       <div className="text-gray-400 space-y-1">
                         <p>Monday - Friday: 12:00 - 22:00</p>
                         <p>Saturday: 10:00 - 22:00</p>
@@ -88,7 +105,7 @@ export default function Contact() {
               className="relative h-[600px] rounded-xl overflow-hidden"
             >
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d156388.35439831169!2d20.921111!3d52.233333!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x471ecc669a869f01%3A0x72f0be2a88ead3fc!2sWarsaw%2C%20Poland!5e0!3m2!1sen!2sus!4v1650000000000!5m2!1sen!2sus"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2446.371894248593!2d20.99415217647106!3d52.182112471974634!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x471ecd90e61467e9%3A0x10a6a67e1b657d4a!2zUmFnZSBSb29tICJTbWFzaCBhbmQgRnVuIiBQb2vDs2ogV8WbY2lla8WCb8WbY2kgRGVtb2xrYQ!5e0!3m2!1spl!2spl!4v1739126393262!5m2!1spl!2spl"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

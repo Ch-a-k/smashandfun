@@ -11,7 +11,7 @@ const services = [
     name: { pl: 'BUŁKA Z MASŁEM', en: 'PIECE OF CAKE' },
     duration: '30 min.',
     price: '199.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/2/count/1/',
     difficulty: 1
   },
   {
@@ -19,7 +19,7 @@ const services = [
     name: { pl: 'ŁATWY', en: 'EASY' },
     duration: '1 godzin',
     price: '299.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/3/count/1/',
     difficulty: 2
   },
   {
@@ -27,7 +27,7 @@ const services = [
     name: { pl: 'ŚREDNI', en: 'MEDIUM' },
     duration: '2 godzin',
     price: '499.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/4/count/1/',
     difficulty: 3,
     isBestseller: true
   },
@@ -36,7 +36,7 @@ const services = [
     name: { pl: 'TRUDNY', en: 'HARD' },
     duration: '2 godzin',
     price: '999.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/5/count/1/',
     difficulty: 4
   },
   {
@@ -44,7 +44,7 @@ const services = [
     name: { pl: 'GROUPON - BUŁKA Z MASŁEM', en: 'GROUPON - PIECE OF CAKE' },
     duration: '30 min.',
     price: '0.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/6/count/1/',
     isPromo: true
   },
   {
@@ -52,7 +52,7 @@ const services = [
     name: { pl: 'GROUPON - ŁATWY', en: 'GROUPON - EASY' },
     duration: '1 godzin',
     price: '0.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/8/count/1/',
     isPromo: true
   },
   {
@@ -60,7 +60,7 @@ const services = [
     name: { pl: 'GROUPON - ŚREDNI', en: 'GROUPON - MEDIUM' },
     duration: '2 godzin',
     price: '0.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/7/count/1/',
     isPromo: true
   },
   {
@@ -68,7 +68,7 @@ const services = [
     name: { pl: 'GROUPON - TRUDNY', en: 'GROUPON - HARD' },
     duration: '2 godzin',
     price: '0.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/count/1/',
     isPromo: true
   },
   {
@@ -76,7 +76,7 @@ const services = [
     name: { pl: 'Super Prezenty - "Dawka śmiechu i demolki"', en: 'Super Gifts - "Dose of fun and demolition"' },
     duration: '30 min.',
     price: '0.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/9/count/1/',
     isGift: true
   },
   {
@@ -84,7 +84,7 @@ const services = [
     name: { pl: 'Super Prezenty - "Totalna rozwałka!"', en: 'Super Gifts - "Total destruction!"' },
     duration: '1 godzin',
     price: '0.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/10/count/1/',
     isGift: true
   },
   {
@@ -92,7 +92,7 @@ const services = [
     name: { pl: 'Wyjątkowy Prezent - "Śmiech i destrukcja"', en: 'Special Gift - "Laughter and destruction"' },
     duration: '30 min.',
     price: '0.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/11/count/1/',
     isGift: true
   },
   {
@@ -100,10 +100,14 @@ const services = [
     name: { pl: 'Wyjątkowy Prezent - "Totalna rozwałka"', en: 'Special Gift - "Total demolition"' },
     duration: '1 godzin',
     price: '0.00 zł',
-    link: '#',
+    link: 'https://smashandfun.simplybook.it/v2/#book/service/12/count/1/',
     isGift: true
   }
 ];
+
+const mainServices = services.filter(s => !s.isPromo && !s.isGift);
+const promoServices = services.filter(s => s.isPromo);
+const giftServices = services.filter(s => s.isGift);
 
 export default function Services() {
   const { language, t } = useLanguage();
@@ -125,114 +129,177 @@ export default function Services() {
       />
       {/* Services Grid */}
       <section className="py-20 bg-zinc-900/50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {services.map((service, index) => (
+        <div className="max-w-7xl mx-auto px-4 space-y-8">
+          {/* Main Services */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {mainServices.map((service, index) => (
               <motion.div
                 key={index}
-                initial={{ y: 50, opacity: 0 }}
+                initial={{ y: 20, opacity: 0 }}
                 whileInView={{ y: 0, opacity: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.02 }}
-                className="relative group"
+                className="relative group h-full"
               >
-                {(service.isPromo || service.isGift || service.isBestseller) && (
-                  <div className={`absolute top-4 right-4 ${
-                    service.isPromo ? 'bg-blue-500' : 
-                    service.isGift ? 'bg-purple-500' :
-                    'bg-[#ff5a00]'
-                  } text-white px-3 py-1 rounded-full text-sm z-20`}>
-                    {service.isPromo ? t('services.promo') : 
-                     service.isGift ? t('services.gift') :
-                     'Bestseller!'}
+                {service.isBestseller && (
+                  <div className="absolute -top-2 -right-2 bg-[#ff5a00] text-white px-3 py-1 rounded-full text-sm z-20 shadow-lg">
+                    Bestseller!
                   </div>
                 )}
                 
-                <div className={`relative overflow-hidden rounded-xl border-2 min-h-[400px] ${
-                  service.isPromo ? 'border-blue-500' :
-                  service.isGift ? 'border-purple-500' :
-                  'border-[#ff5a00]'
-                }`}>
-                  {/* Main Content */}
-                  <div className="bg-black/80 backdrop-blur-sm p-8 relative z-10 h-full flex flex-col">
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-bold mb-4 text-[#ff5a00] group-hover:text-white transition-colors">
-                        {service.name[language]}
-                      </h3>
-                      
-                      <div className="space-y-4 mb-6">
-                        <div className="flex items-center space-x-2 text-gray-400">
-                          <Clock className="w-5 h-5" />
-                          <span>{t('services.duration')}: {service.duration}</span>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 text-gray-400">
-                          <Star className="w-5 h-5" />
-                          <span>{t('services.price')}: {service.price === '0.00 zł' ? t('services.free') : service.price}</span>
-                        </div>
-                        
-                        {service.difficulty && (
-                          <div className="flex items-center space-x-2">
-                            {renderDifficulty(service.difficulty)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                <div className="bg-black/80 backdrop-blur-sm rounded-xl border border-[#ff5a00]/20 hover:border-[#ff5a00] transition-all duration-300 overflow-hidden group-hover:shadow-lg group-hover:shadow-[#ff5a00]/10 h-full flex flex-col">
+                  {/* Card Content */}
+                  <div className="p-6 flex-1">
+                    <h3 className="text-xl font-bold mb-3 text-white group-hover:text-[#ff5a00] transition-colors">
+                      {service.name[language]}
+                    </h3>
                     
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center space-x-2 text-gray-400">
+                        <Clock className="w-4 h-4 text-[#ff5a00]" />
+                        <span>{service.duration}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 text-gray-400">
+                        <Star className="w-4 h-4 text-[#ff5a00]" />
+                        <span>{service.price === '0.00 zł' ? t('services.free') : service.price}</span>
+                      </div>
+                      
+                      {service.difficulty && (
+                        <div className="flex items-center space-x-1">
+                          {renderDifficulty(service.difficulty)}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-gray-800">
+                      <h4 className="text-sm font-medium text-[#ff5a00] mb-2">{t('services.packages.' + service.id + '.items.title')}</h4>
+                      <ul className="text-gray-400 text-sm space-y-1">
+                        {Array.isArray(t('services.packages.' + service.id + '.items.list')) && 
+                          t('services.packages.' + service.id + '.items.list').map((item: string, idx: number) => (
+                            <li key={idx} className="flex items-start space-x-2">
+                              <span className="text-[#ff5a00]">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))
+                        }
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Book Button */}
+                  <div className="p-4 bg-black/40 mt-auto">
                     <a
                       href={service.link}
-                      className={`inline-block w-full text-center py-3 px-6 rounded-lg transition-all transform hover:scale-105 ${
-                        service.isPromo ? 'bg-blue-500 hover:bg-blue-600' :
-                        service.isGift ? 'bg-purple-500 hover:bg-purple-600' :
-                        'bg-[#ff5a00] hover:bg-[#ff7a30]'
-                      } text-white font-semibold`}
+                      className="block w-full text-center py-2.5 px-4 rounded-lg transition-all bg-[#ff5a00] hover:bg-[#ff7a30] text-white font-medium text-sm"
                     >
                       {t('services.book')}
                     </a>
                   </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
 
-                  {/* Hover Details - только для основных пакетов */}
-                  {!service.isPromo && !service.isGift && (
-                    <div className="absolute inset-0 bg-black/95 translate-y-full group-hover:translate-y-0 transition-transform duration-300 z-20 flex flex-col">
-                      <div className="flex-1 overflow-y-auto p-8">
-                        <h4 className="text-lg font-semibold text-[#ff5a00] mb-4">{t('services.packages.' + service.id + '.items.title')}</h4>
-                        <ul className="space-y-2 mb-6">
-                          {Array.isArray(t('services.packages.' + service.id + '.items.list')) && 
-                            t('services.packages.' + service.id + '.items.list').map((item: string, idx: number) => (
-                              <li key={idx} className="text-gray-300 flex items-center">
-                                <span className="text-[#ff5a00] mr-2">•</span> {item}
-                              </li>
-                            ))}
-                        </ul>
-
-                        <h4 className="text-lg font-semibold text-[#ff5a00] mb-4">{t('services.packages.' + service.id + '.tools.title')}</h4>
-                        <ul className="space-y-2">
-                          {Array.isArray(t('services.packages.' + service.id + '.tools.list')) && 
-                            t('services.packages.' + service.id + '.tools.list').map((item: string, idx: number) => (
-                              <li key={idx} className="text-gray-300 flex items-center">
-                                <span className="text-[#ff5a00] mr-2">•</span> {item}
-                              </li>
-                            ))}
-                        </ul>
+          {/* Promo Services */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {promoServices.map((service, index) => (
+              <motion.div
+                key={index}
+                initial={{ y: 20, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="relative group h-full"
+              >
+                <div className="absolute -top-2 -right-2 bg-blue-500 text-white px-3 py-1 rounded-full text-sm z-20 shadow-lg">
+                  {t('services.promo')}
+                </div>
+                
+                <div className="bg-black/80 backdrop-blur-sm rounded-xl border border-blue-500/20 hover:border-blue-500 transition-all duration-300 overflow-hidden group-hover:shadow-lg group-hover:shadow-blue-500/10 h-full flex flex-col">
+                  {/* Card Content */}
+                  <div className="p-6 flex-1">
+                    <h3 className="text-xl font-bold mb-3 text-white group-hover:text-blue-500 transition-colors">
+                      {service.name[language]}
+                    </h3>
+                    
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center space-x-2 text-gray-400">
+                        <Clock className="w-4 h-4 text-blue-500" />
+                        <span>{service.duration}</span>
                       </div>
-                      <div className="p-8 pt-0">
+                      
+                      <div className="flex items-center space-x-2 text-gray-400">
+                        <Star className="w-4 h-4 text-blue-500" />
+                        <span>{t('services.free')}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Book Button */}
+                  <div className="p-4 bg-black/40 mt-auto">
+                    <a
+                      href={service.link}
+                      className="block w-full text-center py-2.5 px-4 rounded-lg transition-all bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm"
+                    >
+                      {t('services.book')}
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Gift Cards Section */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl" />
+            <div className="relative pt-8 pb-4">
+              <h2 className="text-2xl font-bold text-center mb-8 text-white">
+                <span className="text-purple-500">🎁</span> {t('services.gift')}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {giftServices.map((service, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ y: 20, opacity: 0 }}
+                    whileInView={{ y: 0, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="relative group h-full"
+                  >
+                    <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm z-20 shadow-lg">
+                      {t('services.gift')}
+                    </div>
+                    
+                    <div className="bg-black/80 backdrop-blur-sm rounded-xl border border-purple-500/20 hover:border-purple-500 transition-all duration-300 overflow-hidden group-hover:shadow-lg group-hover:shadow-purple-500/10 h-full flex flex-col">
+                      {/* Card Content */}
+                      <div className="p-6 flex-1">
+                        <h3 className="text-xl font-bold mb-3 text-white group-hover:text-purple-500 transition-colors">
+                          {service.name[language]}
+                        </h3>
+                        
+                        <div className="space-y-3 text-sm">
+                          <div className="flex items-center space-x-2 text-gray-400">
+                            <Clock className="w-4 h-4 text-purple-500" />
+                            <span>{service.duration}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Book Button */}
+                      <div className="p-4 bg-black/40 mt-auto">
                         <a
                           href={service.link}
-                          className={`inline-block w-full text-center py-3 px-6 rounded-lg transition-all transform hover:scale-105 ${
-                            service.isPromo ? 'bg-blue-500 hover:bg-blue-600' :
-                            service.isGift ? 'bg-purple-500 hover:bg-purple-600' :
-                            'bg-[#ff5a00] hover:bg-[#ff7a30]'
-                          } text-white font-semibold`}
+                          className="block w-full text-center py-2.5 px-4 rounded-lg transition-all bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium text-sm"
                         >
                           {t('services.book')}
                         </a>
                       </div>
                     </div>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+                  </motion.div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>

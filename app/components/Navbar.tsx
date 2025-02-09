@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import FlagIcon from './FlagIcon';
 
 export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
@@ -27,7 +28,7 @@ export default function Navbar() {
   const logoHeight = useTransform(
     scrollY,
     [0, 200],
-    ['7rem', '4rem']
+    ['3.5rem', '2rem']
   );
   const fontSize = useTransform(
     scrollY,
@@ -77,8 +78,9 @@ export default function Navbar() {
             </Link>
             <button
               onClick={() => setLanguage(language === 'en' ? 'pl' : 'en')}
-              className="px-3 py-1 rounded border border-[#ff5a00] text-[#ff5a00] hover:bg-[#ff5a00] hover:text-white transition font-protest uppercase"
+              className="px-3 py-1 rounded border border-[#ff5a00] text-[#ff5a00] hover:bg-[#ff5a00] hover:text-white transition font-protest uppercase flex items-center gap-2"
             >
+              <FlagIcon country={language === 'en' ? 'us' : 'pl'} />
               {language.toUpperCase()}
             </button>
           </motion.div>

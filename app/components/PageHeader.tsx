@@ -13,7 +13,7 @@ export default function PageHeader({ title, subtitle }: PageHeaderProps) {
   useEffect(() => {
     const interval = setInterval(() => {
       setPattern(getRandomPattern());
-    }, 500); // Меняем паттерн каждые 2.5 секунды вместо 5
+    }, 1000); // Меняем паттерн каждые 2.5 секунды вместо 5
 
     return () => clearInterval(interval);
   }, []);
@@ -22,8 +22,8 @@ export default function PageHeader({ title, subtitle }: PageHeaderProps) {
     <div className="relative h-[40vh] min-h-[400px] w-full flex items-center justify-center overflow-hidden">
       <motion.div
         initial={{ scale: 1 }}
-        animate={{ scale: 1.1 }}
-        transition={{ duration: 5, repeat: Infinity, repeatType: "reverse" }} // Уменьшили duration с 20 до 5
+        animate={{ scale: 1.2 }}
+        transition={{ duration: 2, repeat: Infinity, repeatType: "reverse" }} // Уменьшили duration с 20 до 5
         className="absolute inset-0"
         style={getPatternStyle(pattern)}
       />

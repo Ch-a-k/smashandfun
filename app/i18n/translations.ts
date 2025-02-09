@@ -30,6 +30,14 @@ export const translations: Record<string, Translations> = {
     services: {
       title: 'Services',
       subtitle: 'Choose your rage package',
+      duration: 'Duration',
+      price: 'Price',
+      difficulty: 'Difficulty',
+      book: 'Book Now',
+      promo: 'Promo',
+      gift: 'Gift',
+      bestseller: 'Bestseller',
+      free: 'Free',
       booking: {
         title: 'Book Your Session',
         description: 'Ready to release some stress? Book your rage room session now!',
@@ -145,6 +153,15 @@ export const translations: Record<string, Translations> = {
           details: '1-2 people/up to 30 min',
           price: '199 PLN'
         }
+      },
+      additionalItems: {
+        title: 'Additional Items Available',
+        items: [
+          'Extra glass items',
+          'Electronics',
+          'Furniture pieces',
+          'Special requests'
+        ]
       }
     },
     reviews: {
@@ -182,9 +199,10 @@ export const translations: Record<string, Translations> = {
       title: 'Contact Us',
       subtitle: 'Have questions? We\'re here to help!',
       name: 'Your Name',
-      email: 'Your Email',
+      email: 'Email',
       phone: 'Phone',
       address: 'Address',
+      openingHours: 'Opening Hours',
       message: 'Your Message',
       submit: 'Send Message'
     },
@@ -267,6 +285,14 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
     services: {
       title: 'Usługi',
       subtitle: 'Wybierz swój pakiet złości',
+      duration: 'Czas trwania',
+      price: 'Cena',
+      difficulty: 'Poziom trudności',
+      book: 'Zarezerwuj',
+      promo: 'Promocja',
+      gift: 'Prezent',
+      bestseller: 'Bestseller',
+      free: 'Za darmo',
       booking: {
         title: 'Zarezerwuj Sesję',
         description: 'Gotowy na uwolnienie stresu? Zarezerwuj swoją sesję już teraz!',
@@ -382,6 +408,15 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
           details: '1-2 osoby/do 30 min',
           price: '199 PLN'
         }
+      },
+      additionalItems: {
+        title: 'Dodatkowe Przedmioty',
+        items: [
+          'Dodatkowe przedmioty szklane',
+          'Elektronika',
+          'Meble',
+          'Specjalne zamówienia'
+        ]
       }
     },
     reviews: {
@@ -422,6 +457,7 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
       email: 'Twój Email',
       phone: 'Telefon',
       address: 'Adres',
+      openingHours: 'Godziny Otwarcia',
       message: 'Twoja Wiadomość',
       submit: 'Wyślij Wiadomość'
     },

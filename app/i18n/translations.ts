@@ -173,9 +173,13 @@ export const translations: Record<string, Translations> = {
     },
     contact: {
       title: 'Contact Us',
-      address: 'Address',
+      subtitle: 'Have questions? We\'re here to help!',
+      name: 'Your Name',
+      email: 'Your Email',
       phone: 'Phone',
-      email: 'Email',
+      address: 'Address',
+      message: 'Your Message',
+      submit: 'Send Message'
     },
     reviews: {
       title: 'What Our Clients Say',
@@ -457,9 +461,13 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
     },
     contact: {
       title: 'Kontakt',
-      address: 'Adres',
+      subtitle: 'Masz pytania? Jesteśmy tu, aby pomóc!',
+      name: 'Twoje Imię',
+      email: 'Twój Email',
       phone: 'Telefon',
-      email: 'Email',
+      address: 'Adres',
+      message: 'Wiadomość',
+      submit: 'Wyślij Wiadomość'
     },
     reviews: {
       title: 'Co Mówią Nasi Klienci',

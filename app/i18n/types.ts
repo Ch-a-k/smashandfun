@@ -46,6 +46,8 @@ export interface Translations {
     subtitle: string;
     name: string;
     email: string;
+    phone: string;
+    address: string;
     message: string;
     submit: string;
   };

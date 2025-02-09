@@ -1,10 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import { LanguageProvider } from './i18n/LanguageProvider';
 import Navbar from './components/Navbar';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Smash & Fun - Release Your Stress',
@@ -18,10 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-black text-white`}>
+      <body className="font-hammersmith bg-black text-white">
         <LanguageProvider>
           <Navbar />
-          <main className="pt-16">{children}</main>
+          <main className="pt-32">{children}</main>
         </LanguageProvider>
       </body>
     </html>

@@ -1,4 +1,6 @@
-export const translations = {
+import { Translations } from './types';
+
+export const translations: Record<string, Translations> = {
   en: {
     nav: {
       home: 'Home',
@@ -18,6 +20,9 @@ export const translations = {
     services: {
       title: 'Services',
       subtitle: 'Choose your rage package',
+      book: 'Book Now',
+      gift: 'Gift Card',
+      promo: 'Special Offer',
       additionalItems: {
         title: 'Additional Items',
         items: [
@@ -133,7 +138,38 @@ export const translations = {
           details: '1-2 people/up to 30 min',
           price: '199 PLN'
         }
-      }
+      },
+      booking: {
+        title: 'Book Your Session',
+        description: 'Ready to release some stress? Book your rage room session now!',
+        cta: 'Book Now',
+        form: {
+          name: 'Your Name',
+          email: 'Email',
+          phone: 'Phone Number',
+          date: 'Preferred Date',
+          time: 'Preferred Time',
+          package: 'Select Package',
+          submit: 'Book Session'
+        }
+      },
+      giftCard: {
+        title: 'Gift Voucher',
+        description: 'Give the gift of stress relief',
+        cta: 'Buy Voucher',
+        options: {
+          title: 'Choose Voucher Type',
+          monetary: 'Money Value Voucher',
+          package: 'Package Voucher'
+        }
+      },
+      promos: {
+        title: 'Special Offers',
+        description: 'Check out our current promotions',
+        groupDiscount: 'Group Discount: 10% off for groups of 4+',
+        studentDiscount: 'Student Discount: 15% off with valid student ID',
+        weekdaySpecial: 'Weekday Special: 20% off morning sessions'
+      },
     },
     contact: {
       title: 'Contact Us',
@@ -142,7 +178,8 @@ export const translations = {
       email: 'Email',
     },
     reviews: {
-      title: 'What Our Customers Say',
+      title: 'What Our Clients Say',
+      viewMore: 'View more reviews on Google',
     },
     cta: {
       title: 'Ready to Release Your Stress?',
@@ -253,7 +290,10 @@ export const translations = {
     },
     services: {
       title: 'Usługi',
-      subtitle: 'Wybierz swój pakiet złości',
+      subtitle: 'Wybierz swój pakiet destrukcji',
+      book: 'Zarezerwuj',
+      gift: 'Karta Podarunkowa',
+      promo: 'Promocja',
       additionalItems: {
         title: 'Dodatkowe Przedmioty',
         items: [
@@ -369,7 +409,38 @@ export const translations = {
           details: '1-2 osoby/do 30 min',
           price: '199 PLN'
         }
-      }
+      },
+      booking: {
+        title: 'Zarezerwuj Sesję',
+        description: 'Gotowy na uwolnienie stresu? Zarezerwuj swoją sesję już teraz!',
+        cta: 'Zarezerwuj',
+        form: {
+          name: 'Twoje Imię',
+          email: 'Email',
+          phone: 'Numer Telefonu',
+          date: 'Preferowana Data',
+          time: 'Preferowana Godzina',
+          package: 'Wybierz Pakiet',
+          submit: 'Zarezerwuj Sesję'
+        }
+      },
+      giftCard: {
+        title: 'Karta Podarunkowa',
+        description: 'Podaruj prezent w postaci sesji odstresowującej',
+        cta: 'Kup Voucher',
+        options: {
+          title: 'Wybierz Rodzaj Vouchera',
+          monetary: 'Voucher Wartościowy',
+          package: 'Voucher Pakietowy'
+        }
+      },
+      promos: {
+        title: 'Promocje',
+        description: 'Sprawdź nasze aktualne promocje',
+        groupDiscount: 'Zniżka Grupowa: 10% dla grup 4+',
+        studentDiscount: 'Zniżka Studencka: 15% z ważną legitymacją',
+        weekdaySpecial: 'Promocja w Dni Powszednie: 20% zniżki na poranne sesje'
+      },
     },
     contact: {
       title: 'Kontakt',
@@ -379,6 +450,7 @@ export const translations = {
     },
     reviews: {
       title: 'Co Mówią Nasi Klienci',
+      viewMore: 'Zobacz więcej opinii na Google',
     },
     cta: {
       title: 'Gotowy na Uwolnienie Stresu?',

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Hammer, Shield, Clock, Star, Users, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import ReviewsSection from './components/ReviewsSection';
 
 interface Review {
   id: string;
@@ -235,12 +236,12 @@ export default function Home() {
         
         <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
           <motion.div
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 100, scale: 0.5 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 1 }}
-            className="mb-8"
+            className="mb-8 transform scale-150"
           >
-            <Hammer className="w-24 h-24 text-[#ff5a00] mx-auto mb-6" />
+            <Hammer className="w-96 h-96 text-[#ff5a00] mx-auto mb-6" />
           </motion.div>
           
           <motion.h1 
@@ -364,142 +365,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Voucher Section */}
-      <section className="py-20 bg-zinc-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            whileInView={{ y: 0, opacity: 1 }}
-            viewport={{ once: true }}
-            className="bg-black/50 backdrop-blur-sm rounded-2xl p-12 border border-[#ff5a00] text-center"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-[#ff5a00] mb-6">
-              {t('voucher.title')}
-            </h2>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              {t('voucher.description')}
-            </p>
-            <Link
-              href="/contact"
-              className="bg-[#ff5a00] text-white px-8 py-4 rounded-full text-xl hover:bg-[#ff7a30] transition-all transform hover:scale-110 inline-flex items-center space-x-2"
-            >
-              {t('voucher.button')}
-            </Link>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Gift Idea Section */}
-      <section className="py-20 bg-zinc-900">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="space-y-6"
-            >
-              <h2 className="text-4xl md:text-5xl font-bold text-[#ff5a00]">
-                {t('voucher.title')}
-              </h2>
-              <p className="text-xl text-gray-300">
-                {t('voucher.description')}
-              </p>
-              <div className="space-y-4">
-                {t('voucher.benefits').map((benefit: string, index: number) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div className="w-2 h-2 bg-[#ff5a00] rounded-full"></div>
-                    <p className="text-gray-300">{benefit}</p>
-                  </div>
-                ))}
-              </div>
-              <Link
-                href="/contact"
-                className="inline-block bg-[#ff5a00] text-white px-8 py-4 rounded-full text-xl hover:bg-[#ff7a30] transition-all transform hover:scale-110"
-              >
-                {t('voucher.cta')}
-              </Link>
-            </motion.div>
-            
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative aspect-[4/3] rounded-2xl overflow-hidden"
-            >
-              <img
-                src="/images/voucher.png"
-                alt="Voucher"
-                className="absolute inset-0 w-full h-full object-cover transform hover:scale-110 transition-transform duration-500"
-              />
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Reviews Section */}
-      <section className="py-20 bg-black">
-        <div className="max-w-4xl mx-auto px-4">
-          <motion.h2
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-bold text-center mb-12 text-[#ff5a00]"
-          >
-            {t('reviews.title')}
-          </motion.h2>
-
-          <div className="relative">
-            <motion.div
-              key={currentReviewIndex}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="bg-zinc-900/50 rounded-xl p-8"
-            >
-              <div className="flex items-start space-x-4">
-                <img
-                  src={reviews[currentReviewIndex].avatar}
-                  alt={reviews[currentReviewIndex].author}
-                  className="w-16 h-16 rounded-full"
-                />
-                <div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <h3 className="text-xl font-semibold text-white">
-                      {reviews[currentReviewIndex].author}
-                    </h3>
-                    <div className="flex">
-                      {Array.from({ length: reviews[currentReviewIndex].rating }).map((_, i) => (
-                        <Star key={i} className="w-4 h-4 text-[#ff5a00]" />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-gray-400">
-                    {reviews[currentReviewIndex].text[language]}
-                  </p>
-                  <p className="text-gray-500 text-sm mt-2">
-                    {new Date(reviews[currentReviewIndex].date).toLocaleDateString(
-                      language === 'pl' ? 'pl-PL' : 'en-US'
-                    )}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            <div className="flex justify-center mt-6 space-x-2">
-              {reviews.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentReviewIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-all ${
-                    index === currentReviewIndex ? 'bg-[#ff5a00] w-4' : 'bg-gray-600'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <ReviewsSection />
 
       {/* Partners Section */}
       <section className="py-20 bg-black">

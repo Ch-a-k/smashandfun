@@ -28,9 +28,9 @@ export default function PageHeader({ title, subtitle }: PageHeaderProps) {
         style={getPatternStyle(pattern)}
       />
       <div className="relative z-10 text-center">
-        <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">{title}</h1>
+        <h1 className="text-5xl md:text-7xl font-protest uppercase text-white mb-4 tracking-wider">{title}</h1>
         {subtitle && (
-          <p className="text-xl md:text-2xl text-gray-200">{subtitle}</p>
+          <p className="text-xl md:text-3xl text-gray-200 font-hammersmith">{subtitle}</p>
         )}
       </div>
     </div>

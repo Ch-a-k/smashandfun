@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Protest+Guerrilla&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hammersmith+One&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,6 +20,26 @@
 }
 
 @layer base {
+  h1, h2, h3, h4 {
+    @apply font-protest uppercase tracking-wider;
+  }
+  
+  h1 {
+    @apply text-4xl md:text-6xl;
+  }
+  
+  h2 {
+    @apply text-3xl md:text-5xl;
+  }
+  
+  h3 {
+    @apply text-2xl md:text-4xl;
+  }
+  
+  h4 {
+    @apply text-xl md:text-3xl;
+  }
+  
   :root {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;

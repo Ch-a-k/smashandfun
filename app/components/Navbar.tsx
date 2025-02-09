@@ -2,45 +2,88 @@
 
 import { useLanguage } from '../i18n/LanguageProvider';
 import Link from 'next/link';
-import { Hammer } from 'lucide-react';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 export default function Navbar() {
   const { language, setLanguage, t } = useLanguage();
+  const { scrollY } = useScroll();
+  const backgroundColor = useTransform(
+    scrollY,
+    [0, 200],
+    ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 0.6)']
+  );
+  const backdropBlur = useTransform(
+    scrollY,
+    [0, 200],
+    ['blur(0px)', 'blur(8px)']
+  );
+  const navHeight = useTransform(
+    scrollY,
+    [0, 200],
+    ['8rem', '5rem']
+  );
+  const logoHeight = useTransform(
+    scrollY,
+    [0, 200],
+    ['7rem', '4rem']
+  );
+  const fontSize = useTransform(
+    scrollY,
+    [0, 200],
+    ['1.25rem', '1rem']
+  );
 
   return (
-    <nav className="fixed w-full bg-black/90 backdrop-blur-sm z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center space-x-2">
-            <Hammer className="h-8 w-8 text-[#ff5a00]" />
-            <span className="text-white font-bold text-xl">Smash & Fun</span>
+    <motion.nav
+      className="fixed w-full z-50"
+      style={{
+        backgroundColor,
+        backdropFilter: backdropBlur,
+        height: navHeight
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+        <motion.div className="flex items-center justify-between h-full">
+          <Link href="/" className="flex items-center">
+            <motion.div style={{ height: logoHeight }}>
+              <Image
+                src="/images/logo.png"
+                alt="Smash & Fun Logo"
+                width={420}
+                height={120}
+                className="h-full w-auto"
+                priority
+              />
+            </motion.div>
           </Link>
           
-          <div className="flex items-center space-x-8">
-            <Link href="/" className="text-white hover:text-[#ff5a00] transition">
+          <motion.div className="flex items-center space-x-8" style={{ fontSize }}>
+            <Link href="/" className="text-white hover:text-[#ff5a00] transition font-protest uppercase">
               {t('nav.home')}
             </Link>
-            <Link href="/services" className="text-white hover:text-[#ff5a00] transition">
+            <Link href="/services" className="text-white hover:text-[#ff5a00] transition font-protest uppercase">
               {t('nav.services')}
             </Link>
-            <Link href="/blog" className="text-white hover:text-[#ff5a00] transition">
+            <Link href="/blog" className="text-white hover:text-[#ff5a00] transition font-protest uppercase">
               {t('nav.blog')}
             </Link>
-            <Link href="/faq" className="text-white hover:text-[#ff5a00] transition">
+            <Link href="/faq" className="text-white hover:text-[#ff5a00] transition font-protest uppercase">
               {t('nav.faq')}
             </Link>
-            <Link href="/contact" className="text-white hover:text-[#ff5a00] transition">
+            <Link href="/contact" className="text-white hover:text-[#ff5a00] transition font-protest uppercase">
               {t('nav.contact')}
             </Link>
             <button
               onClick={() => setLanguage(language === 'en' ? 'pl' : 'en')}
-              className="px-3 py-1 rounded border border-[#ff5a00] text-[#ff5a00] hover:bg-[#ff5a00] hover:text-white transition"
+              className="px-3 py-1 rounded border border-[#ff5a00] text-[#ff5a00] hover:bg-[#ff5a00] hover:text-white transition font-protest uppercase"
             >
               {language.toUpperCase()}
             </button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
-    </nav>
+    </motion.nav>
   );
 }

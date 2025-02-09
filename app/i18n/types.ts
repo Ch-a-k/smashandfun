@@ -64,6 +64,7 @@ export interface Translations {
     email: string;
     phone: string;
     address: string;
+    openingHours: string;
     message: string;
     submit: string;
   };
@@ -87,6 +88,14 @@ export interface Translations {
   services: {
     title: string;
     subtitle: string;
+    duration: string;
+    price: string;
+    difficulty: string;
+    book: string;
+    promo: string;
+    gift: string;
+    bestseller: string;
+    free: string;
     booking: {
       title: string;
       description: string;
@@ -123,6 +132,10 @@ export interface Translations {
       medium: ServicePackage;
       easy: ServicePackage;
       beginner: ServicePackage;
+    };
+    additionalItems: {
+      title: string;
+      items: string[];
     };
   };
   social: {

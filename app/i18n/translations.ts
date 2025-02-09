@@ -14,6 +14,16 @@ export const translations: Record<string, Translations> = {
       subtitle: 'Release Your Stress in Style',
       cta: 'Book Now'
     },
+    happyHours: {
+      title: 'Happy Hours!',
+      schedule: 'Monday to Friday, 10 AM - 2 PM',
+      discounts: [
+        '30% off on all packages',
+        'Free protective gear rental',
+        'Additional 15 minutes free'
+      ],
+      cta: 'Don\'t miss out on these special offers!'
+    },
     features: {
       title: 'Why Choose Us?'
     },
@@ -143,7 +153,8 @@ export const translations: Record<string, Translations> = {
     },
     cta: {
       title: 'Ready to Release Your Stress?',
-      subtitle: 'Join thousands of satisfied customers who have experienced the ultimate stress relief'
+      subtitle: 'Join thousands of satisfied customers who have experienced the ultimate stress relief',
+      button: 'Book Now'
     },
     faq: {
       title: 'Frequently Asked Questions',
@@ -181,16 +192,6 @@ export const translations: Record<string, Translations> = {
       close: 'Close',
       viewServices: 'View Services'
     },
-    happyHours: {
-      title: 'Happy Hours',
-      schedule: 'Monday - Friday, 11:00 - 16:00',
-      discounts: [
-        '20% off all packages',
-        'Free protective gear rental',
-        'Complimentary session photos'
-      ],
-      cta: 'Book Happy Hour Session'
-    },
     blog: {
       title: 'Blog',
       subtitle: 'Latest articles and insights',
@@ -217,7 +218,10 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
       }
     },
     social: {
-      followUs: 'Follow Us'
+      followUs: 'Follow Us',
+      facebook: 'Facebook',
+      instagram: 'Instagram',
+      twitter: 'Twitter'
     },
     partners: {
       title: 'PARTNERS'
@@ -244,8 +248,18 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
     },
     hero: {
       title: 'SMASH & FUN',
-      subtitle: 'Uwolnij Stres w Stylu',
-      cta: 'Zarezerwuj'
+      subtitle: 'Uwolnij Swój Stres w Stylu',
+      cta: 'Zarezerwuj Teraz'
+    },
+    happyHours: {
+      title: 'Happy Hours!',
+      schedule: 'Poniedziałek - Piątek, 10:00 - 14:00',
+      discounts: [
+        '30% zniżki na wszystkie pakiety',
+        'Darmowy wynajem sprzętu ochronnego',
+        'Dodatkowe 15 minut gratis'
+      ],
+      cta: 'Nie przegap tych specjalnych ofert!'
     },
     features: {
       title: 'Dlaczego My?'
@@ -376,7 +390,8 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
     },
     cta: {
       title: 'Gotowy na Uwolnienie Stresu?',
-      subtitle: 'Dołącz do tysięcy zadowolonych klientów'
+      subtitle: 'Dołącz do tysięcy zadowolonych klientów',
+      button: 'Zarezerwuj'
     },
     faq: {
       title: 'Często Zadawane Pytania',
@@ -414,16 +429,6 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
       close: 'Zamknij',
       viewServices: 'Zobacz Usługi'
     },
-    happyHours: {
-      title: 'Happy Hours',
-      schedule: 'Poniedziałek - Piątek, 11:00 - 16:00',
-      discounts: [
-        '20% zniżki na wszystkie pakiety',
-        'Darmowy wynajem sprzętu ochronnego',
-        'Darmowe zdjęcia z sesji'
-      ],
-      cta: 'Zarezerwuj Sesję w Happy Hours'
-    },
     blog: {
       title: 'Blog',
       subtitle: 'Najnowsze artykuły i porady',
@@ -450,7 +455,10 @@ Widzieliśmy wielu profesjonalistów, którzy czerpią korzyści z regularnych s
       }
     },
     social: {
-      followUs: 'Obserwuj Nas'
+      followUs: 'Obserwuj Nas',
+      facebook: 'Facebook',
+      instagram: 'Instagram',
+      twitter: 'Twitter'
     },
     partners: {
       title: 'PARTNERZY'

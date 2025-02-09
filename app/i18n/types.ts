@@ -122,6 +122,7 @@ export interface Translations {
       hard: ServicePackage;
       medium: ServicePackage;
       easy: ServicePackage;
+      beginner: ServicePackage;
     };
   };
   social: {

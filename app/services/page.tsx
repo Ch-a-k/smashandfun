@@ -198,20 +198,22 @@ export default function Services() {
                       <div className="flex-1 overflow-y-auto p-8">
                         <h4 className="text-lg font-semibold text-[#ff5a00] mb-4">{t('services.packages.' + service.id + '.items.title')}</h4>
                         <ul className="space-y-2 mb-6">
-                          {t('services.packages.' + service.id + '.items.list').map((item: string, idx: number) => (
-                            <li key={idx} className="text-gray-300 flex items-center">
-                              <span className="text-[#ff5a00] mr-2">•</span> {item}
-                            </li>
-                          ))}
+                          {Array.isArray(t('services.packages.' + service.id + '.items.list')) && 
+                            t('services.packages.' + service.id + '.items.list').map((item: string, idx: number) => (
+                              <li key={idx} className="text-gray-300 flex items-center">
+                                <span className="text-[#ff5a00] mr-2">•</span> {item}
+                              </li>
+                            ))}
                         </ul>
 
                         <h4 className="text-lg font-semibold text-[#ff5a00] mb-4">{t('services.packages.' + service.id + '.tools.title')}</h4>
                         <ul className="space-y-2">
-                          {t('services.packages.' + service.id + '.tools.list').map((item: string, idx: number) => (
-                            <li key={idx} className="text-gray-300 flex items-center">
-                              <span className="text-[#ff5a00] mr-2">•</span> {item}
-                            </li>
-                          ))}
+                          {Array.isArray(t('services.packages.' + service.id + '.tools.list')) && 
+                            t('services.packages.' + service.id + '.tools.list').map((item: string, idx: number) => (
+                              <li key={idx} className="text-gray-300 flex items-center">
+                                <span className="text-[#ff5a00] mr-2">•</span> {item}
+                              </li>
+                            ))}
                         </ul>
                       </div>
                       <div className="p-8 pt-0">
@@ -248,15 +250,16 @@ export default function Services() {
               {t('services.additionalItems.title')}
             </h3>
             <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {t('services.additionalItems.items').map((item: string, index: number) => (
-                <li
-                  key={index}
-                  className="flex items-center space-x-2 text-gray-300"
-                >
-                  <span className="text-[#ff5a00]">•</span>
-                  <span>{item}</span>
-                </li>
-              ))}
+              {Array.isArray(t('services.additionalItems.items')) && 
+                t('services.additionalItems.items').map((item: string, index: number) => (
+                  <li
+                    key={index}
+                    className="flex items-center space-x-2 text-gray-300"
+                  >
+                    <span className="text-[#ff5a00]">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
             </ul>
           </motion.div>
         </div>

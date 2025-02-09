@@ -122,13 +122,15 @@ export interface Translations {
       hard: ServicePackage;
       medium: ServicePackage;
       easy: ServicePackage;
-      beginner: ServicePackage;
     };
   };
-  social?: {
+  social: {
     followUs: string;
+    facebook: string;
+    instagram: string;
+    twitter: string;
   };
-  partners?: {
+  partners: {
     title: string;
   };
   voucher: {

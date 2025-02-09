@@ -5,54 +5,51 @@ export const translations: Record<string, Translations> = {
     nav: {
       home: 'Home',
       services: 'Services',
-      contact: 'Contact',
       blog: 'Blog',
-      faq: 'FAQ'
+      faq: 'FAQ',
+      contact: 'Contact'
     },
     hero: {
       title: 'SMASH & FUN',
       subtitle: 'Release Your Stress in Style',
-      cta: 'Book Now',
+      cta: 'Book Now'
     },
     features: {
-      title: 'Why Choose Us?',
+      title: 'Why Choose Us?'
     },
     services: {
       title: 'Services',
       subtitle: 'Choose your rage package',
-      book: 'Book Now',
-      gift: 'Gift Card',
-      promo: 'Special Offer',
-      additionalItems: {
-        title: 'Additional Items',
-        items: [
-          'Extra glass items (5 pcs) - 50 PLN',
-          'Extra electronics (1 pc) - 100 PLN',
-          'Extra furniture (1 pc) - 150 PLN',
-          'Video recording - 50 PLN'
-        ]
-      },
-      descriptions: {
-        pieceCake: {
-          title: 'PIECE OF CAKE',
-          duration: '30 min',
-          items: ['Basic glass items', 'Safety equipment', 'Perfect for beginners']
-        },
-        easy: {
-          title: 'EASY',
-          duration: '1 hour',
-          items: ['More glass items', 'Basic furniture', 'Safety equipment', 'Good for stress relief']
-        },
-        medium: {
-          title: 'MEDIUM',
-          duration: '2 hours',
-          items: ['Lots of glass items', 'Multiple furniture pieces', 'Electronics', 'Safety equipment', 'Our most popular choice']
-        },
-        hard: {
-          title: 'HARD',
-          duration: '2 hours',
-          items: ['Maximum glass items', 'Large furniture', 'Multiple electronics', 'Safety equipment', 'For ultimate destruction']
+      booking: {
+        title: 'Book Your Session',
+        description: 'Ready to release some stress? Book your rage room session now!',
+        cta: 'Book Now',
+        form: {
+          name: 'Your Name',
+          email: 'Email',
+          phone: 'Phone Number',
+          date: 'Preferred Date',
+          time: 'Preferred Time',
+          package: 'Select Package',
+          submit: 'Book Session'
         }
+      },
+      giftCard: {
+        title: 'Gift Voucher',
+        description: 'Give the gift of stress relief',
+        cta: 'Buy Voucher',
+        options: {
+          title: 'Choose Voucher Type',
+          monetary: 'Money Value Voucher',
+          package: 'Package Voucher'
+        }
+      },
+      promos: {
+        title: 'Special Offers',
+        description: 'Check out our current promotions',
+        groupDiscount: 'Group Discount: 10% off for groups of 4+',
+        studentDiscount: 'Student Discount: 15% off with valid student ID',
+        weekdaySpecial: 'Weekday Special: 20% off morning sessions'
       },
       packages: {
         hard: {
@@ -138,52 +135,11 @@ export const translations: Record<string, Translations> = {
           details: '1-2 people/up to 30 min',
           price: '199 PLN'
         }
-      },
-      booking: {
-        title: 'Book Your Session',
-        description: 'Ready to release some stress? Book your rage room session now!',
-        cta: 'Book Now',
-        form: {
-          name: 'Your Name',
-          email: 'Email',
-          phone: 'Phone Number',
-          date: 'Preferred Date',
-          time: 'Preferred Time',
-          package: 'Select Package',
-          submit: 'Book Session'
-        }
-      },
-      giftCard: {
-        title: 'Gift Voucher',
-        description: 'Give the gift of stress relief',
-        cta: 'Buy Voucher',
-        options: {
-          title: 'Choose Voucher Type',
-          monetary: 'Money Value Voucher',
-          package: 'Package Voucher'
-        }
-      },
-      promos: {
-        title: 'Special Offers',
-        description: 'Check out our current promotions',
-        groupDiscount: 'Group Discount: 10% off for groups of 4+',
-        studentDiscount: 'Student Discount: 15% off with valid student ID',
-        weekdaySpecial: 'Weekday Special: 20% off morning sessions'
-      },
-    },
-    contact: {
-      title: 'Contact Us',
-      subtitle: 'Have questions? We\'re here to help!',
-      name: 'Your Name',
-      email: 'Your Email',
-      phone: 'Phone',
-      address: 'Address',
-      message: 'Your Message',
-      submit: 'Send Message'
+      }
     },
     reviews: {
       title: 'What Our Clients Say',
-      viewMore: 'View more reviews on Google',
+      viewMore: 'View More Reviews'
     },
     cta: {
       title: 'Ready to Release Your Stress?',
@@ -191,6 +147,7 @@ export const translations: Record<string, Translations> = {
     },
     faq: {
       title: 'Frequently Asked Questions',
+      subtitle: 'Find answers to common questions',
       questions: [
         {
           q: 'What is a Rage Room?',
@@ -207,42 +164,45 @@ export const translations: Record<string, Translations> = {
         {
           q: 'How long does a session last?',
           a: 'Session duration depends on the chosen package and can range from 30 minutes to 2 hours. You can use the full available time or end earlier if you feel you\'ve achieved your goals.'
-        },
-        {
-          q: 'Is it safe?',
-          a: 'Yes! Our clients\' safety is our priority. We provide full protective equipment, including face shields, coveralls or jackets, and gloves. Our staff supervises the session to ensure you have safe and exciting fun.'
-        },
-        {
-          q: 'Can I organize a private event, such as a birthday or company party?',
-          a: 'Of course! We organize private events for groups, including birthdays, team building events, and other special occasions. Contact us to book a date and customize details to your needs.'
-        },
-        {
-          q: 'Can I come alone, or do I need a group?',
-          a: 'We welcome both individuals and groups. Our packages are flexible and adapted to different numbers of participants.'
-        },
-        {
-          q: 'Can I bring my own objects to destroy?',
-          a: 'Yes, you can bring your own objects, but they must meet our safety standards. Contact us in advance to ensure your items are suitable for destruction.'
-        },
-        {
-          q: 'How can I book a session?',
-          a: 'Reservations can only be made online through our website. We recommend booking in advance to guarantee availability on your preferred date.'
-        },
-        {
-          q: 'What is the price of a session?',
-          a: 'Prices depend on the chosen package and number of participants. You can find detailed pricing in the "Offer" section on our website. We also offer discounts for larger groups and special occasions.'
         }
       ]
     },
+    contact: {
+      title: 'Contact Us',
+      subtitle: 'Have questions? We\'re here to help!',
+      name: 'Your Name',
+      email: 'Your Email',
+      phone: 'Phone',
+      address: 'Address',
+      message: 'Your Message',
+      submit: 'Send Message'
+    },
+    common: {
+      close: 'Close',
+      viewServices: 'View Services'
+    },
+    happyHours: {
+      title: 'Happy Hours',
+      schedule: 'Monday - Friday, 11:00 - 16:00',
+      discounts: [
+        '20% off all packages',
+        'Free protective gear rental',
+        'Complimentary session photos'
+      ],
+      cta: 'Book Happy Hour Session'
+    },
     blog: {
-      title: 'Our Blog',
+      title: 'Blog',
       subtitle: 'Latest articles and insights',
+      readMore: 'Read More',
+      backToBlog: 'Back to Blog',
       stressAtWork: {
         title: 'How to Deal with Stress at Work',
         subtitle: 'Effective strategies for managing workplace stress',
         date: '2025-02-09',
-        author: 'Anna Kowalska',
+        author: 'John Smith',
         readTime: '5 min read',
+        excerpt: 'Life is generally stressful, but work-related stress can be particularly challenging. Discover how our Rage Room can help you manage and release work-related stress in a safe and controlled environment.',
         content: `Stress at work is a common issue that affects many professionals. Understanding how to manage it effectively is crucial for maintaining both mental and physical health.
 
 In today's fast-paced work environment, it's essential to recognize the signs of stress and take proactive steps to address them. Some common symptoms include difficulty concentrating, irritability, and physical tension.
@@ -251,10 +211,16 @@ One effective way to combat workplace stress is through physical activity. This 
 
 Regular breaks and stress-relief activities are crucial for maintaining productivity and mental well-being. Our smash room sessions offer a perfect opportunity to take a break from work and release built-up tension in a fun and therapeutic way.
 
-Remember, it's not just about destroying things - it's about giving yourself permission to let go of stress and negative emotions in a healthy, controlled manner. Our trained staff ensures that every session is both safe and therapeutic.
+Remember, it's not just about breaking things - it's about giving yourself permission to release stress and negative emotions in a healthy, controlled way. Our trained staff ensures that each session is both safe and therapeutic.
 
 We've seen numerous professionals benefit from regular smash room sessions as part of their stress management routine. It's an unconventional but effective approach to dealing with workplace stress.`
       }
+    },
+    social: {
+      followUs: 'Follow Us'
+    },
+    partners: {
+      title: 'PARTNERS'
     },
     voucher: {
       title: 'GIFT IDEA',
@@ -266,166 +232,27 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
         'Digital or physical delivery'
       ],
       cta: 'Get a Voucher'
-    },
-    happyHours: {
-      title: 'Happy Hours',
-      schedule: 'Monday to Friday, 11:00 - 16:00',
-      discounts: [
-        '20% off on all packages',
-        'Free protective gear rental',
-        'Complimentary photos of your session'
-      ],
-      cta: 'Book Happy Hour Session'
-    },
-    social: {
-      followUs: 'Follow Us'
-    },
-    partners: {
-      title: 'PARTNERS'
-    },
-    common: {
-      close: 'Close',
-      viewServices: 'View Services'
     }
   },
   pl: {
     nav: {
       home: 'Strona Główna',
       services: 'Usługi',
-      contact: 'Kontakt',
       blog: 'Blog',
-      faq: 'FAQ'
+      faq: 'FAQ',
+      contact: 'Kontakt'
     },
     hero: {
       title: 'SMASH & FUN',
       subtitle: 'Uwolnij Stres w Stylu',
-      cta: 'Zarezerwuj',
+      cta: 'Zarezerwuj'
     },
     features: {
-      title: 'Dlaczego My?',
+      title: 'Dlaczego My?'
     },
     services: {
       title: 'Usługi',
-      subtitle: 'Wybierz swój pakiet destrukcji',
-      book: 'Zarezerwuj',
-      gift: 'Karta Podarunkowa',
-      promo: 'Promocja',
-      additionalItems: {
-        title: 'Dodatkowe Przedmioty',
-        items: [
-          'Dodatkowe szklane przedmioty (5 szt.) - 50 PLN',
-          'Dodatkowy sprzęt RTV i AGD (1 szt.) - 100 PLN',
-          'Dodatkowe meble (1 szt.) - 150 PLN',
-          'Nagranie wideo - 50 PLN'
-        ]
-      },
-      descriptions: {
-        pieceCake: {
-          title: 'BUŁKA Z MASŁEM',
-          duration: '30 min',
-          items: ['Podstawowe elementy szklane', 'Sprzęt ochronny', 'Idealne dla początkujących']
-        },
-        easy: {
-          title: 'ŁATWY',
-          duration: '1 godzina',
-          items: ['Więcej elementów szklanych', 'Podstawowe meble', 'Sprzęt ochronny', 'Dobre na odstresowanie']
-        },
-        medium: {
-          title: 'ŚREDNI',
-          duration: '2 godziny',
-          items: ['Dużo elementów szklanych', 'Kilka mebli', 'Elektronika', 'Sprzęt ochronny', 'Nasz najpopularniejszy wybór']
-        },
-        hard: {
-          title: 'TRUDNY',
-          duration: '2 godziny',
-          items: ['Maksymalna ilość szkła', 'Duże meble', 'Różnorodna elektronika', 'Sprzęt ochronny', 'Dla maksymalnej destrukcji']
-        }
-      },
-      packages: {
-        hard: {
-          title: 'TRUDNY',
-          items: {
-            title: 'DO ZDEMOLOWANIA',
-            list: [
-              '35 szklanych przedmiotów',
-              '5 meble',
-              '8 sprzętów RTV i AGD',
-              '10 mniejszych sprzętów RTV i AGD'
-            ]
-          },
-          tools: {
-            title: 'NARZĘDZIA',
-            list: [
-              'ubranie',
-              'kask',
-              'rękawice'
-            ]
-          },
-          details: '1-6 osób/do 180 min',
-          price: '999 PLN'
-        },
-        medium: {
-          title: 'ŚREDNI',
-          items: {
-            title: 'DO ZDEMOLOWANIA',
-            list: [
-              '30 szklanych przedmiotów',
-              '3 meble',
-              '5 sprzętów RTV i AGD'
-            ]
-          },
-          tools: {
-            title: 'NARZĘDZIA',
-            list: [
-              'ubranie',
-              'kask',
-              'rękawice'
-            ]
-          },
-          details: '1-4 osoby/do 120 min',
-          price: '499 PLN'
-        },
-        easy: {
-          title: 'ŁATWY',
-          items: {
-            title: 'DO ZDEMOLOWANIA',
-            list: [
-              '25 szklanych przedmiotów',
-              '2 meble',
-              '3 sprzęty RTV i AGD'
-            ]
-          },
-          tools: {
-            title: 'NARZĘDZIA',
-            list: [
-              'ubranie',
-              'kask',
-              'rękawice'
-            ]
-          },
-          details: '1-2 osoby/do 45 min',
-          price: '299 PLN'
-        },
-        beginner: {
-          title: 'BUŁKA Z MASŁEM',
-          items: {
-            title: 'DO ZDEMOLOWANIA',
-            list: [
-              '25 szklanych przedmiotów'
-            ]
-          },
-          tools: {
-            title: 'NARZĘDZIA',
-            list: [
-              'ubranie',
-              'kask',
-              'rękawice'
-            ]
-          },
-          details: '1-2 osoby/do 30 min',
-          price: '199 PLN'
-        }
-      },
+      subtitle: 'Wybierz swój pakiet złości',
       booking: {
         title: 'Zarezerwuj Sesję',
         description: 'Gotowy na uwolnienie stresu? Zarezerwuj swoją sesję już teraz!',
@@ -442,21 +269,136 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
       },
       giftCard: {
         title: 'Karta Podarunkowa',
-        description: 'Podaruj prezent w postaci sesji odstresowującej',
+        description: 'Podaruj prezent w postaci uwolnienia od stresu',
         cta: 'Kup Voucher',
         options: {
           title: 'Wybierz Rodzaj Vouchera',
-          monetary: 'Voucher Wartościowy',
+          monetary: 'Voucher Kwotowy',
           package: 'Voucher Pakietowy'
         }
       },
       promos: {
-        title: 'Promocje',
+        title: 'Oferty Specjalne',
         description: 'Sprawdź nasze aktualne promocje',
         groupDiscount: 'Zniżka Grupowa: 10% dla grup 4+',
         studentDiscount: 'Zniżka Studencka: 15% z ważną legitymacją',
-        weekdaySpecial: 'Promocja w Dni Powszednie: 20% zniżki na poranne sesje'
+        weekdaySpecial: 'Promocja w Dni Robocze: 20% zniżki na poranne sesje'
       },
+      packages: {
+        hard: {
+          title: 'TRUDNY',
+          items: {
+            title: 'DO ZNISZCZENIA',
+            list: [
+              '35 przedmiotów szklanych',
+              '5 mebli',
+              '8 elektroniki',
+              '10 mniejszej elektroniki'
+            ]
+          },
+          tools: {
+            title: 'NARZĘDZIA',
+            list: [
+              'ubranie',
+              'kask',
+              'rękawice'
+            ]
+          },
+          details: '1-6 osób/do 180 min',
+          price: '999 PLN'
+        },
+        medium: {
+          title: 'ŚREDNI',
+          items: {
+            title: 'DO ZNISZCZENIA',
+            list: [
+              '30 przedmiotów szklanych',
+              '3 meble',
+              '5 elektroniki'
+            ]
+          },
+          tools: {
+            title: 'NARZĘDZIA',
+            list: [
+              'ubranie',
+              'kask',
+              'rękawice'
+            ]
+          },
+          details: '1-4 osoby/do 120 min',
+          price: '499 PLN'
+        },
+        easy: {
+          title: 'ŁATWY',
+          items: {
+            title: 'DO ZNISZCZENIA',
+            list: [
+              '25 przedmiotów szklanych',
+              '2 meble',
+              '3 elektroniki'
+            ]
+          },
+          tools: {
+            title: 'NARZĘDZIA',
+            list: [
+              'ubranie',
+              'kask',
+              'rękawice'
+            ]
+          },
+          details: '1-2 osoby/do 45 min',
+          price: '299 PLN'
+        },
+        beginner: {
+          title: 'POCZĄTKUJĄCY',
+          items: {
+            title: 'DO ZNISZCZENIA',
+            list: [
+              '25 przedmiotów szklanych'
+            ]
+          },
+          tools: {
+            title: 'NARZĘDZIA',
+            list: [
+              'ubranie',
+              'kask',
+              'rękawice'
+            ]
+          },
+          details: '1-2 osoby/do 30 min',
+          price: '199 PLN'
+        }
+      }
+    },
+    reviews: {
+      title: 'Co Mówią Nasi Klienci',
+      viewMore: 'Zobacz Więcej Opinii'
+    },
+    cta: {
+      title: 'Gotowy na Uwolnienie Stresu?',
+      subtitle: 'Dołącz do tysięcy zadowolonych klientów'
+    },
+    faq: {
+      title: 'Często Zadawane Pytania',
+      subtitle: 'Znajdź odpowiedzi na popularne pytania',
+      questions: [
+        {
+          q: 'Co to jest Pokój Złości?',
+          a: 'Pokój Złości to miejsce, gdzie możesz nie tylko uwolnić stres, ale także doświadczyć nowych emocji i rozrywki poprzez niszczenie przedmiotów w kontrolowanym środowisku. Od mebli po elektronikę – wszystko jest do Twojej dyspozycji, aby zapewnić Ci pełną satysfakcję z demolki!'
+        },
+        {
+          q: 'Jakie przedmioty mogę zniszczyć?',
+          a: 'Oferujemy szeroki wybór przedmiotów do zniszczenia, w tym meble, szkło, elektronikę, a nawet specjalnie przygotowane rekwizyty. Z każdym pakietem otrzymujesz różne przedmioty, a jeśli masz specjalne życzenia, chętnie je omówimy!'
+        },
+        {
+          q: 'Czy potrzebuję wcześniejszego doświadczenia?',
+          a: 'Nie, demolka nie wymaga żadnych umiejętności! Każdy może uczestniczyć, niezależnie od poziomu doświadczenia. Przed sesją zapewniamy pełne instrukcje i niezbędny sprzęt ochronny.'
+        },
+        {
+          q: 'Jak długo trwa sesja?',
+          a: 'Czas trwania sesji zależy od wybranego pakietu i może wynosić od 30 minut do 2 godzin. Możesz wykorzystać cały dostępny czas lub zakończyć wcześniej, jeśli czujesz, że osiągnąłeś swoje cele.'
+        }
+      ]
     },
     contact: {
       title: 'Kontakt',
@@ -465,103 +407,64 @@ We've seen numerous professionals benefit from regular smash room sessions as pa
       email: 'Twój Email',
       phone: 'Telefon',
       address: 'Adres',
-      message: 'Wiadomość',
+      message: 'Twoja Wiadomość',
       submit: 'Wyślij Wiadomość'
-    },
-    reviews: {
-      title: 'Co Mówią Nasi Klienci',
-      viewMore: 'Zobacz więcej opinii na Google',
-    },
-    cta: {
-      title: 'Gotowy na Uwolnienie Stresu?',
-      subtitle: 'Dołącz do tysięcy zadowolonych klientów'
-    },
-    faq: {
-      title: 'Często Zadawane Pytania',
-      questions: [
-        {
-          q: 'Czym jest Rage Room?',
-          a: 'Rage Room to miejsce, gdzie możesz nie tylko wyładować stres, ale także doświadczyć nowych emocji i rozrywki, niszcząc przedmioty w kontrolowanym środowisku. Od mebli po elektronikę – wszystko jest do Twojej dyspozycji, aby zapewnić Ci pełną satysfakcję z demolki!'
-        },
-        {
-          q: 'Jakie przedmioty mogę niszczyć?',
-          a: 'Oferujemy szeroki wybór przedmiotów do zniszczenia, w tym meble, szkło, elektronikę, a nawet specjalnie przygotowane rekwizyty. Z każdym pakietem dostajesz różnorodne obiekty, a jeśli masz specjalne życzenia, chętnie je omówimy!'
-        },
-        {
-          q: 'Czy muszę mieć wcześniejsze doświadczenie?',
-          a: 'Nie, demolka nie wymaga żadnych umiejętności! Każdy może wziąć udział, niezależnie od poziomu doświadczenia. Przed sesją zapewniamy pełen instruktaż oraz niezbędny sprzęt ochronny.'
-        },
-        {
-          q: 'Jak długo trwa sesja?',
-          a: 'Czas trwania sesji zależy od wybranego pakietu i może wynosić od 30 minut do 2 godzin. Możecie wykorzystać pełny dostępny czas lub zakończyć wcześniej, jeśli uznacie, że osiągnęliście swoje cele.'
-        },
-        {
-          q: 'Czy to bezpieczne?',
-          a: 'Tak! Bezpieczeństwo naszych klientów jest naszym priorytetem. Zapewniamy pełny sprzęt ochronny, w tym przyłbice ochronne, kombinezony lub kurtki oraz rękawice. Nasz personel czuwa nad przebiegiem sesji, aby zapewnić Wam bezpieczną i ekscytującą zabawę.'
-        },
-        {
-          q: 'Czy mogę zorganizować prywatne wydarzenie, takie jak urodziny czy impreza firmowa?',
-          a: 'Oczywiście! Organizujemy prywatne eventy dla grup, w tym urodziny, imprezy integracyjne i inne wydarzenia specjalne. Skontaktuj się z nami, aby zarezerwować termin i dostosować szczegóły do Twoich potrzeb.'
-        },
-        {
-          q: 'Czy mogę przyjść sam/a, czy potrzebuję grupy?',
-          a: 'Zapraszamy zarówno osoby indywidualne, jak i grupy. Nasze pakiety są elastyczne i dopasowane do różnych liczebności uczestników.'
-        },
-        {
-          q: 'Czy mogę przynieść własne przedmioty do zniszczenia?',
-          a: 'Tak, możesz przynieść własne przedmioty, jednak muszą one spełniać nasze standardy bezpieczeństwa. Skontaktuj się z nami wcześniej, aby upewnić się, że Twoje przedmioty są odpowiednie do zniszczenia.'
-        },
-        {
-          q: 'Jak mogę zarezerwować sesję?',
-          a: 'Rezerwacji można dokonać wyłącznie online za pośrednictwem naszej strony internetowej. Polecamy wcześniejszą rezerwację, aby zagwarantować dostępność w wybranym terminie.'
-        },
-        {
-          q: 'Jaka jest cena sesji?',
-          a: 'Ceny zależą od wybranego pakietu oraz liczby uczestników. Szczegółowy cennik znajdziesz w zakładce "Oferta" na naszej stronie internetowej. Oferujemy także zniżki na większe grupy i specjalne okazje.'
-        }
-      ],
-      subtitle: ''
-    },
-    blog: {
-      title: 'Blog',
-      readMore: 'Czytaj więcej',
-      backToBlog: 'Powrót do Bloga',
-      stressAtWork: {
-        title: 'Stres w pracy – jak się go pozbyć?',
-        excerpt: 'Życie jest generalnie stresujące, ale stres związany z pracą może być szczególnie trudny. Odkryj, jak nasz Pokój Złości może pomóc Ci zarządzać i uwolnić stres związany z pracą w bezpiecznym i kontrolowanym środowisku.',
-        content: 'W dzisiejszym szybko zmieniającym się świecie, stres w miejscu pracy stał się coraz bardziej powszechnym wyzwaniem, które dotyka miliony ludzi. Od napiętych terminów po trudnych współpracowników, źródła stresu wydają się być nieskończone. A co, gdyby istniał unikalny i skuteczny sposób na uwolnienie całego tego napięcia?\n\nNasz Pokój Złości oferuje rewolucyjne podejście do zarządzania stresem. Zamiast tłumić swoje frustracje lub zabierać je do domu, możesz je uwolnić w kontrolowanym, bezpiecznym środowisku. Akt fizycznego niszczenia rzeczy wyzwala uwalnianie endorfin - naturalnych środków przeciwstresowych twojego organizmu.\n\nOto jak nasz Pokój Złości pomaga w walce ze stresem w pracy:\n\n1. Uwolnienie fizyczne: Akt rozbijania przedmiotów zapewnia natychmiastowe fizyczne ujście dla nagromadzonych frustracji.\n\n2. Katharsis emocjonalne: Wyrażaj swoje emocje swobodnie bez osądzania i konsekwencji.\n\n3. Reset stresu: Wyjdź czując się lżej i bardziej zrównoważony, gotowy do stawienia czoła wyzwaniom w pracy z odnowioną energią.\n\n4. Czynnik zabawy: Przekształć redukcję stresu w przyjemne doświadczenie - kto by pomyślał, że niszczenie rzeczy może być tak terapeutyczne?\n\nPamiętaj, że choć nasz Pokój Złości zapewnia doskonałe ujście dla stresu, ważne jest również zajęcie się podstawowymi przyczynami stresu w pracy. Rozważ połączenie sesji w Pokoju Złości z innymi technikami zarządzania stresem, takimi jak medytacja, ćwiczenia czy profesjonalne poradnictwo.\n\nGotowy wypróbować to unikalne podejście do redukcji stresu? Zarezerwuj swoją sesję już dziś i doświadcz terapeutycznych korzyści naszego Pokoju Złości na własnej skórze.'
-      }
-    },
-    voucher: {
-      title: 'POMYSŁ NA PREZENT',
-      description: 'Szukasz wyjątkowego prezentu? Podaruj voucher do Pokoju Złości!',
-      benefits: [
-        'Ważny przez 3 miesiące',
-        'Można wykorzystać na dowolny pakiet',
-        'Możliwość personalizacji wiadomości',
-        'Dostawa cyfrowa lub fizyczna'
-      ],
-      cta: 'Zdobądź Voucher'
-    },
-    happyHours: {
-      title: 'Happy Hours',
-      schedule: 'Monday to Friday, 11:00 - 16:00',
-      discounts: [
-        '20% off on all packages',
-        'Free protective gear rental',
-        'Complimentary photos of your session'
-      ],
-      cta: 'Book Happy Hour Session'
-    },
-    social: {
-      followUs: 'Obserwuj nas'
-    },
-    partners: {
-      title: 'PARTNERZY'
     },
     common: {
       close: 'Zamknij',
       viewServices: 'Zobacz Usługi'
+    },
+    happyHours: {
+      title: 'Happy Hours',
+      schedule: 'Poniedziałek - Piątek, 11:00 - 16:00',
+      discounts: [
+        '20% zniżki na wszystkie pakiety',
+        'Darmowy wynajem sprzętu ochronnego',
+        'Darmowe zdjęcia z sesji'
+      ],
+      cta: 'Zarezerwuj Sesję w Happy Hours'
+    },
+    blog: {
+      title: 'Blog',
+      subtitle: 'Najnowsze artykuły i porady',
+      readMore: 'Czytaj więcej',
+      backToBlog: 'Powrót do Bloga',
+      stressAtWork: {
+        title: 'Jak Radzić Sobie ze Stresem w Pracy',
+        subtitle: 'Skuteczne strategie zarządzania stresem w miejscu pracy',
+        date: '2025-02-09',
+        author: 'Anna Kowalska',
+        readTime: '5 min czytania',
+        excerpt: 'Życie jest generalnie stresujące, ale stres związany z pracą może być szczególnie trudny. Odkryj, jak nasz Pokój Złości może pomóc Ci zarządzać i uwolnić stres związany z pracą w bezpiecznym i kontrolowanym środowisku.',
+        content: `Stres w pracy to powszechny problem, który dotyka wielu profesjonalistów. Zrozumienie, jak skutecznie nim zarządzać, jest kluczowe dla zachowania zdrowia psychicznego i fizycznego.
+
+W dzisiejszym szybkim środowisku pracy ważne jest rozpoznawanie oznak stresu i podejmowanie proaktywnych kroków, aby się z nimi zmierzyć. Niektóre częste objawy to trudności z koncentracją, drażliwość i napięcie fizyczne.
+
+Jednym ze skutecznych sposobów walki ze stresem w miejscu pracy jest aktywność fizyczna. Tutaj właśnie wkracza nasz pokój złości - zapewnia on unikalny i katartyczny sposób na uwolnienie napięcia i frustracji w bezpiecznym, kontrolowanym środowisku.
+
+Regularne przerwy i aktywności redukujące stres są kluczowe dla utrzymania produktywności i dobrego samopoczucia psychicznego. Nasze sesje w pokoju złości oferują doskonałą okazję do zrobienia przerwy w pracy i uwolnienia nagromadzonego napięcia w zabawny i terapeutyczny sposób.
+
+Pamiętaj, nie chodzi tylko o niszczenie rzeczy - chodzi o danie sobie pozwolenia na uwolnienie stresu i negatywnych emocji w zdrowy, kontrolowany sposób. Nasz przeszkolony personel dba o to, aby każda sesja była zarówno bezpieczna, jak i terapeutyczna.
+
+Widzieliśmy wielu profesjonalistów, którzy czerpią korzyści z regularnych sesji w pokoju złości jako części swojej rutyny zarządzania stresem. To niekonwencjonalne, ale skuteczne podejście do radzenia sobie ze stresem w miejscu pracy.`
+      }
+    },
+    social: {
+      followUs: 'Obserwuj Nas'
+    },
+    partners: {
+      title: 'PARTNERZY'
+    },
+    voucher: {
+      title: 'POMYSŁ NA PREZENT',
+      description: 'Szukasz wyjątkowego prezentu? Podaruj voucher na sesję w Pokoju Złości!',
+      benefits: [
+        'Ważny przez 3 miesiące',
+        'Może być wykorzystany na dowolny pakiet',
+        'Możliwość personalizacji wiadomości',
+        'Dostawa cyfrowa lub fizyczna'
+      ],
+      cta: 'Zdobądź Voucher'
     }
-  },
+  }
 };

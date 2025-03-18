@@ -1,0 +1,60 @@
+"use client";
+
+import { motion } from 'framer-motion';
+import { ResponsiveImage } from '../ui/ResponsiveImage';
+import { useI18n } from '@/i18n/I18nContext';
+
+const decorativeImages = [
+  { src: '/images/turn-left.png', className: 'top-[5%] left-[15%] w-20 h-20', sizes: '5rem' },
+  { src: '/images/6o.png', className: 'top-[40%] left-[8%] w-16 h-16', sizes: '4rem' },
+  { src: '/images/1.png', className: 'top-[65%] right-[20%] w-24 h-24', sizes: '6rem' },
+  { src: '/images/down.png', className: 'top-[75%] left-[50%] w-20 h-20 -translate-x-1/2', sizes: '5rem' },
+  { src: '/images/turn-right.png', className: 'top-[25%] right-[12%] w-12 h-12', sizes: '3rem' },
+  { src: '/images/3o.png', className: 'top-[60%] left-[25%] w-16 h-16', sizes: '4rem' },
+  { src: '/images/2o.png', className: 'top-[15%] right-[35%] w-14 h-14', sizes: '3.5rem' },
+  { src: '/images/4o.png', className: 'top-[50%] right-[15%] w-12 h-12', sizes: '3rem' }
+];
+
+export function HeroSection() {
+  const { t } = useI18n();
+
+  return (
+    <section className="relative w-full bg-[#231f20] py-32">
+      {/* Decorative line */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#f36e21] to-transparent opacity-30" />
+      
+      {/* Decorative background images */}
+      {decorativeImages.map((image, index) => (
+        <div key={index} className={`absolute opacity-90 pointer-events-none ${image.className}`}>
+          <ResponsiveImage
+            src={image.src}
+            alt=""
+            fill
+            sizes={image.sizes}
+            className="z-1 object-contain"
+          />
+        </div>
+      ))}
+      
+      <div className="relative max-w-7xl mx-auto px-4">
+        {/* Hero content */}
+        <motion.h1 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-5xl md:text-6xl font-bold text-white text-center mb-8 relative z-10"
+        >
+          {t('organizeParty.hero.title')}
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="text-xl text-white/70 text-center max-w-3xl mx-auto mb-8"
+        >
+          {t('organizeParty.hero.subtitle')}
+        </motion.p>
+      </div>
+    </section>
+  );
+} 

@@ -39,15 +39,40 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         alt: 'Smash&Fun - Rage Room',
+        type: 'image/png',
       },
+      {
+        url: '/og/og-image-square.png',
+        width: 1080,
+        height: 1080,
+        alt: 'Smash&Fun - Rage Room Square',
+        type: 'image/png',
+      }
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Smash&Fun - Rage Room #1 in Warsaw',
     description: 'Release stress and emotions in the most exciting way! Visit our rage room in Warsaw.',
+    site: '@smashandfun',
+    creator: '@smashandfun',
     images: ['/og/og-image.png'],
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  },
+  category: 'entertainment',
   appleWebApp: {
     capable: true,
     title: 'Smash&Fun',

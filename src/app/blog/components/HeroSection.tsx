@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import { useI18n } from '@/i18n/I18nContext';
 import { ResponsiveImage } from '@/components/ui/ResponsiveImage';
 

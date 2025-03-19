@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 // Настраиваемые параметры
 const CONFIG = {
@@ -178,10 +178,10 @@ export function FloatingImages() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Инициализация анимации
-  const initAnimation = () => {
+  // Инициализация анимации с использованием useCallback
+  const initAnimation = useCallback(() => {
     if (!canvasRef.current || !containerRef.current) return;
     
     // Устанавливаем размер canvas равным размеру контейнера
@@ -240,8 +240,9 @@ export function FloatingImages() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  };
+  }, []);
 
+  // Используем useEffect с нашим memoized колбэком
   useEffect(() => {
     initAnimation();
   }, [initAnimation]);

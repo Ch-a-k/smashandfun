@@ -3,11 +3,12 @@
 import Image, { ImageProps } from 'next/image';
 import { useState } from 'react';
 
-interface ResponsiveImageProps extends Omit<ImageProps, 'sizes'> {
+interface ResponsiveImageProps extends Omit<ImageProps, 'sizes' | 'alt'> {
   sizes?: string;
+  alt: string;
 }
 
-export function ResponsiveImage({ fill, sizes, ...props }: ResponsiveImageProps) {
+export function ResponsiveImage({ fill, sizes, alt, ...props }: ResponsiveImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   
   // Определяем наиболее общий случай использования размеров для изображений
@@ -18,6 +19,7 @@ export function ResponsiveImage({ fill, sizes, ...props }: ResponsiveImageProps)
   return (
     <Image
       {...props}
+      alt={alt}
       fill={fill}
       sizes={defaultSizes}
       className={`${props.className || ''} transition-all duration-200 ${

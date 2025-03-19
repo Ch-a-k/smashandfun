@@ -12,11 +12,13 @@ export const en = {
     settings: 'Settings'
   },
   nav: {
-    home: 'HOME',
-    organizeParty: 'ORGANIZE PARTY',
-    blog: 'BLOG',
+    home: 'Home',
+    organizeParty: 'Organize Party',
+    blog: 'Blog',
     faq: 'FAQ',
-    contact: 'CONTACT'
+    contact: 'Contact',
+    b2c: 'Private Clients (B2C)',
+    b2b: 'Corporate Clients (B2B)',
   },
   home: {
     hero: {
@@ -726,5 +728,121 @@ export const en = {
       'Full equipment included'
     ],
     cta: 'BOOK HAPPY HOURS'
+  },
+  b2b: {
+    hero: {
+      title: 'CORPORATE EVENTS AND TEAM BUILDING',
+      subtitle: 'Create unforgettable experiences for your team',
+      cta: 'GET IN TOUCH'
+    },
+    description: {
+      title: 'FOR BUSINESS',
+      uniqueExperiences: 'Unique Experiences',
+      forYourTeam: 'For Your Team',
+      paragraph1: 'We offer professional organization of corporate events, team building activities, and integration events that will help strengthen your team and create unforgettable memories.',
+      paragraph2: 'Our experienced team will take care of every detail, from planning to execution, ensuring your event is a complete success.'
+    },
+    benefits: {
+      benefit1: {
+        title: 'Professional Organization',
+        description: 'Full support in planning and executing your event'
+      },
+      benefit2: {
+        title: 'Customized Programs',
+        description: 'Tailored activities for your team\'s needs'
+      },
+      benefit3: {
+        title: 'Flexible Scheduling',
+        description: 'Convenient dates and times for your team'
+      }
+    },
+    serviceTypes: {
+      teamBuilding: {
+        title: 'Team Building',
+        description: 'Strengthen team bonds through exciting activities',
+        features: [
+          'Interactive team challenges',
+          'Problem-solving exercises',
+          'Communication workshops',
+          'Team coordination activities',
+          'Stress relief sessions',
+          'Group dynamics exercises'
+        ]
+      },
+      corporateEvents: {
+        title: 'Corporate Events',
+        description: 'Professional events for your business needs',
+        features: [
+          'Company celebrations',
+          'Product launches',
+          'Team rewards',
+          'Client entertainment',
+          'Holiday parties',
+          'Annual meetings'
+        ]
+      },
+      integration: {
+        title: 'Team Integration',
+        description: 'Build stronger connections within your team',
+        features: [
+          'Ice-breaking activities',
+          'Group bonding exercises',
+          'Social networking',
+          'Team competitions',
+          'Collaborative projects',
+          'Fun group activities'
+        ]
+      }
+    },
+    stats: {
+      satisfiedClients: 'Satisfied Clients',
+      completedEvents: 'Completed Events',
+      participants: 'Participants',
+      yearsExperience: 'Years Experience'
+    },
+    form: {
+      title: 'Contact Us',
+      subtitle: 'Let\'s discuss your event',
+      name: {
+        label: 'Full Name',
+        placeholder: 'Enter your full name'
+      },
+      email: {
+        label: 'Email Address',
+        placeholder: 'Enter your email address'
+      },
+      phone: {
+        label: 'Phone Number',
+        placeholder: 'Enter your phone number'
+      },
+      service: {
+        label: 'Service Type',
+        placeholder: 'Select service type'
+      },
+      people: {
+        label: 'Number of People',
+        placeholder: 'Enter number of participants'
+      },
+      date: {
+        label: 'Preferred Date',
+        placeholder: 'Select preferred date'
+      },
+      message: {
+        label: 'Additional Information',
+        placeholder: 'Tell us more about your event...'
+      },
+      submit: 'Send Request',
+      submitting: 'Sending...',
+      success: 'Thank you! We\'ll contact you soon.',
+      error: 'An error occurred. Please try again.',
+      validation: {
+        name: 'Name must be at least 2 characters long',
+        email: 'Please enter a valid email address',
+        phone: 'Phone number must be at least 9 characters long',
+        service: 'Please select a service type',
+        people: 'Please enter number of participants',
+        date: 'Please select a date'
+      }
+    }
   }
 };

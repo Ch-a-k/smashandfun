@@ -30,11 +30,13 @@ export const pl = {
     cta: 'ZAREZERWUJ HAPPY HOURS'
   },
   nav: {
-    home: 'STRONA GŁÓWNA',
-    organizeParty: 'ORGANIZACJA IMPREZ',
-    blog: 'BLOG',
+    home: 'Strona główna',
+    organizeParty: 'Organizacja imprez',
+    blog: 'Blog',
     faq: 'FAQ',
-    contact: 'KONTAKT'
+    contact: 'Kontakt',
+    b2c: 'Klienci indywidualni (B2C)',
+    b2b: 'Klienci korporacyjni (B2B)',
   },
   home: {
     hero: {
@@ -725,6 +727,122 @@ export const pl = {
       rights: 'Smash&Fun. Wszelkie prawa zastrzeżone.',
       privacyPolicy: 'Polityka Prywatności',
       terms: 'Regulamin'
+    }
+  },
+  b2b: {
+    hero: {
+      title: 'IMPREZY FIRMOWE I TEAM BUILDING',
+      subtitle: 'Stwórz niezapomniane doświadczenia dla swojego zespołu',
+      cta: 'SKONTAKTUJ SIĘ'
+    },
+    description: {
+      title: 'DLA BIZNESU',
+      uniqueExperiences: 'Wyjątkowe Doświadczenia',
+      forYourTeam: 'Dla Twojego Zespołu',
+      paragraph1: 'Oferujemy profesjonalną organizację imprez firmowych, zajęć team buildingowych i wydarzeń integracyjnych, które pomogą wzmocnić Twój zespół i stworzyć niezapomniane wspomnienia.',
+      paragraph2: 'Nasz doświadczony zespół zadba o każdy szczegół, od planowania po realizację, zapewniając, że Twoje wydarzenie będzie pełnym sukcesem.'
+    },
+    benefits: {
+      benefit1: {
+        title: 'Profesjonalna Organizacja',
+        description: 'Pełne wsparcie w planowaniu i realizacji wydarzenia'
+      },
+      benefit2: {
+        title: 'Spersonalizowane Programy',
+        description: 'Dostosowane aktywności do potrzeb Twojego zespołu'
+      },
+      benefit3: {
+        title: 'Elastyczny Harmonogram',
+        description: 'Dogodne terminy dla Twojego zespołu'
+      }
+    },
+    serviceTypes: {
+      teamBuilding: {
+        title: 'Team Building',
+        description: 'Wzmacniaj więzi zespołowe poprzez ekscytujące aktywności',
+        features: [
+          'Interaktywne wyzwania zespołowe',
+          'Ćwiczenia rozwiązywania problemów',
+          'Warsztaty komunikacji',
+          'Aktywności koordynacji zespołowej',
+          'Sesje redukcji stresu',
+          'Ćwiczenia dynamiki grupowej'
+        ]
+      },
+      corporateEvents: {
+        title: 'Wydarzenia Firmowe',
+        description: 'Profesjonalne wydarzenia dla potrzeb Twojej firmy',
+        features: [
+          'Celebracje firmowe',
+          'Premiery produktów',
+          'Nagrody zespołowe',
+          'Rozrywka dla klientów',
+          'Imprezy świąteczne',
+          'Spotkania roczne'
+        ]
+      },
+      integration: {
+        title: 'Integracja Zespołu',
+        description: 'Buduj silniejsze połączenia w zespole',
+        features: [
+          'Aktywności integracyjne',
+          'Ćwiczenia budowania więzi',
+          'Networking społeczny',
+          'Zawody zespołowe',
+          'Projekty współpracy',
+          'Grupowe aktywności rozrywkowe'
+        ]
+      }
+    },
+    stats: {
+      satisfiedClients: 'Zadowolonych Klientów',
+      completedEvents: 'Zrealizowanych Wydarzeń',
+      participants: 'Uczestników',
+      yearsExperience: 'Lat Doświadczenia'
+    },
+    form: {
+      title: 'Skontaktuj się z nami',
+      subtitle: 'Porozmawiajmy o Twoim wydarzeniu',
+      name: {
+        label: 'Imię i Nazwisko',
+        placeholder: 'Wpisz swoje imię i nazwisko'
+      },
+      email: {
+        label: 'Adres Email',
+        placeholder: 'Wpisz swój adres email'
+      },
+      phone: {
+        label: 'Numer Telefonu',
+        placeholder: 'Wpisz swój numer telefonu'
+      },
+      service: {
+        label: 'Rodzaj Usługi',
+        placeholder: 'Wybierz rodzaj usługi'
+      },
+      people: {
+        label: 'Liczba Osób',
+        placeholder: 'Podaj liczbę uczestników'
+      },
+      date: {
+        label: 'Preferowana Data',
+        placeholder: 'Wybierz preferowaną datę'
+      },
+      message: {
+        label: 'Dodatkowe Informacje',
+        placeholder: 'Opowiedz nam więcej o swoim wydarzeniu...'
+      },
+      submit: 'Wyślij Zapytanie',
+      submitting: 'Wysyłanie...',
+      success: 'Dziękujemy! Skontaktujemy się wkrótce.',
+      error: 'Wystąpił błąd. Spróbuj ponownie.',
+      validation: {
+        name: 'Imię musi mieć co najmniej 2 znaki',
+        email: 'Wprowadź poprawny adres email',
+        phone: 'Numer telefonu musi mieć co najmniej 9 znaków',
+        service: 'Wybierz rodzaj usługi',
+        people: 'Podaj liczbę uczestników',
+        date: 'Wybierz datę'
+      }
     }
   }
 };

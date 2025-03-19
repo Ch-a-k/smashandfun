@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useI18n } from '@/i18n/I18nContext';
 import LanguageSwitcher from './LanguageSwitcher';
-import { Clock } from 'lucide-react';
+import { Clock, ChevronDown } from 'lucide-react';
 import HappyHoursModal from './HappyHoursModal';
 
 // Функция для установки куки
@@ -41,6 +41,8 @@ export default function Header() {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHappyHoursOpen, setIsHappyHoursOpen] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout>();
   const pathname = usePathname();
   const { t } = useI18n();
 
@@ -101,7 +103,13 @@ export default function Header() {
 
   const navLinks = [
     { href: '/', label: t('nav.home') },
-    { href: '/organizacja-imprez', label: t('nav.organizeParty') },
+    {
+      label: t('nav.organizeParty'),
+      dropdown: [
+        { href: '/organizacja-imprez', label: t('nav.b2c') },
+        { href: '/organizacja-imprez-b2b', label: t('nav.b2b') }
+      ]
+    },
     { href: '/blog', label: t('nav.blog') },
     { href: '/faq', label: t('nav.faq') },
     { href: '/kontakt', label: t('nav.contact') },
@@ -156,22 +164,76 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={` text-lg font-impact uppercase tracking-wide transition-colors ${
-                  pathname === link.href
-                    ? 'text-[#f36e21]'
-                    : 'text-white hover:text-[#f36e21]'
-                }`}
+            {navLinks.map((link, index) => (
+              <div
+                key={link.href || index}
+                className="relative"
+                onMouseEnter={() => {
+                  if (closeTimeoutRef.current) {
+                    clearTimeout(closeTimeoutRef.current);
+                  }
+                  link.dropdown && setActiveDropdown(index.toString());
+                }}
+                onMouseLeave={() => {
+                  if (link.dropdown) {
+                    closeTimeoutRef.current = setTimeout(() => {
+                      setActiveDropdown(null);
+                    }, 150);
+                  }
+                }}
               >
-                {link.label}
-              </Link>
+                {link.href ? (
+                  <Link
+                    href={link.href}
+                    className={`text-lg font-impact uppercase tracking-wide transition-colors ${
+                      pathname === link.href
+                        ? 'text-[#f36e21]'
+                        : 'text-white hover:text-[#f36e21]'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <button
+                    className={`text-lg font-impact uppercase tracking-wide transition-colors text-white hover:text-[#f36e21] cursor-pointer flex items-center gap-1`}
+                  >
+                    {link.label}
+                    <ChevronDown 
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        activeDropdown === index.toString() ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                )}
+                
+                {/* Dropdown Menu */}
+                {link.dropdown && activeDropdown === index.toString() && (
+                  <div 
+                    className="absolute top-full left-0 mt-2 w-64 bg-[#1a1718] rounded-lg shadow-lg overflow-hidden border border-white/10"
+                    onMouseEnter={() => {
+                      if (closeTimeoutRef.current) {
+                        clearTimeout(closeTimeoutRef.current);
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      closeTimeoutRef.current = setTimeout(() => {
+                        setActiveDropdown(null);
+                      }, 150);
+                    }}
+                  >
+                    {link.dropdown.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="block px-4 py-3 text-white hover:bg-[#f36e21]/10 hover:text-[#f36e21] transition-colors text-lg font-impact uppercase tracking-wide"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
-            
-            
-            
           </nav>
 
           <div className="flex items-center space-x-4">
@@ -239,22 +301,47 @@ export default function Header() {
                 <div className="flex flex-col items-center space-y-5">
                   {navLinks.map((link, index) => (
                     <motion.div
-                      key={link.href}
+                      key={link.href || index}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
+                      className="w-full"
                     >
-                      <Link
-                        href={link.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={`text-lg font-impact uppercase tracking-wide transition-colors ${
-                          pathname === link.href
-                            ? 'text-[#f36e21]'
-                            : 'text-white hover:text-[#f36e21]'
-                        }`}
-                      >
-                        {link.label}
-                      </Link>
+                      {link.dropdown ? (
+                        <div className="space-y-3">
+                          <div className="text-lg font-impact uppercase tracking-wide text-white/50 text-center">
+                            {link.label}
+                          </div>
+                          <div className="space-y-2">
+                            {link.dropdown.map((item) => (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={`block text-center text-lg font-impact uppercase tracking-wide transition-colors ${
+                                  pathname === item.href
+                                    ? 'text-[#f36e21]'
+                                    : 'text-white hover:text-[#f36e21]'
+                                }`}
+                              >
+                                {item.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <Link
+                          href={link.href!}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={`block text-center text-lg font-impact uppercase tracking-wide transition-colors ${
+                            pathname === link.href
+                              ? 'text-[#f36e21]'
+                              : 'text-white hover:text-[#f36e21]'
+                          }`}
+                        >
+                          {link.label}
+                        </Link>
+                      )}
                     </motion.div>
                   ))}
                   

@@ -242,6 +242,10 @@ export function FloatingImages() {
     };
   };
 
+  useEffect(() => {
+    initAnimation();
+  }, [initAnimation]);
+
   return (
     <div ref={containerRef} className="absolute inset-0 overflow-hidden pointer-events-none">
       <canvas 

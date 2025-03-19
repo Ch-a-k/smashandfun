@@ -42,7 +42,7 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isHappyHoursOpen, setIsHappyHoursOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const closeTimeoutRef = useRef<NodeJS.Timeout>();
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pathname = usePathname();
   const { t } = useI18n();
 
@@ -172,7 +172,9 @@ export default function Header() {
                   if (closeTimeoutRef.current) {
                     clearTimeout(closeTimeoutRef.current);
                   }
-                  link.dropdown && setActiveDropdown(index.toString());
+                  if (link.dropdown) {
+                    setActiveDropdown(index.toString());
+                  }
                 }}
                 onMouseLeave={() => {
                   if (link.dropdown) {

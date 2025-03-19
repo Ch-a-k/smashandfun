@@ -237,6 +237,7 @@ export default function OrganizacjaImprezB2B() {
                   src="/images/4o.png" 
                   alt="Decoration" 
                   fill 
+                  onLoad={() => {}}
                   sizes="(max-width: 768px) 100vw, 30vw"
                   className="object-contain"
                 />
@@ -349,7 +350,6 @@ export default function OrganizacjaImprezB2B() {
         {/* Modernized Description Section */}
         <section className="w-full bg-[#231f20] py-20 relative overflow-hidden" ref={descriptionRef}>
           {/* Background effects */}
-          <div className="absolute inset-0 bg-[url('/images/noise.png')] opacity-5 mix-blend-overlay pointer-events-none"></div>
           <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-[#f36e21]/10 rounded-full blur-[120px] pointer-events-none"></div>
           <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-[#f36e21]/5 rounded-full blur-[150px] pointer-events-none"></div>
           
@@ -477,7 +477,6 @@ export default function OrganizacjaImprezB2B() {
 
         {/* Stats Section - новая секция */}
         <section className="w-full bg-[#1a1718] py-16 relative">
-          <div className="absolute inset-0 bg-[url('/images/noise.png')] opacity-5 mix-blend-overlay pointer-events-none"></div>
           
           <div className="max-w-7xl mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
@@ -506,7 +505,6 @@ export default function OrganizacjaImprezB2B() {
         {/* Modern Contact Form Section */}
         <section className="w-full bg-[#231f20] py-20 pb-32 relative" id="contact-form" ref={formRef}>
           {/* Background elements */}
-          <div className="absolute inset-0 bg-[url('/images/noise.png')] opacity-5 mix-blend-overlay pointer-events-none"></div>
           <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#f36e21]/30 to-transparent"></div>
           <div className="absolute -top-40 right-0 w-96 h-96 bg-[#f36e21]/5 rounded-full blur-[100px] pointer-events-none"></div>
           

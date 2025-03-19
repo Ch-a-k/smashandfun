@@ -30,6 +30,7 @@ export function HeroSection() {
             src={image.src}
             alt=""
             fill
+            onLoad={() => {}}
             sizes={image.sizes}
             className="z-1 object-contain"
           />

@@ -5,32 +5,25 @@ import { useState } from 'react';
 
 interface ResponsiveImageProps extends Omit<ImageProps, 'sizes'> {
   sizes?: string;
-  alt: string;
-  className?: string;
 }
 
-export function ResponsiveImage({ 
-  fill, 
-  sizes, 
-  alt, 
-  className = '', 
-  ...props 
-}: ResponsiveImageProps) {
+export function ResponsiveImage({ fill, sizes, ...props }: ResponsiveImageProps) {
   const [isLoading, setIsLoading] = useState(true);
-
-  // Если используется fill, но не указан sizes, добавляем дефолтное значение
-  const defaultSizes = fill && !sizes ? '100vw' : sizes;
+  
+  // Определяем наиболее общий случай использования размеров для изображений
+  const defaultSizes = fill && !sizes 
+    ? '(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw' 
+    : sizes;
 
   return (
     <Image
       {...props}
       fill={fill}
       sizes={defaultSizes}
-      alt={alt}
-      className={`${className} transition-all duration-200 ${
+      className={`${props.className || ''} transition-all duration-200 ${
         isLoading ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
       }`}
-      onLoadingComplete={() => setIsLoading(false)}
+      onLoad={() => setIsLoading(false)}
     />
   );
 } 

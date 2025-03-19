@@ -761,12 +761,10 @@ export const en = {
         title: 'Team Building',
         description: 'Strengthen team bonds through exciting activities',
         features: [
-          'Interactive team challenges',
-          'Problem-solving exercises',
-          'Communication workshops',
-          'Team coordination activities',
-          'Stress relief sessions',
-          'Group dynamics exercises'
+          '⁠Stress-relief sessions',
+          'Team integration challenges',
+          '⁠Coordination and reflex exercises',
+          '⁠100% adrenaline and fun',
         ]
       },
       corporateEvents: {
@@ -785,12 +783,11 @@ export const en = {
         title: 'Team Integration',
         description: 'Build stronger connections within your team',
         features: [
-          'Ice-breaking activities',
-          'Group bonding exercises',
-          'Social networking',
-          'Team competitions',
-          'Collaborative projects',
-          'Fun group activities'
+          '⁠Integration activities',
+          'Extreme stress relief',
+          'Team-based challenges',
+          'Engaging group activities',
+          'Unforgettable experiences',
         ]
       }
     },

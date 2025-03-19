@@ -40,6 +40,7 @@ export function BlogPostCard({ post, index, onPostClick }: BlogPostCardProps) {
             src={post.image}
             alt={post.title}
             fill
+            sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover transform hover:scale-105 transition-transform duration-500"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#1a1718] to-transparent opacity-60" />

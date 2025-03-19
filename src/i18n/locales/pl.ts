@@ -761,12 +761,10 @@ export const pl = {
         title: 'Team Building',
         description: 'Wzmacniaj więzi zespołowe poprzez ekscytujące aktywności',
         features: [
-          'Interaktywne wyzwania zespołowe',
-          'Ćwiczenia rozwiązywania problemów',
-          'Warsztaty komunikacji',
-          'Aktywności koordynacji zespołowej',
           'Sesje redukcji stresu',
-          'Ćwiczenia dynamiki grupowej'
+          ' ⁠Integracyjne wyzwania zespołowe',
+          '⁠Aktywności koordynacyjne',
+          '⁠100% adrenaliny i dobrej zabawy',
         ]
       },
       corporateEvents: {
@@ -786,11 +784,10 @@ export const pl = {
         description: 'Buduj silniejsze połączenia w zespole',
         features: [
           'Aktywności integracyjne',
-          'Ćwiczenia budowania więzi',
-          'Networking społeczny',
-          'Zawody zespołowe',
-          'Projekty współpracy',
-          'Grupowe aktywności rozrywkowe'
+          'Ekstremalne rozładowanie stresu',
+          'Zadania zespołowe',
+          'Wyzwania grupowe',
+          'Niezapomniane emocje',
         ]
       }
     },

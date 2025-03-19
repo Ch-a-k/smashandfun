@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useI18n } from '@/i18n/I18nContext';
+import { ResponsiveImage } from '@/components/ui/ResponsiveImage';
 
 const decorativeImages = [
   { src: '/images/turn-left.png', className: 'top-[5%] left-[15%] w-20 h-20' },
@@ -22,15 +23,19 @@ export function BlogHeroSection() {
       
       {/* Decorative background images */}
       {decorativeImages.map((image, index) => (
-        <div key={index} className={`absolute opacity-90 pointer-events-none ${image.className}`}>
-          <Image
-            src={image.src}
-            alt=""
-            fill
-            className="object-contain"
-          />
-        </div>
-      ))}
+  <div key={index} className={`absolute opacity-90 pointer-events-none ${image.className}`}>
+    {image.src && (
+      <ResponsiveImage
+        src={image.src}
+        alt=""
+        fill
+        onLoad={() => {}}
+        sizes="(max-width: 768px) 100vw, 50vw"  // Добавлено свойство sizes
+        className="z-1 object-contain"
+      />
+    )}
+  </div>
+))}
       
       <div className="max-w-7xl mx-auto px-4">
         {/* Hero content */}

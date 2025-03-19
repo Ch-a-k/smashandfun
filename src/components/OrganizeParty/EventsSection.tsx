@@ -6,7 +6,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-const events = ['party', 'corporate', 'kids'] as const;
+const events = ['party', 'kids'] as const;
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -84,3 +84,4 @@ export function EventsSection() {
     </section>
   );
 } 
+ 

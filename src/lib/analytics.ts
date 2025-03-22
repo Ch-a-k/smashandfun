@@ -10,10 +10,16 @@ interface GTagEvent {
 // Типы для window.gtag
 type GTagArg = string | GTagEvent | Record<string, unknown>;
 
+// Типы для Facebook Pixel
+type FbqCommand = 'init' | 'track' | 'trackCustom' | 'trackSingle' | 'consent';
+type FbqEvent = 'PageView' | 'ViewContent' | 'CompleteRegistration' | 'Lead' | 'Purchase' | string;
+type FbqParams = Record<string, string | number | boolean | null | undefined>;
+
 declare global {
   interface Window {
     gtag?: (command: string, ...args: GTagArg[]) => void;
     dataLayer?: unknown[];
+    fbq?: (command: FbqCommand, eventOrId: FbqEvent | string, params?: FbqParams | FbqEvent, eventParams?: FbqParams) => void;
   }
 }
 
@@ -48,6 +54,20 @@ export const isAnalyticsAllowed = (): boolean => {
     return parsedConsent?.analytics === true;
   } catch (error) {
     console.error('Error checking analytics consent:', error);
+    return false;
+  }
+};
+
+// Проверяет, разрешены ли маркетинговые файлы cookie в настройках
+export const isMarketingAllowed = (): boolean => {
+  try {
+    const consent = localStorage.getItem('cookieConsent');
+    if (!consent) return false;
+    
+    const parsedConsent = JSON.parse(consent);
+    return parsedConsent?.marketing === true;
+  } catch (error) {
+    console.error('Error checking marketing consent:', error);
     return false;
   }
 };

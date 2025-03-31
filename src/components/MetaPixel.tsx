@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation';
 import Script from 'next/script';
 import { useEffect } from 'react';
-import { isMarketingAllowed } from '@/lib/analytics';
 
 // ID пикселя Facebook
 const FB_PIXEL_ID = '3458226151146279';
@@ -17,12 +16,6 @@ export default function MetaPixel() {
       window.fbq('track', 'PageView');
     }
   }, [pathname]);
-
-  // Не загружаем скрипт, если пользователь не дал согласие на маркетинговые куки
-  // Это проверяется только на клиенте
-  if (typeof window !== 'undefined' && !isMarketingAllowed()) {
-    return null;
-  }
 
   return (
     <>
@@ -58,4 +51,4 @@ export default function MetaPixel() {
       </noscript>
     </>
   );
-} 
+}

@@ -5,7 +5,7 @@ import CookieConsent from '@/components/CookieConsent'
 import { I18nProvider } from '@/i18n/I18nContext'
 import { Inter } from 'next/font/google'
 import GoogleTagManager from '@/components/GoogleTagManager'
-import MetaPixel from '@/components/MetaPixel'
+
 
 // Load custom fonts
 const impact = localFont({
@@ -112,7 +112,7 @@ export default function RootLayout({
       <body className="bg-[#231f20]">
         <I18nProvider>
           <GoogleTagManager />
-          <MetaPixel />
+
           {children}
           <CookieConsent />
         </I18nProvider>

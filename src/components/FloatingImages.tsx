@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useMemo } from 'react';
 
 // Настраиваемые параметры
 const CONFIG = {
@@ -51,106 +51,120 @@ export function FloatingImages() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
-  const particlesRef = useRef<Particle[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const particlesRef = useRef<any[]>([]);
   const imagesRef = useRef<HTMLImageElement[]>([]);
   const imagesLoadedRef = useRef<boolean>(false);
 
-  // Класс для частиц
-  class Particle {
-    x: number;
-    y: number;
-    size: number;
-    speedX: number;
-    speedY: number;
-    rotation: number;
-    rotationSpeed: number;
-    opacity: number;
-    opacityStep: number;
-    imageIndex: number;
-    zIndex: number;
+  // Определяем класс частицы внутри useMemo
+  const Particle = useMemo(() => {
+    return class Particle {
+      x: number;
+      y: number;
+      size: number;
+      speedX: number;
+      speedY: number;
+      rotation: number;
+      rotationSpeed: number;
+      opacity: number;
+      opacityStep: number;
+      imageIndex: number;
+      zIndex: number;
 
-    constructor(canvasWidth: number, canvasHeight: number) {
-      // Выбираем случайный размер
-      const sizeCategory = Math.random() < 0.5 
-        ? (Math.random() < 0.5 ? 'small' : 'medium') 
-        : 'large';
-      this.size = CONFIG.sizes[sizeCategory as keyof typeof CONFIG.sizes];
-      
-      // Позиция (полностью случайная по всей секции)
-      this.x = Math.random() * canvasWidth;
-      this.y = Math.random() * canvasHeight;
-      
-      // Скорость (случайное направление и величина)
-      const speed = CONFIG.speed.min + Math.random() * (CONFIG.speed.max - CONFIG.speed.min);
-      const angle = Math.random() * Math.PI * 2;
-      this.speedX = Math.cos(angle) * speed;
-      this.speedY = Math.sin(angle) * speed;
-      
-      // Вращение
-      this.rotation = Math.random() * 360;
-      this.rotationSpeed = (Math.random() - 0.5) * 2;
-      
-      // Прозрачность с плавным изменением
-      this.opacity = CONFIG.opacity.min + Math.random() * (CONFIG.opacity.max - CONFIG.opacity.min);
-      this.opacityStep = (Math.random() - 0.5) * 0.005;
-      
-      // Случайное изображение
-      this.imageIndex = Math.floor(Math.random() * IMAGES.length);
-      
-      // Слой для эффекта глубины
-      this.zIndex = CONFIG.effects.zIndex[Math.floor(Math.random() * CONFIG.effects.zIndex.length)];
-    }
+      constructor(canvasWidth: number, canvasHeight: number) {
+        // Выбираем случайную группу размеров на основе вероятностей
+        let sizeGroup: 'small' | 'medium' | 'large';
+        const totalParticles = 
+          CONFIG.particleCounts.small + 
+          CONFIG.particleCounts.medium + 
+          CONFIG.particleCounts.large;
+        
+        const smallProb = CONFIG.particleCounts.small / totalParticles;
+        const mediumProb = CONFIG.particleCounts.medium / totalParticles;
+        
+        const rand = Math.random();
+        if (rand < smallProb) {
+          sizeGroup = 'small';
+        } else if (rand < smallProb + mediumProb) {
+          sizeGroup = 'medium';
+        } else {
+          sizeGroup = 'large';
+        }
+        
+        // Используем размер из конфигурации
+        this.size = CONFIG.sizes[sizeGroup];
+        
+        // Расставляем частицы равномерно по всему холсту
+        this.x = Math.random() * canvasWidth;
+        this.y = Math.random() * canvasHeight;
+        
+        // Скорость зависит от размера (меньше размер - выше скорость)
+        const minSize = CONFIG.sizes.small;
+        const maxSize = CONFIG.sizes.large;
+        const speedMultiplier = 1.5 - (this.size - minSize) / (maxSize - minSize);
+        this.speedX = (Math.random() - 0.5) * (CONFIG.speed.max - CONFIG.speed.min) * speedMultiplier;
+        this.speedY = (Math.random() - 0.5) * (CONFIG.speed.max - CONFIG.speed.min) * speedMultiplier;
+        
+        // Вращение
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.01;
+        
+        // Прозрачность
+        this.opacity = CONFIG.opacity.min + Math.random() * (CONFIG.opacity.max - CONFIG.opacity.min);
+        this.opacityStep = (Math.random() - 0.5) * 0.005;
+        
+        // Случайное изображение
+        this.imageIndex = Math.floor(Math.random() * IMAGES.length);
+        
+        // Z-Index для порядка отрисовки (больше = ближе к зрителю)
+        this.zIndex = CONFIG.effects.zIndex[Math.floor(Math.random() * CONFIG.effects.zIndex.length)];
+      }
 
-    update(canvasWidth: number, canvasHeight: number) {
-      // Обновляем позицию
-      this.x += this.speedX;
-      this.y += this.speedY;
-      
-      // Проверяем границы и меняем направление при необходимости
-      if (this.x < -this.size) {
-        this.x = canvasWidth + this.size;
-      } else if (this.x > canvasWidth + this.size) {
-        this.x = -this.size;
+      update(canvasWidth: number, canvasHeight: number) {
+        // Движение
+        this.x += this.speedX;
+        this.y += this.speedY;
+        
+        // Вращение
+        this.rotation += this.rotationSpeed;
+        
+        // Изменение прозрачности
+        this.opacity += this.opacityStep;
+        
+        // Инвертируем направление изменения прозрачности при достижении границ
+        if (this.opacity >= CONFIG.opacity.max || this.opacity <= CONFIG.opacity.min) {
+          this.opacityStep = -this.opacityStep;
+        }
+        
+        // Границы холста - перемещение на противоположную сторону
+        const buffer = this.size;
+        if (this.x < -buffer) this.x = canvasWidth + buffer;
+        if (this.x > canvasWidth + buffer) this.x = -buffer;
+        if (this.y < -buffer) this.y = canvasHeight + buffer;
+        if (this.y > canvasHeight + buffer) this.y = -buffer;
       }
-      
-      if (this.y < -this.size) {
-        this.y = canvasHeight + this.size;
-      } else if (this.y > canvasHeight + this.size) {
-        this.y = -this.size;
-      }
-      
-      // Обновляем вращение
-      this.rotation += this.rotationSpeed;
-      if (this.rotation > 360) this.rotation -= 360;
-      if (this.rotation < 0) this.rotation += 360;
-      
-      // Обновляем прозрачность с плавным изменением
-      this.opacity += this.opacityStep;
-      if (this.opacity > CONFIG.opacity.max || this.opacity < CONFIG.opacity.min) {
-        this.opacityStep = -this.opacityStep;
-      }
-    }
 
-    draw(ctx: CanvasRenderingContext2D, images: HTMLImageElement[]) {
-      if (!images[this.imageIndex]) return;
-      
-      ctx.save();
-      ctx.globalAlpha = this.opacity;
-      ctx.translate(this.x, this.y);
-      ctx.rotate((this.rotation * Math.PI) / 180);
-      
-      // Рисуем изображение с центром в точке (0,0)
-      ctx.drawImage(
-        images[this.imageIndex],
-        -this.size / 2,
-        -this.size / 2,
-        this.size,
-        this.size
-      );
-      
-      ctx.restore();
-    }
-  }
+      draw(ctx: CanvasRenderingContext2D, images: HTMLImageElement[]) {
+        if (!images[this.imageIndex]) return;
+        
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.translate(this.x, this.y);
+        ctx.rotate((this.rotation * Math.PI) / 180);
+        
+        // Рисуем изображение с центром в точке (0,0)
+        ctx.drawImage(
+          images[this.imageIndex],
+          -this.size / 2,
+          -this.size / 2,
+          this.size,
+          this.size
+        );
+        
+        ctx.restore();
+      }
+    };
+  }, []);
 
   // Загрузка изображений
   useEffect(() => {
@@ -240,7 +254,7 @@ export function FloatingImages() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, []);
+  }, [Particle]);
 
   // Используем useEffect с нашим memoized колбэком
   useEffect(() => {

@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Script from 'next/script';
 import { useEffect } from 'react';
+import { isMarketingAllowed } from '@/lib/analytics';
 
 // ID пикселя Facebook
 const FB_PIXEL_ID = '3458226151146279';
@@ -10,12 +11,37 @@ const FB_PIXEL_ID = '3458226151146279';
 export default function MetaPixel() {
   const pathname = usePathname();
 
+  // Инициализируем пиксель при первой загрузке
+  useEffect(() => {
+    // Проверяем разрешение на маркетинговые куки
+    if (typeof window === 'undefined' || !isMarketingAllowed()) {
+      return;
+    }
+
+    // Проверяем, не инициализирован ли уже пиксель
+    if (!window._fbPixelInit && window.fbq) {
+      console.log('Facebook Pixel already present, marking as initialized');
+      window._fbPixelInit = true;
+    }
+  }, []);
+
   // Отслеживание изменения страницы
   useEffect(() => {
-    if (pathname && typeof window !== 'undefined' && window.fbq) {
+    if (pathname && typeof window !== 'undefined' && window.fbq && isMarketingAllowed()) {
+      // Отправляем событие PageView только если скрипт уже загружен
       window.fbq('track', 'PageView');
     }
   }, [pathname]);
+
+  // Не загружаем скрипт, если пользователь не дал согласие на маркетинговые куки
+  if (typeof window !== 'undefined' && !isMarketingAllowed()) {
+    return null;
+  }
+
+  // Если пиксель уже загружен, не загружаем скрипт повторно
+  if (typeof window !== 'undefined' && window._fbPixelInit) {
+    return null;
+  }
 
   return (
     <>
@@ -23,6 +49,9 @@ export default function MetaPixel() {
       <Script
         id="meta-pixel-script"
         strategy="afterInteractive"
+        onLoad={() => {
+          console.log('Meta Pixel script loaded successfully');
+        }}
         dangerouslySetInnerHTML={{
           __html: `
             !function(f,b,e,v,n,t,s)
@@ -33,8 +62,14 @@ export default function MetaPixel() {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${FB_PIXEL_ID}');
-            fbq('track', 'PageView');
+            
+            // Предотвращаем повторную инициализацию с тем же ID
+            if (!window._fbPixelInit) {
+              fbq('init', '${FB_PIXEL_ID}');
+              fbq('track', 'PageView');
+              window._fbPixelInit = true;
+              console.log('Facebook Pixel initialized with ID: ${FB_PIXEL_ID}');
+            }
           `,
         }}
       />

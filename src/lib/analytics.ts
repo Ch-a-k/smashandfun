@@ -20,6 +20,7 @@ declare global {
     gtag?: (command: string, ...args: GTagArg[]) => void;
     dataLayer?: unknown[];
     fbq?: (command: FbqCommand, eventOrId: FbqEvent | string, params?: FbqParams | FbqEvent, eventParams?: FbqParams) => void;
+    _fbPixelInit?: boolean; // Флаг для отслеживания инициализации пикселя
   }
 }
 

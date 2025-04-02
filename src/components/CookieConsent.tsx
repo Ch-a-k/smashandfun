@@ -70,10 +70,12 @@ export default function CookieConsent() {
       setSettings(allAccepted);
       setShowBanner(false);
       
-      // Если настройки аналитики изменились, перезагружаем страницу для применения изменений
-      if (currentSettings?.analytics !== allAccepted.analytics) {
+      // Если настройки аналитики или маркетинга изменились, перезагружаем страницу
+      if (currentSettings?.analytics !== allAccepted.analytics || 
+          currentSettings?.marketing !== allAccepted.marketing) {
         // Задержка перед перезагрузкой, чтобы модальное окно успело закрыться
         setTimeout(() => {
+          console.log('Reloading page after accepting all cookies');
           window.location.reload();
         }, 300);
       }
@@ -93,10 +95,12 @@ export default function CookieConsent() {
       setShowBanner(false);
       setShowSettings(false);
       
-      // Если настройки аналитики изменились, перезагружаем страницу для применения изменений
-      if (currentSettings?.analytics !== settings.analytics) {
+      // Если настройки аналитики или маркетинга изменились, перезагружаем страницу
+      if (currentSettings?.analytics !== settings.analytics || 
+          currentSettings?.marketing !== settings.marketing) {
         // Задержка перед перезагрузкой, чтобы модальное окно успело закрыться
         setTimeout(() => {
+          console.log('Reloading page after saving cookie settings');
           window.location.reload();
         }, 300);
       }
@@ -107,9 +111,24 @@ export default function CookieConsent() {
 
   const handleRejectAll = () => {
     try {
+      // Получаем текущие настройки из localStorage
+      const currentConsent = localStorage.getItem('cookieConsent');
+      const currentSettings = currentConsent ? JSON.parse(currentConsent) : settings;
+      
+      // Сохраняем настройки по умолчанию
       localStorage.setItem('cookieConsent', JSON.stringify(defaultSettings));
       setSettings(defaultSettings);
       setShowBanner(false);
+      
+      // Если настройки аналитики или маркетинга изменились, перезагружаем страницу
+      if (currentSettings?.analytics !== defaultSettings.analytics || 
+          currentSettings?.marketing !== defaultSettings.marketing) {
+        // Задержка перед перезагрузкой, чтобы модальное окно успело закрыться
+        setTimeout(() => {
+          console.log('Reloading page after rejecting all cookies');
+          window.location.reload();
+        }, 300);
+      }
     } catch (error) {
       console.error('Error rejecting cookies:', error);
     }

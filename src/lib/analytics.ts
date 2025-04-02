@@ -24,9 +24,12 @@ declare global {
   }
 }
 
+// Проверяет, выполняется ли код на клиенте
+const isClient = () => typeof window !== 'undefined';
+
 // Инициализация Google Analytics
 export const pageview = (url: string): void => {
-  if (!window.gtag) return;
+  if (!isClient() || !window.gtag) return;
   
   window.gtag('config', process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID as string, {
     page_path: url,
@@ -35,7 +38,7 @@ export const pageview = (url: string): void => {
 
 // Отправка события в Google Analytics
 export const event = ({ action, category, label, value, non_interaction }: GTagEvent): void => {
-  if (!window.gtag) return;
+  if (!isClient() || !window.gtag) return;
   
   window.gtag('event', action, {
     event_category: category,
@@ -45,10 +48,24 @@ export const event = ({ action, category, label, value, non_interaction }: GTagE
   });
 };
 
+// Безопасно получает значение из localStorage
+const safeGetLocalStorage = (key: string): string | null => {
+  if (!isClient()) return null;
+  
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.error(`Error accessing localStorage for key ${key}:`, error);
+    return null;
+  }
+};
+
 // Проверяет, разрешена ли аналитика в настройках куки
 export const isAnalyticsAllowed = (): boolean => {
+  if (!isClient()) return false;
+  
   try {
-    const consent = localStorage.getItem('cookieConsent');
+    const consent = safeGetLocalStorage('cookieConsent');
     if (!consent) return false;
     
     const parsedConsent = JSON.parse(consent);
@@ -61,8 +78,10 @@ export const isAnalyticsAllowed = (): boolean => {
 
 // Проверяет, разрешены ли маркетинговые файлы cookie в настройках
 export const isMarketingAllowed = (): boolean => {
+  if (!isClient()) return false;
+  
   try {
-    const consent = localStorage.getItem('cookieConsent');
+    const consent = safeGetLocalStorage('cookieConsent');
     if (!consent) return false;
     
     const parsedConsent = JSON.parse(consent);

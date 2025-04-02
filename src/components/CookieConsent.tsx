@@ -17,16 +17,44 @@ const defaultSettings: CookieSettings = {
   marketing: false,
 };
 
+// Безопасно получает значение из localStorage
+const safeGetFromStorage = (key: string): string | null => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.error(`Error reading from localStorage: ${key}`, error);
+    return null;
+  }
+};
+
+// Безопасно устанавливает значение в localStorage
+const safeSetToStorage = (key: string, value: string): boolean => {
+  if (typeof window === 'undefined') return false;
+  
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.error(`Error writing to localStorage: ${key}`, error);
+    return false;
+  }
+};
+
 export default function CookieConsent() {
   const { t } = useI18n();
   const [showBanner, setShowBanner] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState<CookieSettings>(defaultSettings);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
+    
     try {
       // Check if user has already made a choice
-      const consent = localStorage.getItem('cookieConsent');
+      const consent = safeGetFromStorage('cookieConsent');
       if (!consent) {
         setShowBanner(true);
         return;
@@ -43,13 +71,13 @@ export default function CookieConsent() {
         setSettings(parsedConsent);
       } else {
         // Если структура неверная, сбрасываем к настройкам по умолчанию
-        localStorage.removeItem('cookieConsent');
+        safeSetToStorage('cookieConsent', JSON.stringify(defaultSettings));
         setShowBanner(true);
       }
     } catch (error) {
       // Если возникла ошибка при парсинге JSON, сбрасываем к настройкам по умолчанию
       console.error('Error parsing cookie consent:', error);
-      localStorage.removeItem('cookieConsent');
+      safeSetToStorage('cookieConsent', JSON.stringify(defaultSettings));
       setShowBanner(true);
     }
   }, []);
@@ -62,11 +90,11 @@ export default function CookieConsent() {
     };
     try {
       // Получаем текущие настройки из localStorage
-      const currentConsent = localStorage.getItem('cookieConsent');
+      const currentConsent = safeGetFromStorage('cookieConsent');
       const currentSettings = currentConsent ? JSON.parse(currentConsent) : defaultSettings;
       
       // Сохраняем новые настройки
-      localStorage.setItem('cookieConsent', JSON.stringify(allAccepted));
+      safeSetToStorage('cookieConsent', JSON.stringify(allAccepted));
       setSettings(allAccepted);
       setShowBanner(false);
       
@@ -87,11 +115,11 @@ export default function CookieConsent() {
   const handleSaveSettings = () => {
     try {
       // Получаем текущие настройки из localStorage
-      const currentConsent = localStorage.getItem('cookieConsent');
+      const currentConsent = safeGetFromStorage('cookieConsent');
       const currentSettings = currentConsent ? JSON.parse(currentConsent) : defaultSettings;
       
       // Сохраняем новые настройки
-      localStorage.setItem('cookieConsent', JSON.stringify(settings));
+      safeSetToStorage('cookieConsent', JSON.stringify(settings));
       setShowBanner(false);
       setShowSettings(false);
       
@@ -112,11 +140,11 @@ export default function CookieConsent() {
   const handleRejectAll = () => {
     try {
       // Получаем текущие настройки из localStorage
-      const currentConsent = localStorage.getItem('cookieConsent');
+      const currentConsent = safeGetFromStorage('cookieConsent');
       const currentSettings = currentConsent ? JSON.parse(currentConsent) : settings;
       
       // Сохраняем настройки по умолчанию
-      localStorage.setItem('cookieConsent', JSON.stringify(defaultSettings));
+      safeSetToStorage('cookieConsent', JSON.stringify(defaultSettings));
       setSettings(defaultSettings);
       setShowBanner(false);
       
@@ -133,6 +161,11 @@ export default function CookieConsent() {
       console.error('Error rejecting cookies:', error);
     }
   };
+
+  // Если компонент не смонтирован (серверный рендеринг), ничего не показываем
+  if (!isMounted) {
+    return null;
+  }
 
   return (
     <>

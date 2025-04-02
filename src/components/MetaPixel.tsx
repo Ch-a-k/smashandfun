@@ -9,8 +9,17 @@ import { isMarketingAllowed } from '@/lib/analytics';
 // ID пикселя Facebook
 const FB_PIXEL_ID = '2341539319565981';
 
+// Старый ID пикселя, который нужно обнаружить и удалить
+const OLD_PIXEL_ID = '3458226151146279';
+
 // Флаг инициализации
-const PIXEL_INIT_FLAG = 'FB_PIXEL_INIT_V2';
+const PIXEL_INIT_FLAG = 'FB_PIXEL_INIT_V3';
+
+// Глобальный флаг для предотвращения повторной очистки
+let fbPixelCleaned = false;
+
+// Функция для безопасной проверки, выполняется ли код на клиенте
+const isClient = () => typeof window !== 'undefined';
 
 // Расширяем глобальный интерфейс Window для типизации
 declare global {
@@ -20,6 +29,88 @@ declare global {
     // @ts-ignore
     _fbq?: any;
     [PIXEL_INIT_FLAG]?: boolean;
+    // Добавляем специальное свойство для отслеживания очистки
+    fbPixelCleaned?: boolean;
+  }
+}
+
+/**
+ * Очистка старых скриптов и данных Facebook Pixel
+ */
+function cleanupPixelScripts() {
+  if (!isClient() || fbPixelCleaned) return;
+  
+  console.log('Cleaning up old Facebook pixel scripts and data');
+  
+  try {
+    // Удаляем все скрипты, относящиеся к Facebook Pixel
+    document.querySelectorAll('script').forEach(script => {
+      const src = script.getAttribute('src') || '';
+      if (src.includes('connect.facebook.net') || 
+          src.includes('facebook.com/tr') || 
+          (script.innerHTML && (
+            script.innerHTML.includes('fbq') || 
+            script.innerHTML.includes(OLD_PIXEL_ID) || 
+            script.innerHTML.includes(FB_PIXEL_ID)
+          ))) {
+        script.parentNode?.removeChild(script);
+      }
+    });
+    
+    // Удаляем все noscript теги, которые могут относиться к Facebook Pixel
+    document.querySelectorAll('noscript').forEach(noscript => {
+      if (noscript.innerHTML && (
+        noscript.innerHTML.includes('facebook.com/tr') || 
+        noscript.innerHTML.includes(OLD_PIXEL_ID) || 
+        noscript.innerHTML.includes(FB_PIXEL_ID)
+      )) {
+        noscript.parentNode?.removeChild(noscript);
+      }
+    });
+    
+    // Удаляем все куки Facebook
+    document.cookie.split(';').forEach(cookie => {
+      const cookieName = cookie.split('=')[0].trim();
+      if (cookieName.startsWith('_fb') || 
+          cookieName.startsWith('fr') || 
+          cookieName.startsWith('fb') || 
+          cookieName.includes('facebook')) {
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      }
+    });
+    
+    // Очищаем локальное хранилище от элементов, связанных с Facebook
+    if (isClient() && window.localStorage) {
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('fb') || 
+            key.includes('FB') || 
+            key.includes('facebook') || 
+            key.includes('pixel')) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+    
+    // Очищаем sessionStorage от элементов, связанных с Facebook
+    if (isClient() && window.sessionStorage) {
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.includes('fb') || 
+            key.includes('FB') || 
+            key.includes('facebook') || 
+            key.includes('pixel')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    }
+    
+    // Удаляем глобальный объект fbq
+    if (isClient() && (window as any).fbq) {
+      delete (window as any).fbq;
+    }
+    
+    fbPixelCleaned = true;
+  } catch (error) {
+    console.error('Error cleaning up Facebook Pixel:', error);
   }
 }
 
@@ -27,54 +118,16 @@ export default function MetaPixel() {
   const pathname = usePathname();
   const [initialized, setInitialized] = useState(false);
 
-  // Очищаем старые скрипты Facebook Pixel
-  const cleanupPixelScripts = () => {
-    if (typeof window === 'undefined') return;
-
-    console.log('Cleaning up old Facebook pixel scripts and data');
-    
-    // Находим и удаляем все скрипты с fbevents.js
-    const scripts = document.querySelectorAll('script[src*="fbevents.js"]');
-    if (scripts.length > 0) {
-      console.log(`Removing ${scripts.length} existing Facebook Pixel scripts`);
-      scripts.forEach(script => script.parentNode?.removeChild(script));
-    }
-    
-    // Удаляем старые noscript теги с пикселями
-    const noscripts = document.querySelectorAll('noscript img[src*="facebook.com/tr"]');
-    if (noscripts.length > 0) {
-      noscripts.forEach(img => {
-        const noscript = img.closest('noscript');
-        if (noscript) noscript.parentNode?.removeChild(noscript);
-      });
-    }
-    
-    // Удаляем глобальные объекты Facebook Pixel
-    try {
-      delete window.fbq;
-      delete window._fbq;
-      delete window[PIXEL_INIT_FLAG];
-      
-      // Удаляем все cookie с именами, содержащими "fb"
-      document.cookie.split(';').forEach(cookie => {
-        const cookieName = cookie.split('=')[0].trim();
-        if (cookieName.includes('fb') || cookieName.includes('_fb')) {
-          document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-        }
-      });
-    } catch (error) {
-      console.error('Error cleaning up Facebook Pixel data:', error);
-    }
-  };
-
   // Инициализация Meta Pixel
   useEffect(() => {
-    // Проверяем, разрешены ли маркетинговые куки и не на сервере ли мы
-    if (typeof window === 'undefined') return;
+    if (!isClient()) return;
     
-    // Если маркетинговые куки не разрешены, очищаем пиксель
+    // Очищаем старые скрипты и данные
+    cleanupPixelScripts();
+    
+    // Проверяем согласие на маркетинг
     if (!isMarketingAllowed()) {
-      cleanupPixelScripts();
+      console.log('Marketing not allowed by user, Facebook Pixel not initialized');
       return;
     }
     
@@ -83,7 +136,7 @@ export default function MetaPixel() {
     
     // Функция инициализации пикселя
     const initPixel = () => {
-      // Сначала очищаем старые скрипты
+      // На всякий случай еще раз очищаем
       cleanupPixelScripts();
       
       // Создаем функцию fbq
@@ -142,36 +195,33 @@ export default function MetaPixel() {
       }
     };
     
-    // Запускаем инициализацию
-    try {
-      initPixel();
-    } catch (error) {
-      console.error('Error initializing Facebook Pixel:', error);
-      setInitialized(false);
-    }
+    // Запускаем инициализацию с небольшой задержкой, чтобы дать время другим скриптам загрузиться
+    setTimeout(() => {
+      try {
+        initPixel();
+      } catch (error) {
+        console.error('Error initializing Facebook Pixel:', error);
+        setInitialized(false);
+      }
+    }, 100);
+    
+    return () => {
+      // Очистка при размонтировании компонента
+      cleanupPixelScripts();
+    };
   }, [initialized]);
   
-  // Отслеживаем изменение URL для отправки PageView при навигации
+  // Отслеживаем изменение пути для отправки PageView
   useEffect(() => {
-    if (typeof window === 'undefined' || !pathname || !isMarketingAllowed()) return;
+    if (!isClient() || !isMarketingAllowed() || !pathname) return;
     
-    // Если fbq доступен, отправляем событие PageView при изменении пути
+    // Отправляем PageView при изменении пути
+    // @ts-ignore
     if (window.fbq) {
+      // @ts-ignore
       window.fbq('track', 'PageView');
-      console.log('PageView tracked for:', pathname);
     }
   }, [pathname]);
   
-  // Возвращаем noscript тег для пользователей без JavaScript
-  return isMarketingAllowed() ? (
-    <noscript>
-      <img 
-        height="1" 
-        width="1" 
-        style={{ display: 'none' }}
-        src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
-        alt=""
-      />
-    </noscript>
-  ) : null;
+  return null;
 }

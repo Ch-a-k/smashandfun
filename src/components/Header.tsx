@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useI18n } from '@/i18n/I18nContext';
 import LanguageSwitcher from './LanguageSwitcher';
-import { Clock, ChevronDown } from 'lucide-react';
+import { Clock, ChevronDown, Phone } from 'lucide-react';
 import HappyHoursModal from './HappyHoursModal';
 
 // Функция для установки куки
@@ -239,6 +239,16 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center space-x-4">
+            {/* Телефон */}
+            <a
+              href="tel:+48881281313"
+              className="flex items-center gap-2 text-white hover:text-[#f36e21] transition-colors"
+              aria-label="Позвонить по номеру +48 881 281 313"
+            >
+              <Phone className="w-5 h-5 text-[#f36e21]" />
+              <span className="hidden sm:inline font-impact tracking-wide">+48 881 281 313</span>
+            </a>
+            
             <LanguageSwitcher />
             {/* Happy Hours Button */}
             <button
@@ -346,6 +356,21 @@ export default function Header() {
                       )}
                     </motion.div>
                   ))}
+                  
+                  {/* Телефон в мобильном меню */}
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                  >
+                    <a
+                      href="tel:+48881281313"
+                      className="flex items-center justify-center gap-2 text-white hover:text-[#f36e21] transition-colors py-2"
+                    >
+                      <Phone className="w-5 h-5 text-[#f36e21]" />
+                      <span className="font-impact tracking-wide">+48 881 281 313</span>
+                    </a>
+                  </motion.div>
                   
                   <motion.div 
                     initial={{ opacity: 0, y: 20 }}

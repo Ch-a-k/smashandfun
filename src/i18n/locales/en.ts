@@ -62,7 +62,7 @@ export const en = {
         easy: {
           name: 'PIECE OF CAKE',
           items: [
-            '75 glass items',
+            '25 glass items',
             '0 piece of furniture',
             '0 electronic devices'
           ],
@@ -71,27 +71,27 @@ export const en = {
         medium: {
           name: 'EASY',
           items: [
-            '75 glass items',
-            '6 pieces of furniture',
-            '9 electronic devices'
+            '25 glass items',
+            '2 pieces of furniture',
+            '3 electronic devices'
           ],
           difficulty: 'MEDIUM'
         },
         hard: {
           name: 'MEDIUM',
           items: [
-            '90 glass items',
-            '9 pieces of furniture',
-            '15 electronic devices'
+            '30 glass items',
+            '3 pieces of furniture',
+            '5 electronic devices'
           ],
           difficulty: 'HARD'
         },
         extreme: {
           name: 'HARD',
           items: [
-            '105 glass items',
-            '12 pieces of furniture',
-            '21 electronic devices'
+            '35 glass items',
+            '4 pieces of furniture',
+            '7 electronic devices'
           ],
           difficulty: 'EXTREME'
         }

@@ -174,7 +174,7 @@ function PackageInfo({ people, duration }: { people: string, duration: string })
 
 function PricingCard({ pkg, index }: { pkg: Package, index: number }) {
   const { t } = useI18n()
-  const isBestseller = pkg.name === 'ŚREDNI'
+  const isBestseller = pkg.isBestseller
 
   return (
     <motion.div
@@ -257,7 +257,7 @@ export function PricingSection() {
     
     
         {
-      name: 'TRUDNY',
+      name: t('home.pricing.packages.extreme.name'),
       items: t('home.pricing.packages.extreme.items', { returnObjects: true }) as string[],
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-6'),
@@ -267,7 +267,7 @@ export function PricingSection() {
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/5/count/1/',
     },
     {
-      name: 'ŚREDNI',
+      name: t('home.pricing.packages.hard.name'),
       items: t('home.pricing.packages.hard.items', { returnObjects: true }) as string[],
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-4'),
@@ -278,7 +278,7 @@ export function PricingSection() {
       isBestseller: true
     },
     {
-      name: 'ŁATWY',
+      name: t('home.pricing.packages.medium.name'),
       items: t('home.pricing.packages.medium.items', { returnObjects: true }) as string[],
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-2'),
@@ -288,7 +288,7 @@ export function PricingSection() {
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/3/count/1/',
     },
     {
-      name: 'BUŁKA Z MASŁEM',
+      name: t('home.pricing.packages.easy.name'),
       items: t('home.pricing.packages.easy.items', { returnObjects: true }) as string[],
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-2'),

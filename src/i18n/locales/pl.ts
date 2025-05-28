@@ -17,7 +17,7 @@ export const pl = {
     schedule: {
       title: 'Harmonogram',
       weekdays: 'Poniedziałek - Piątek',
-      time: '12:00 - 16:00',
+      time: '14:00 - 16:00',
       discountname: 'Rabat',
       discount: '-20%'
     },
@@ -37,6 +37,7 @@ export const pl = {
     contact: 'Kontakt',
     b2c: 'Klienci indywidualni (B2C)',
     b2b: 'Klienci korporacyjni (B2B)',
+    vouchers: 'Vouchery',
   },
   home: {
     hero: {
@@ -115,10 +116,10 @@ export const pl = {
         }
       },
       people: {
-        '1-2': '1-2 osoby',
-        '1-4osoby': '1-4 osoby',
-        '1-4': '1-4 osoby',
-        '1-6': '1-6 osób'
+        '1-2': 'Max 2 osoby',
+        '1-4osoby': 'Max 4 osoby',
+        '1-4': 'Max 4 osoby',
+        '1-6': 'Max 6 osób'
       },
       duration: {
         '30': 'do 30 min',
@@ -181,7 +182,7 @@ export const pl = {
         email: 'Adres e-mail',
         emailPlaceholder: 'Wpisz adres e-mail',
         phone: 'Numer telefonu',
-        phonePlaceholder: 'Wpisz numer telefonu',
+        phonePlaceholder: '+48 XXX XXX XXX',
         package: 'Wybierz pakiet',
         message: 'Wiadomość',
         messagePlaceholder: 'Dodatkowe informacje lub pytania',

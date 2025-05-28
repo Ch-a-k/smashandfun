@@ -26,16 +26,29 @@ export default function VoucheryPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [phoneError, setPhoneError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const validatePhone = (phone: string) => {
+    // Разрешаем только +48 XXX XXX XXX (пробелы не обязательны, но +48 обязательно)
+    const regex = /^\+48 ?\d{3} ?\d{3} ?\d{3}$/;
+    return regex.test(phone.trim());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
     setSuccess(false);
+    setPhoneError("");
+    if (!validatePhone(form.phone)) {
+      setPhoneError(t("home.voucher.form.phonePlaceholder"));
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     try {
       const res = await fetch("/api/sendVoucherForm", {
         method: "POST",
@@ -107,9 +120,10 @@ export default function VoucheryPage() {
                   required
                   value={form.phone}
                   onChange={handleChange}
-                  className="w-full rounded-lg px-4 py-2 bg-white/10 text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-[#f36e21]"
+                  className={`w-full rounded-lg px-4 py-2 bg-white/10 text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-[#f36e21] ${phoneError ? 'border-red-500' : ''}`}
                   placeholder={t("home.voucher.form.phonePlaceholder")}
                 />
+                {phoneError && <div className="text-red-500 text-sm mt-1">{phoneError}</div>}
               </div>
               <div>
                 <label className="block text-white/80 mb-1" htmlFor="package">{t("home.voucher.form.package")}</label>

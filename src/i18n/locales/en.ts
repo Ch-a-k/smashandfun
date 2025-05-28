@@ -19,6 +19,7 @@ export const en = {
     contact: 'Contact',
     b2c: 'Private Clients (B2C)',
     b2b: 'Corporate Clients (B2B)',
+    vouchers: 'Vouchers',
   },
   home: {
     hero: {
@@ -97,10 +98,10 @@ export const en = {
         }
       },
       people: {
-        '1-2': '1-2 people',
-        '1-4osoby': '1-4 people',
-        '1-4': '1-4 people',
-        '1-6': '1-6 people'
+        '1-2': 'Max 2 people',
+        '1-4osoby': 'Max 4 people',
+        '1-4': 'Max 4 people',
+        '1-6': 'Max 6 people'
       },
       duration: {
         '30': 'up to 30 min',
@@ -163,7 +164,7 @@ export const en = {
         email: 'Email',
         emailPlaceholder: 'Enter your email address',
         phone: 'Phone number',
-        phonePlaceholder: 'Enter your phone number',
+        phonePlaceholder: '+48 XXX XXX XXX',
         package: 'Select package',
         message: 'Message',
         messagePlaceholder: 'Additional info or questions',
@@ -733,7 +734,7 @@ export const en = {
     schedule: {
       title: 'Schedule',
       weekdays: 'Monday - Friday',
-      time: '12:00 - 16:00',
+      time: '14:00 - 16:00',
       discountname: 'Discount',
       discount: '-20%'
     },

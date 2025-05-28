@@ -107,7 +107,8 @@ export default function Header() {
       label: t('nav.organizeParty'),
       dropdown: [
         { href: '/organizacja-imprez', label: t('nav.b2c') },
-        { href: '/organizacja-imprez-b2b', label: t('nav.b2b') }
+        { href: '/organizacja-imprez-b2b', label: t('nav.b2b') },
+        { href: '/vouchery', label: t('nav.vouchers') },
       ]
     },
     { href: '/blog', label: t('nav.blog') },

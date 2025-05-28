@@ -117,7 +117,7 @@ export default function HappyHoursModal({ isOpen, onClose }: HappyHoursModalProp
                 <div className="flex-1">
                   <div className="flex justify-between items-center">
                     <span className="text-white/80 text-sm">{t('happyHours.schedule.weekdays') || 'Monday - Friday'}</span>
-                    <span className="text-white text-sm font-medium">{t('happyHours.schedule.time') || '12:00 - 16:00'}</span>
+                    <span className="text-white text-sm font-medium">{t('happyHours.schedule.time') || '14:00 - 16:00'}</span>
                   </div>
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-white/80 text-sm">{t('happyHours.schedule.discountname') || 'Discount'}</span>

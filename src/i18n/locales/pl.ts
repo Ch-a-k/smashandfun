@@ -173,7 +173,23 @@ export const pl = {
         'Voucher ważny przez 6 miesięcy',
         'Możliwość wyboru dowolnego pakietu',
         'Natychmiastowa dostawa na email'
-      ]
+      ],
+      form: {
+        title: 'Formularz zamówienia vouchera',
+        name: 'Imię i nazwisko',
+        namePlaceholder: 'Wpisz imię i nazwisko',
+        email: 'Adres e-mail',
+        emailPlaceholder: 'Wpisz adres e-mail',
+        phone: 'Numer telefonu',
+        phonePlaceholder: 'Wpisz numer telefonu',
+        package: 'Wybierz pakiet',
+        message: 'Wiadomość',
+        messagePlaceholder: 'Dodatkowe informacje lub pytania',
+        submit: 'Wyślij zgłoszenie',
+        sending: 'Wysyłanie...',
+        success: 'Dziękujemy! Twoje zgłoszenie zostało wysłane.',
+        error: 'Wystąpił błąd podczas wysyłania. Spróbuj ponownie.'
+      }
     },
     reviews: {
       title: 'OPINIE KLIENTÓW',

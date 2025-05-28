@@ -155,7 +155,23 @@ export const en = {
         'Voucher valid for 6 months',
         'Choice of any package',
         'Instant email delivery'
-      ]
+      ],
+      form: {
+        title: 'Voucher Order Form',
+        name: 'Full name',
+        namePlaceholder: 'Enter your full name',
+        email: 'Email',
+        emailPlaceholder: 'Enter your email address',
+        phone: 'Phone number',
+        phonePlaceholder: 'Enter your phone number',
+        package: 'Select package',
+        message: 'Message',
+        messagePlaceholder: 'Additional info or questions',
+        submit: 'Send request',
+        sending: 'Sending...',
+        success: 'Thank you! Your request has been sent.',
+        error: 'An error occurred while sending. Please try again.'
+      }
     },
     reviews: {
       title: 'CUSTOMER REVIEWS',

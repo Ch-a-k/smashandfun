@@ -23,6 +23,9 @@ importers:
       '@tsparticles/all':
         specifier: ^3.8.1
         version: 3.8.1
+      '@tsparticles/confetti':
+        specifier: ^3.8.1
+        version: 3.8.1
       '@tsparticles/engine':
         specifier: ^3.8.1
         version: 3.8.1
@@ -526,6 +529,9 @@ packages:
 
   '@tsparticles/basic@3.8.1':
     resolution: {integrity: sha512-my114zRmekT/+I2cGuEnHxlX5G/jO0iVtNnsxxlsgspXUTSY+fDixmrNF4UgFkuaIwd9Bv/yH+7S/4HE4qte7A==}
+
+  '@tsparticles/confetti@3.8.1':
+    resolution: {integrity: sha512-ahtLeGiPwTXiWFAEnJHTOIFteYwjRJDpPEr4ohMSEHWD8Y0HkgtLQMzWgWMGYH/Q+ibi6DR5RGhXq6ndWkj/ag==}
 
   '@tsparticles/effect-bubble@3.8.1':
     resolution: {integrity: sha512-cH8tC9/bVft+67ZW88OOL5ICelOgtSkF4+wkomzdu+vEfqt3xlFik2NkdCQ1I5r7D9lbsPAdct7ltMHWScuN2Q==}
@@ -3197,6 +3203,25 @@ snapshots:
       '@tsparticles/updater-opacity': 3.8.1
       '@tsparticles/updater-out-modes': 3.8.1
       '@tsparticles/updater-size': 3.8.1
+
+  '@tsparticles/confetti@3.8.1':
+    dependencies:
+      '@tsparticles/basic': 3.8.1
+      '@tsparticles/engine': 3.8.1
+      '@tsparticles/plugin-emitters': 3.8.1
+      '@tsparticles/plugin-motion': 3.8.1
+      '@tsparticles/shape-cards': 3.8.1
+      '@tsparticles/shape-emoji': 3.8.1
+      '@tsparticles/shape-heart': 3.8.1
+      '@tsparticles/shape-image': 3.8.1
+      '@tsparticles/shape-polygon': 3.8.1
+      '@tsparticles/shape-square': 3.8.1
+      '@tsparticles/shape-star': 3.8.1
+      '@tsparticles/updater-life': 3.8.1
+      '@tsparticles/updater-roll': 3.8.1
+      '@tsparticles/updater-rotate': 3.8.1
+      '@tsparticles/updater-tilt': 3.8.1
+      '@tsparticles/updater-wobble': 3.8.1
 
   '@tsparticles/effect-bubble@3.8.1':
     dependencies:

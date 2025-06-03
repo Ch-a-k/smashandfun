@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { useI18n } from '@/i18n/I18nContext';
+import InFomoFooterButton from './InFomoFooterButton';
 
 const fadeInUpAnimation = {
   initial: { opacity: 0, y: 20 },
@@ -159,6 +160,8 @@ export default function Footer() {
             </div>
           </div>
         </motion.div>
+        {/* IN-FOMO button */}
+        <InFomoFooterButton />
       </div>
     </footer>
   );

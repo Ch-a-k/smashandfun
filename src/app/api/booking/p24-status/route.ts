@@ -9,9 +9,9 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   const body = await req.text();
-  let data: any = {};
+  let data: Record<string, string> = {};
   try {
-    data = JSON.parse(body);
+    data = JSON.parse(body) as Record<string, string>;
   } catch {
     // fallback: парсим вручную (form-urlencoded)
     body.split('&').forEach(pair => {

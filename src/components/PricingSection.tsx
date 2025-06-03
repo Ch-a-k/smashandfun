@@ -33,6 +33,7 @@ interface Package {
   difficulty: string
   bookingUrl: string
   isBestseller?: boolean
+  id: string
 }
 
 // Constants
@@ -230,7 +231,7 @@ function PricingCard({ pkg, index }: { pkg: Package, index: number }) {
 
         {/* Button */}
         <Link 
-          href={pkg.bookingUrl}
+          href={`/booking/${pkg.id}`}
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
@@ -265,6 +266,7 @@ export function PricingSection() {
       price: '999 PLN',
       difficulty: t('home.pricing.packages.extreme.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/5/count/1/',
+      id: '21eb6278-0593-442c-ae9e-49cb8b853aee'
     },
     {
       name: t('home.pricing.packages.hard.name'),
@@ -275,7 +277,8 @@ export function PricingSection() {
       price: '499 PLN',
       difficulty: t('home.pricing.packages.hard.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/4/count/1/',
-      isBestseller: true
+      isBestseller: true,
+      id: '5e30466f-b5a8-41f2-a992-465c6c0b86aa'
     },
     {
       name: t('home.pricing.packages.medium.name'),
@@ -286,6 +289,7 @@ export function PricingSection() {
       price: '299 PLN',
       difficulty: t('home.pricing.packages.medium.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/3/count/1/',
+      id: '346a3361-a0a8-4171-9513-fe02098923e5'
     },
     {
       name: t('home.pricing.packages.easy.name'),
@@ -296,6 +300,7 @@ export function PricingSection() {
       price: '199 PLN',
       difficulty: t('home.pricing.packages.easy.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/2/count/1/',
+      id: '439e5e5b-db4a-4f66-9c83-beeef9c44eac'
     },
   ]
 

@@ -858,5 +858,42 @@ export const en = {
         date: 'Please select a date'
       }
     }
+  },
+  booking: {
+    chooseDateTime: 'Choose date and time',
+    date: 'Date',
+    time: 'Time',
+    selectTime: 'Select time',
+    loading: 'Loading...',
+    next: 'Next',
+    enterDetails: 'Enter your details',
+    name: 'Name',
+    email: 'E-mail',
+    phone: 'Phone',
+    extraItemsTitle: 'Extra options',
+    extraItemsSubtitle: 'Choose extra options',
+    noExtraItems: 'No extra options',
+    paymentTypeTitle: 'Payment type',
+    paymentTypeSubtitle: 'Choose payment method',
+    payFull: 'Pay full amount',
+    payDeposit: 'Pay deposit',
+    total: 'Total',
+    payNow: 'Pay now',
+    confirmTitle: 'Confirmation',
+    confirmSubtitle: 'Check your details before payment',
+    promo: 'Promo code',
+    promoCheck: 'Check',
+    promoChecking: 'Checking...',
+    promoValid: 'Code applied',
+    promoInvalid: 'Invalid code',
+    promoPlaceholder: 'Enter promo code (if you have one)',
+    promoBtn: 'Check',
+    promoNotFound: 'Code not found',
+    promoInactive: 'Code inactive',
+    promoUsed: 'Code already used',
+    promoApplied: 'Code applied',
+    promoDiscount: 'Discount',
+    promoPercent: 'percent',
+    paymentType: 'Payment type'
   }
 };

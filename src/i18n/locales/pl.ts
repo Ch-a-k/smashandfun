@@ -858,5 +858,42 @@ export const pl = {
         date: 'Wybierz datę'
       }
     }
+  },
+  booking: {
+    chooseDateTime: 'Wybierz datę i godzinę',
+    date: 'Data',
+    time: 'Godzina',
+    selectTime: 'Wybierz godzinę',
+    loading: 'Ładowanie...',
+    next: 'Dalej',
+    enterDetails: 'Wprowadź swoje dane',
+    name: 'Imię',
+    email: 'E-mail',
+    phone: 'Telefon',
+    extraItemsTitle: 'Dodatkowe opcje',
+    extraItemsSubtitle: 'Wybierz dodatkowe opcje',
+    noExtraItems: 'Bez dodatkowych opcji',
+    paymentTypeTitle: 'Typ płatności',
+    paymentTypeSubtitle: 'Wybierz sposób płatności',
+    payFull: 'Zapłać całość',
+    payDeposit: 'Zapłać zaliczkę',
+    total: 'Razem',
+    payNow: 'Zapłać',
+    confirmTitle: 'Potwierdzenie',
+    confirmSubtitle: 'Sprawdź dane przed płatnością',
+    promo: 'Kod promocyjny',
+    promoCheck: 'Sprawdź i zastosuj',
+    promoChecking: 'Sprawdzanie...',
+    promoValid: 'Kod zastosowany',
+    promoInvalid: 'Nieprawidłowy kod',
+    promoPlaceholder: 'Wpisz kod promocyjny (jeśli masz)',
+    promoBtn: 'Sprawdź i zastosuj',
+    promoNotFound: 'Kod nie został znaleziony',
+    promoInactive: 'Kod nieaktywny',
+    promoUsed: 'Kod został już wykorzystany',
+    promoApplied: 'Kod zastosowany',
+    promoDiscount: 'Rabat',
+    promoPercent: 'procent',
+    paymentType: 'Typ płatności'
   }
 };

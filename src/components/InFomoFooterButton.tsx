@@ -21,12 +21,12 @@ export default function InFomoFooterButton() {
   }, []);
 
   return (
-    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 18 }}>
       <button
         ref={btnRef}
         onClick={handleClick}
         style={{
-          background: 'none',
+          background: 'rgba(24, 23, 28, 0.92)',
           border: 'none',
           color: '#bbb',
           fontSize: 16,
@@ -36,8 +36,10 @@ export default function InFomoFooterButton() {
           alignItems: 'center',
           gap: 4,
           outline: 'none',
-          padding: 0,
-          transition: 'color 0.18s',
+          padding: '10px 22px',
+          borderRadius: 16,
+          boxShadow: '0 2px 16px #0007',
+          transition: 'background 0.18s, color 0.18s',
         }}
         aria-label="Made by IN-FOMO"
       >

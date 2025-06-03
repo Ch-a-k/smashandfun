@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Image from 'next/image';
+import InFomoFooterButton from '@/components/InFomoFooterButton';
 
 interface Package {
   id: string;
@@ -774,6 +775,8 @@ export default function BookingPage() {
           {step === 5 && Step5}
           {error && <div style={{ color: 'red' }}>{error}</div>}
         </div>
+        {/* IN-FOMO button */}
+        <InFomoFooterButton />
       </div>
       <style>{`
         .datepicker-input {

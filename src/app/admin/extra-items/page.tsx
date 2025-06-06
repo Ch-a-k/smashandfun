@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from '@/lib/supabaseClient';
+import { withAdminAuth } from '../components/withAdminAuth';
 
 interface ExtraItem {
   id: string;
@@ -15,7 +16,7 @@ const emptyItem: Omit<ExtraItem, 'id'> = {
   description: '',
 };
 
-export default function ExtraItemsAdmin() {
+function ExtraItemsPage() {
   const [items, setItems] = useState<ExtraItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -178,4 +179,6 @@ export default function ExtraItemsAdmin() {
       )}
     </div>
   );
-} 
+}
+
+export default withAdminAuth(ExtraItemsPage); 

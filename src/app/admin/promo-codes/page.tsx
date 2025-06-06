@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabaseClient';
+import { withAdminAuth } from '../components/withAdminAuth';
 
 interface PromoCode {
   id: string;
@@ -43,7 +44,7 @@ function formatTime(val: string): string {
   return val;
 }
 
-export default function PromoCodesAdmin() {
+function PromoCodesPage() {
   const router = useRouter();
   const [promos, setPromos] = useState<PromoCode[]>([]);
   const [loading, setLoading] = useState(true);
@@ -173,7 +174,7 @@ export default function PromoCodesAdmin() {
     <div style={{color:'#fff'}}>
       <h1 style={{fontSize:28, fontWeight:800, color:'#f36e21', marginBottom:18}}>Promocje</h1>
       <p style={{fontSize:16, opacity:0.9, marginBottom:18}}>Twórz i zarządzaj kodami promocyjnymi oraz rabatami (procent lub zł).</p>
-      <button onClick={openAdd} style={{background:'#f36e21', color:'#fff', border:'none', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, marginBottom:24, cursor:'pointer'}}>Dodaj promokod</button>
+      <button onClick={openAdd} style={{background:'#f36e21', color:'#fff', border:'none', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, marginBottom:24, cursor:'pointer'}}>Dodaj kod promocyjny</button>
       <div style={{background:'#23222a', borderRadius:12, padding:32, minHeight:180, color:'#fff', fontSize:16}}>
         {loading ? (
           <div>Ładowanie...</div>
@@ -188,8 +189,8 @@ export default function PromoCodesAdmin() {
                 <th style={{padding:'8px 12px', textAlign:'left'}}>Rabat (zł)</th>
                 <th style={{padding:'8px 12px', textAlign:'left'}}>Od</th>
                 <th style={{padding:'8px 12px', textAlign:'left'}}>Do</th>
-                <th style={{padding:'8px 12px', textAlign:'left'}}>Czas od</th>
-                <th style={{padding:'8px 12px', textAlign:'left'}}>Czas do</th>
+                <th style={{padding:'8px 12px', textAlign:'left'}}>Godzina od</th>
+                <th style={{padding:'8px 12px', textAlign:'left'}}>Godzina do</th>
                 <th style={{padding:'8px 12px', textAlign:'left'}}>Limit</th>
                 <th style={{padding:'8px 12px', textAlign:'left'}}>Użyto</th>
                 <th style={{padding:'8px 12px'}}></th>
@@ -221,7 +222,7 @@ export default function PromoCodesAdmin() {
       {modalOpen && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'flex-start', justifyContent:'center', overflow:'auto'}}>
           <form onSubmit={handleSave} style={{background:'#23222a', borderRadius:14, padding:'36px 32px', minWidth:340, boxShadow:'0 4px 32px #0008', color:'#fff', display:'flex', flexDirection:'column', gap:18, maxHeight:'90vh', overflowY:'auto', marginTop:40}}>
-            <h2 style={{color:'#f36e21', fontWeight:800, fontSize:22, marginBottom:8}}>{editId ? 'Edytuj promokod' : 'Nowy promokod'}</h2>
+            <h2 style={{color:'#f36e21', fontWeight:800, fontSize:22, marginBottom:8}}>{editId ? 'Edytuj kod promocyjny' : 'Nowy kod promocyjny'}</h2>
             <label>Kod
               <input type="text" value={form.code} onChange={e => setForm(f => ({...f, code: e.target.value}))} required style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
             </label>
@@ -240,7 +241,7 @@ export default function PromoCodesAdmin() {
             <label>Limit użyć
               <input type="number" value={form.usage_limit ?? ''} onChange={e => setForm(f => ({...f, usage_limit: e.target.value === '' ? null : Number(e.target.value)}))} min={0} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
             </label>
-            <label>Czas od
+            <label>Godzina od
               <input
                 type="text"
                 inputMode="numeric"
@@ -251,7 +252,7 @@ export default function PromoCodesAdmin() {
                 style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}}
               />
             </label>
-            <label>Czas do
+            <label>Godzina do
               <input
                 type="text"
                 inputMode="numeric"
@@ -273,7 +274,7 @@ export default function PromoCodesAdmin() {
       {deleteId && (
         <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}}>
           <div style={{background:'#23222a', borderRadius:14, padding:'36px 32px', minWidth:320, boxShadow:'0 4px 32px #0008', color:'#fff', display:'flex', flexDirection:'column', gap:18, alignItems:'center'}}>
-            <div style={{fontSize:18, fontWeight:700, marginBottom:8}}>Czy na pewno chcesz usunąć ten promokod?</div>
+            <div style={{fontSize:18, fontWeight:700, marginBottom:8}}>Czy na pewno chcesz usunąć ten kod promocyjny?</div>
             <div style={{display:'flex', gap:12}}>
               <button onClick={()=>handleDelete(deleteId)} disabled={deleteLoading} style={{background:'#ff4d4f', color:'#fff', border:'none', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, cursor:deleteLoading?'not-allowed':'pointer'}}>{deleteLoading ? 'Usuwanie...' : 'Usuń'}</button>
               <button onClick={()=>setDeleteId(null)} style={{background:'#23222a', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, cursor:'pointer'}}>Anuluj</button>
@@ -283,4 +284,6 @@ export default function PromoCodesAdmin() {
       )}
     </div>
   );
-} 
+}
+
+export default withAdminAuth(PromoCodesPage); 

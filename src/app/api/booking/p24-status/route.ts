@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 // Используем серверный Supabase client (чтобы не было ошибок импорта)
 const supabase = createClient(
@@ -34,6 +35,42 @@ export async function POST(req: Request) {
 
   if (error) {
     return NextResponse.json({ error: 'Błąd aktualizacji statusu' }, { status: 500 });
+  }
+
+  // Генерируем одноразовый токен для смены даты/времени
+  const changeToken = crypto.randomBytes(24).toString('hex');
+  await supabase
+    .from('bookings')
+    .update({ change_token: changeToken })
+    .eq('id', bookingId);
+
+  // Получаем данные бронирования и пакета для письма
+  const { data: booking } = await supabase
+    .from('bookings')
+    .select('user_email, date, time, package_id, name, phone, extra_items, change_token')
+    .eq('id', bookingId)
+    .single();
+  if (booking) {
+    // --- Временно убираю отправку письма после оплаты для тестов ---
+    // if (booking.user_email && pkg) {
+    //   const cancelLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun.pl'}/booking/change?token=${booking.change_token}`;
+    //   await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/api/sendBookingEmail', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify({
+    //       to: booking.user_email,
+    //       booking: {
+    //         date: booking.date,
+    //         time: booking.time,
+    //         package: pkg.name || '',
+    //         people: pkg.people_count || '',
+    //         name: booking.name || '',
+    //         cancel_link: cancelLink
+    //       },
+    //       type: 'new'
+    //     })
+    //   });
+    // }
   }
 
   // Przelewy24 ждёт 'OK' в ответе

@@ -5,12 +5,13 @@ create table if not exists packages (
     description text,
     difficulty text,
     price numeric not null,
-    duration integer not null,
+    duration integer not null, -- длительность услуги в минутах
     people_count integer not null,
     items jsonb not null,
     tools jsonb not null,
-    allowed_rooms jsonb not null,
-    room_priority jsonb
+    allowed_rooms jsonb not null, -- массив id комнат, где можно проводить услугу
+    room_priority jsonb,          -- массив id комнат по приоритету
+    cleanup_time integer not null default 15 -- время уборки после услуги, в минутах
 );
 
 -- Дополнительные предметы
@@ -32,15 +33,18 @@ create table if not exists rooms (
 create table if not exists bookings (
     id uuid primary key default gen_random_uuid(),
     user_email text not null,
+    name text,
     package_id uuid references packages(id),
     room_id uuid references rooms(id),
-    date date not null,
-    time time not null,
+    date date not null,         -- дата бронирования (Europe/Warsaw)
+    time time not null,         -- время начала (Europe/Warsaw)
     extra_items jsonb,
     total_price numeric not null,
     status text not null check (status in ('pending', 'paid', 'deposit', 'cancelled')),
     payment_id text,
     promo_code text,
+    phone text,
+    change_token text, -- одноразовый токен для смены даты/времени
     created_at timestamp with time zone default now(),
     updated_at timestamp with time zone default now()
 );

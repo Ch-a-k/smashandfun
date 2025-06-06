@@ -3,954 +3,857 @@ import { useEffect, useState } from "react";
 import { supabase } from '@/lib/supabaseClient';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import React from 'react';
+import { withAdminAuth } from '../components/withAdminAuth';
 
+// Интерфейсы для типизации
 interface Booking {
   id: string;
   user_email: string;
+  name?: string;
   package_id: string;
   room_id: string;
   date: string;
   time: string;
-  total_price: number;
-  status: string;
-  created_at: string;
-  extra_items?: { id: string; count?: number }[];
-}
-
-interface PackageMap { [id: string]: string; }
-interface RoomMap { [id: string]: string; }
-interface ExtraItemMap { [id: string]: string; }
-
-interface BookingDetails extends Booking {
-  extra_items?: { id: string; count?: number }[];
+  time_end?: string;
+  status?: string;
+  phone?: string;
+  total_price?: string;
+  payment_id?: string;
   promo_code?: string;
+  created_at?: string;
+  updated_at?: string;
+  extra_items?: object | null;
+  change_token?: string;
 }
-
-interface BookingHistoryEntry {
+interface Room {
   id: string;
-  action: string;
-  comment?: string;
-  created_at: string;
+  name: string;
 }
-
-interface CommentEntry {
+interface PackageMap {
+  [id: string]: string;
+}
+interface PromoCode {
   id: string;
-  author_role: string;
-  text: string;
-  created_at: string;
+  code: string;
+  discount_percent: number;
+  discount_amount?: number | null;
+  valid_from?: string | null;
+  valid_to?: string | null;
+  usage_limit?: number | null;
+  used_count?: number | null;
+  time_from?: string | null;
+  time_to?: string | null;
 }
 
-export default function BookingsAdmin() {
+// Генерация времени с шагом 15 минут с 09:00 до 21:00
+function generateTimeSlots(start: string, end: string, stepMinutes: number) {
+  const result: string[] = [];
+  let [h, m] = start.split(":").map(Number);
+  const [endH, endM] = end.split(":").map(Number);
+  while (h < endH || (h === endH && m <= endM)) {
+    result.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+    m += stepMinutes;
+    if (m >= 60) { h++; m -= 60; }
+  }
+  return result;
+}
+
+const GODZINY = generateTimeSlots("09:00", "21:00", 15);
+
+// Функция для выбора цвета по статусу
+function getStatusColor(status?: string) {
+  switch (status) {
+    case 'paid':
+      return 'bg-green-200 border-green-400 text-green-900';
+    case 'pending':
+      return 'bg-yellow-100 border-yellow-400 text-yellow-900';
+    case 'cancelled':
+      return 'bg-red-200 border-red-400 text-red-900';
+    case 'deposit':
+      return 'bg-blue-200 border-blue-400 text-blue-900';
+    default:
+      return 'bg-gray-200 border-gray-400 text-gray-900';
+  }
+}
+
+// Варианты статусов оплаты
+const STATUS_OPTIONS = [
+  { value: 'paid', label: 'paid' },
+  { value: 'pending', label: 'pending' },
+  { value: 'cancelled', label: 'cancelled' },
+  { value: 'deposit', label: 'deposit' },
+];
+
+// 1. Определяю тип Package
+
+type Package = {
+  id: string;
+  name: string;
+  allowed_rooms: string[];
+  room_priority: string[];
+  duration: number; // в минутах
+  cleanup_time?: number; // в минутах
+  // Добавьте другие поля, если они используются
+};
+
+// Возвращает текущую дату/время в зоне Europe/Warsaw
+function getPolandDate(): Date {
+  const now = new Date();
+  // Получить строку локального времени в Польше
+  const polandString = now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
+  return new Date(polandString);
+}
+
+// Преобразует строку 'YYYY-MM-DD' в Date в зоне Europe/Warsaw
+function parsePolandDate(str: string): Date {
+  const [year, month, day] = str.split('-').map(Number);
+  // Создаём дату в польской зоне (локальное время)
+  const polandString = new Date(year, month - 1, day).toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
+  return new Date(polandString);
+}
+
+// Возвращает YYYY-MM-DD для даты в зоне Europe/Warsaw
+function formatDatePoland(date: Date): string {
+  // Получаем локальное время в Польше
+  const poland = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
+  const year = poland.getFullYear();
+  const month = (poland.getMonth() + 1).toString().padStart(2, '0');
+  const day = poland.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function EmailInfoTooltip() {
+  const [show, setShow] = useState(false);
+  return (
+    <span style={{position:'relative', display:'inline-block', marginLeft:6}}>
+      <span
+        style={{
+          cursor:'pointer',
+          color:'#f36e21',
+          fontWeight:700,
+          fontSize:13,
+          verticalAlign:'top',
+        }}
+        onMouseEnter={()=>setShow(true)}
+        onMouseLeave={()=>setShow(false)}
+      >ℹ️</span>
+      {show && (
+        <span style={{
+          position:'absolute',
+          left:'50%',
+          top:'120%',
+          transform:'translateX(-50%)',
+          background:'#333',
+          color:'#fff',
+          border:'1px solid #f36e21',
+          borderRadius:8,
+          padding:'10px 16px',
+          fontSize:14,
+          whiteSpace:'pre-line',
+          zIndex:100,
+          minWidth:200,
+          maxWidth:260,
+          boxShadow:'0 4px 24px #000a',
+          textAlign:'center'
+        }}>
+          Wyślij ponownie e-mail z potwierdzeniem rezerwacji do klienta. E-mail zostanie wysłany na podany adres. Wszystkie pola formularza muszą zostać wypełnione.
+        </span>
+      )}
+    </span>
+  );
+}
+
+function BookingsPage() {
+  const [date, setDate] = useState<Date>(getPolandDate());
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [packages, setPackages] = useState<PackageMap>({});
+  const [packageDurations, setPackageDurations] = useState<{[id: string]: number}>({});
+  const [packageCleanupTimes, setPackageCleanupTimes] = useState<{[id: string]: number}>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [searchEmail, setSearchEmail] = useState("");
-  const [searchDate, setSearchDate] = useState("");
-  const [packageMap, setPackageMap] = useState<PackageMap>({});
-  const [roomMap, setRoomMap] = useState<RoomMap>({});
-  const [extraItemMap, setExtraItemMap] = useState<ExtraItemMap>({});
-  const [detailsId, setDetailsId] = useState<string | null>(null);
-  const [details, setDetails] = useState<BookingDetails | null>(null);
-  const [detailsLoading, setDetailsLoading] = useState(false);
-  const [history, setHistory] = useState<BookingHistoryEntry[]>([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [comments, setComments] = useState<CommentEntry[]>([]);
-  const [commentsLoading, setCommentsLoading] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<string>('');
-  const [filterRoom, setFilterRoom] = useState<string>('');
-  const [sortField, setSortField] = useState<'date'|'total_price'|'status'>('date');
-  const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc');
-  const [editMode, setEditMode] = useState(false);
-  const [editForm, setEditForm] = useState<BookingDetails | null>(null);
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [addForm, setAddForm] = useState({
-    date: '',
-    time: '',
+  const [bookedDates, setBookedDates] = useState<Date[]>([]);
+  const [editForm, setEditForm] = useState<Booking | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [extraItemMap, setExtraItemMap] = useState<{ [id: string]: string }>({});
+  const [newExtraItem, setNewExtraItem] = useState<{id: string, count: number}>({id: '', count: 1});
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
+  const [packagePrices, setPackagePrices] = useState<{[id: string]: number}>({});
+  const [extraItemPrices, setExtraItemPrices] = useState<{[id: string]: number}>({});
+  const emptyBooking: Booking = {
+    id: '',
     user_email: '',
     name: '',
-    phone: '',
     package_id: '',
     room_id: '',
-    total_price: '',
+    date: '',
+    time: '',
     status: 'pending',
+    phone: '',
+    total_price: '',
+    payment_id: '',
     promo_code: '',
-  });
-  const [addLoading, setAddLoading] = useState(false);
-  const [adminRole, setAdminRole] = useState<string | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
+    created_at: '',
+    updated_at: '',
+    extra_items: [],
+  };
+  const [isNew, setIsNew] = useState(false);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
-  const [timesLoading, setTimesLoading] = useState(false);
-  const [loadedMonths, setLoadedMonths] = useState<Set<string>>(new Set());
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [emailStatus, setEmailStatus] = useState<string | null>(null);
+  const [emailSending, setEmailSending] = useState(false);
+  const [datesCache, setDatesCache] = useState<{[packageId: string]: string[]}>({});
+  const [timesCache, setTimesCache] = useState<{[key: string]: string[]}>({});
   const [loadingDates, setLoadingDates] = useState(false);
-  const [extraItems, setExtraItems] = useState<{id:string;name:string;price:number}[]>([]);
-  const [addExtraItems, setAddExtraItems] = useState<{id:string;count:number}[]>([]);
+  const [loadingTimes, setLoadingTimes] = useState(false);
 
-  async function fetchMaps() {
-    // Получаем названия пакетов, комнат и предметов для отображения
-    const { data: packages } = await supabase.from('packages').select('id, name');
-    const { data: rooms } = await supabase.from('rooms').select('id, name');
-    const { data: extraItems } = await supabase.from('extra_items').select('id, name');
-    setPackageMap(Object.fromEntries((packages||[]).map((p: {id: string, name: string}) => [p.id, p.name])));
-    setRoomMap(Object.fromEntries((rooms||[]).map((r: {id: string, name: string}) => [r.id, r.name])));
-    setExtraItemMap(Object.fromEntries((extraItems||[]).map((ei: {id: string, name: string}) => [ei.id, ei.name])));
-  }
-
-  async function fetchBookings() {
-    setLoading(true);
-    setError("");
-    let query = supabase.from('bookings').select('*').order('date', { ascending: false }).order('time', { ascending: false });
-    if (searchEmail) query = query.ilike('user_email', `%${searchEmail}%`);
-    if (searchDate) query = query.eq('date', searchDate);
-    const { data, error } = await query;
-    if (error) {
-      setError("Błąd ładowania rezerwacji");
-      setLoading(false);
-      return;
-    }
-    setBookings(data || []);
-    setLoading(false);
-  }
-
-  async function openDetails(id: string) {
-    setDetailsLoading(true);
-    setDetailsId(id);
-    const { data } = await supabase.from('bookings').select('*').eq('id', id).single();
-    if (data && typeof data === 'object' && !Array.isArray(data)) {
-      setDetails(data as BookingDetails);
-    } else if (Array.isArray(data) && (data as BookingDetails[]).length > 0) {
-      setDetails((data as BookingDetails[])[0]);
-    } else {
-      setDetails(null);
-    }
-    setDetailsLoading(false);
-    // Загружаем историю изменений
-    setHistoryLoading(true);
-    const { data: hist } = await supabase.from('booking_history').select('*').eq('booking_id', id).order('created_at', { ascending: false });
-    setHistory(hist || []);
-    setHistoryLoading(false);
-    // Загружаем комментарии
-    setCommentsLoading(true);
-    const { data: comm } = await supabase.from('comments').select('*').eq('booking_id', id).order('created_at', { ascending: false });
-    setComments(comm || []);
-    setCommentsLoading(false);
-  }
-
-  // Экспорт в CSV
-  function exportCSV() {
-    const header = ['Data','Godzina','E-mail','Pakiet','Pokój','Suma','Status','Dodatki'];
-    const rows = bookings.map(b => [
-      b.date,
-      b.time.slice(0,5),
-      b.user_email,
-      packageMap[b.package_id] || b.package_id,
-      roomMap[b.room_id] || b.room_id,
-      Number(b.total_price).toFixed(2),
-      b.status,
-      Array.isArray(b.extra_items) && b.extra_items.length > 0
-        ? b.extra_items.map((ei: {id: string; count?: number}) => `${extraItemMap[ei.id] || ei.id}${ei.count ? ` ×${ei.count}` : ''}`).join(', ')
-        : ''
-    ]);
-    const csv = [header, ...rows].map(r=>r.join(';')).join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'rezerwacje.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // Быстрая смена статуса
-  async function quickStatus(id: string, status: string) {
-    await supabase.from('bookings').update({status}).eq('id', id);
-    fetchBookings();
-    if (detailsId === id) openDetails(id);
-  }
-
-  // Фильтрация и сортировка
-  let filtered = bookings;
-  if (filterStatus) filtered = filtered.filter(b=>b.status===filterStatus);
-  if (filterRoom) filtered = filtered.filter(b=>b.room_id===filterRoom);
-  filtered = [...filtered].sort((a,b)=>{
-    if (sortField==='date') {
-      const d1 = a.date + ' ' + a.time;
-      const d2 = b.date + ' ' + b.time;
-      return sortDir==='asc' ? d1.localeCompare(d2) : d2.localeCompare(d1);
-    }
-    if (sortField==='total_price') {
-      return sortDir==='asc' ? a.total_price-b.total_price : b.total_price-a.total_price;
-    }
-    if (sortField==='status') {
-      return sortDir==='asc' ? a.status.localeCompare(b.status) : b.status.localeCompare(a.status);
-    }
-    return 0;
-  });
-
-  const handleEditSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editForm || !details) return;
-
-    const { id, date, time, user_email, package_id, room_id, total_price, status, promo_code } = editForm;
-
-    try {
-      const { data, error } = await supabase
-        .from('bookings')
-        .update({
-          date,
-          time,
-          user_email,
-          package_id,
-          room_id,
-          total_price,
-          status,
-          promo_code
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('Błąd rezerwacji:', error.message);
-        return;
-      }
-
-      if (data && typeof data === 'object' && !Array.isArray(data)) {
-        setDetails(data as BookingDetails);
-      } else if (Array.isArray(data) && (data as BookingDetails[]).length > 0) {
-        setDetails((data as BookingDetails[])[0]);
-      }
-      setEditMode(false);
-      fetchBookings();
-      // Отправить письмо клиенту об изменении бронирования
-      await fetch('/api/sendBookingEmail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: user_email,
-          booking: {
-            date,
-            time,
-            package: packageMap[package_id] || package_id,
-            people: '',
-          },
-          type: 'update'
-        })
-      });
-    } catch (error) {
-      console.error('Błąd podczas edycji rezerwacji:', error);
-    }
-  };
-
-  async function handleAddBooking(e: React.FormEvent) {
-    e.preventDefault();
-    setAddLoading(true);
-    // Простая валидация
-    if (!addForm.date || !addForm.time || !addForm.user_email || !addForm.package_id || !addForm.status) {
-      alert('Wypełnij wszystkie wymagane pola!');
-      setAddLoading(false);
-      return;
-    }
-    try {
-      const res = await fetch('/api/booking/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: addForm.user_email,
-          name: addForm.name,
-          phone: addForm.phone,
-          packageId: addForm.package_id,
-          date: addForm.date,
-          time: addForm.time,
-          extraItems: addExtraItems,
-          promoCode: addForm.promo_code
-        })
-      });
-      const result = await res.json();
-      setAddLoading(false);
-      if (!res.ok) {
-        alert(result.error || 'Błąd dodawania rezerwacji');
-        return;
-      }
-      setAddModalOpen(false);
-      setAddForm({ date: '', time: '', user_email: '', name: '', phone: '', package_id: '', room_id: '', total_price: '', status: 'pending', promo_code: '' });
-      fetchBookings();
-      // Отправить письмо клиенту о новой брони
-      await fetch('/api/sendBookingEmail', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: addForm.user_email,
-          booking: {
-            date: addForm.date,
-            time: addForm.time,
-            package: packageMap[addForm.package_id] || addForm.package_id,
-            people: '',
-          },
-          type: 'new'
-        })
-      });
-    } catch {
-      setAddLoading(false);
-      alert('Błąd dodawania rezerwacji');
-    }
-  }
-
-  // Получаем роль из localStorage (как в /admin/page.tsx)
+  // Загружаем даты с резервациями и extra items
   useEffect(() => {
-    const email = typeof window !== 'undefined' ? localStorage.getItem('admin_email') : null;
-    if (!email) return;
-    supabase
-      .from('admins')
-      .select('role')
-      .eq('email', email)
-      .single()
-      .then(({ data }) => setAdminRole(data?.role || null));
+    async function fetchBookedDates() {
+      const { data } = await supabase.from('bookings').select('date');
+      if (data) {
+        const uniqueDates = Array.from(new Set(data.map((b: {date: string}) => b.date)));
+        setBookedDates(uniqueDates.map(d => new Date(d)));
+      }
+      // Загружаем extra items
+    const { data: extraItems } = await supabase.from('extra_items').select('id, name');
+      if (extraItems) {
+        setExtraItemMap(Object.fromEntries(extraItems.map((ei: {id: string, name: string}) => [ei.id, ei.name])));
+      }
+    }
+    fetchBookedDates();
   }, []);
 
-  async function handleDeleteBooking(id: string) {
-    setDeleteLoading(true);
-    const { error } = await supabase.from('bookings').delete().eq('id', id);
-    setDeleteLoading(false);
-    setDeleteId(null);
-    setDetailsId(null);
-    setDetails(null);
-    if (error) {
-      alert('Błąd usuwania: ' + error.message);
-      return;
+  useEffect(() => {
+    async function fetchData() {
+    setLoading(true);
+      // Получаем комнаты
+      const { data: roomsData } = await supabase.from('rooms').select('id, name');
+      setRooms((roomsData as Room[]) || []);
+      // Получаем пакеты
+      const { data: packagesData } = await supabase.from('packages').select('id, name, duration, cleanup_time');
+      setPackages(Object.fromEntries(((packagesData as {id: string, name: string, duration: number, cleanup_time?: number}[])||[]).map((p) => [p.id, p.name])));
+      setPackageDurations(Object.fromEntries(((packagesData as {id: string, duration: number}[])||[]).map((p) => [p.id, p.duration || 60])));
+      setPackageCleanupTimes(Object.fromEntries(((packagesData as {id: string, cleanup_time?: number}[])||[]).map((p) => [p.id, p.cleanup_time ?? 15])));
+      // Получаем бронирования на выбранную дату
+      const dateStr = formatDatePoland(date);
+      const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
+      setBookings((bookingsData as Booking[]) || []);
+      setLoading(false);
     }
-    fetchBookings();
+    fetchData();
+  }, [date]);
+
+  function getBooking(roomId: string, hour: string) {
+    // hour теперь полный формат, например 09:15
+    return bookings.filter(b => b.room_id === roomId && b.time.slice(0,5) === hour);
   }
 
-  // Функция для загрузки дат по диапазону (как на клиенте)
-  const loadDates = async (start: Date, end: Date) => {
+  function openModal(booking: Booking) {
+    setEditForm({
+      ...booking,
+      change_token: booking.change_token || '',
+    });
+    setModalOpen(true);
+    setError(null);
+    if (booking.package_id) {
+      fetchPackageDetails(booking.package_id);
+      setLoadingDates(true);
+      setLoadingTimes(true);
+      Promise.all([
+        fetchAvailableDatesCached(booking.package_id),
+        booking.date ? fetchAvailableTimesCached(booking.package_id, booking.date) : setAvailableTimes([])
+      ]).finally(() => {
+        setLoadingDates(false);
+        setLoadingTimes(false);
+      });
+    }
+  }
+  function closeModal() {
+    setModalOpen(false);
+    setEditForm(null);
+    setError(null);
+    setIsNew(false);
+  }
+
+  function openNewModal() {
+    setEditForm({ ...emptyBooking, date: new Date().toISOString().slice(0,10) });
+    setIsNew(true);
+    setModalOpen(true);
+    setError(null);
+    if (emptyBooking.package_id) {
+      fetchPackageDetails(emptyBooking.package_id);
+      setLoadingDates(true);
+      setLoadingTimes(true);
+      Promise.all([
+        fetchAvailableDatesCached(emptyBooking.package_id),
+        emptyBooking.date ? fetchAvailableTimesCached(emptyBooking.package_id, emptyBooking.date) : setAvailableTimes([])
+      ]).finally(() => {
+        setLoadingDates(false);
+        setLoadingTimes(false);
+      });
+    }
+  }
+
+  // Получение пакета с allowed_rooms и room_priority
+  async function fetchPackageDetails(packageId: string) {
+    const { data } = await supabase.from('packages').select('*').eq('id', packageId).single();
+    setSelectedPackage(data);
+  }
+
+  // Получение доступных дат
+  async function fetchAvailableDatesCached(packageId: string) {
+    if (datesCache[packageId]) {
+      setAvailableDates(datesCache[packageId]);
+      return;
+    }
     setLoadingDates(true);
-    const startDate = start.toISOString().slice(0, 10);
-    const endDate = end.toISOString().slice(0, 10);
+    const today = new Date();
+    const startDate = today.toISOString().slice(0,10);
+    const endDate = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate()).toISOString().slice(0,10);
     const res = await fetch('/api/booking/available-dates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ packageId: addForm.package_id, startDate, endDate })
+      body: JSON.stringify({ packageId, startDate, endDate })
     });
     const data = await res.json();
-    if (data.dates) {
-      setAvailableDates(prev => Array.from(new Set([...prev, ...data.dates])));
-    }
+    setAvailableDates(data.dates || []);
+    setDatesCache(prev => ({ ...prev, [packageId]: data.dates || [] }));
     setLoadingDates(false);
-  };
-
-  // Загружаем даты для текущего месяца при открытии модалки и выборе пакета
-  useEffect(() => {
-    if (!addModalOpen || !addForm.package_id) {
-      setAvailableDates([]);
-      setLoadedMonths(new Set());
-      setAddForm(f => ({ ...f, date: '', time: '' }));
-      return;
-    }
-    // Сброс при смене пакета
-    setAvailableDates([]);
-    setLoadedMonths(new Set());
-    const today = new Date();
-    const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    const monthKey = `${start.getFullYear()}-${start.getMonth()}`;
-    loadDates(start, end);
-    setLoadedMonths(new Set([monthKey]));
-    setAddForm(f => ({ ...f, date: '', time: '' }));
-  }, [addModalOpen, addForm.package_id]);
-
-  // При смене месяца подгружаем даты для нового месяца
-  const handleMonthChange = (date: Date) => {
-    const start = new Date(date.getFullYear(), date.getMonth(), 1);
-    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
-    const monthKey = `${start.getFullYear()}-${start.getMonth()}`;
-    if (!loadedMonths.has(monthKey)) {
-      loadDates(start, end);
-      setLoadedMonths(prev => new Set(prev).add(monthKey));
-    }
-  };
-
-  // Фильтр для доступных дат
-  const availableDatesSet = new Set(availableDates);
-  function isDateAvailable(date: Date) {
-    const iso = date.toISOString().slice(0, 10);
-    return availableDatesSet.has(iso);
   }
 
-  // Загрузка доступных времён при выборе даты
-  useEffect(() => {
-    if (!addForm.package_id || !addForm.date) {
-      setAvailableTimes([]);
-      setAddForm(f => ({ ...f, time: '' }));
-      return;
+  // Получение доступных времен
+  async function fetchAvailableTimesCached(packageId: string, date: string): Promise<string[]> {
+    const key = packageId + '_' + date;
+    if (timesCache[key]) {
+      setAvailableTimes(timesCache[key]);
+      return timesCache[key];
     }
-    setTimesLoading(true);
-    fetch('/api/booking/check-availability', {
+    setLoadingTimes(true);
+    const res = await fetch('/api/booking/check-availability', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ packageId: addForm.package_id, date: addForm.date })
-    })
-      .then(res => res.json())
-      .then(data => {
-        setAvailableTimes(data.times || []);
-        setTimesLoading(false);
-        setAddForm(f => ({ ...f, time: '' }));
-      })
-      .catch(() => {
-        setAvailableTimes([]);
-        setTimesLoading(false);
-      });
-  }, [addForm.package_id, addForm.date]);
+      body: JSON.stringify({ packageId, date })
+    });
+    const data = await res.json();
+    setAvailableTimes(data.times || []);
+    setTimesCache(prev => ({ ...prev, [key]: data.times || [] }));
+    setLoadingTimes(false);
+    return data.times || [];
+  }
 
-  // Автоматический расчет суммы бронирования
-  useEffect(() => {
-    async function fetchPrice() {
-      if (!addForm.package_id || !addForm.date || !addForm.time) {
-        setAddForm(f => ({ ...f, total_price: '' }));
-        return;
+  // Обработка выбора пакета
+  function handlePackageChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    handleChange(e);
+    const packageId = e.target.value;
+    if (packageId) {
+      fetchPackageDetails(packageId);
+      setLoadingDates(true);
+      setLoadingTimes(true);
+      Promise.all([
+        fetchAvailableDatesCached(packageId),
+        setAvailableTimes([])
+      ]).finally(() => {
+        setLoadingDates(false);
+        setLoadingTimes(false);
+      });
+      setEditForm(prev => prev ? { ...prev, package_id: packageId, date: '', time: '' } : prev);
+    } else {
+      setSelectedPackage(null);
+      setAvailableDates([]);
+      setAvailableTimes([]);
+    }
+  }
+
+  // Обработка выбора даты
+  function handleDateChange(date: Date | null) {
+    if (!editForm || !selectedPackage) return;
+    setEditForm(prev => prev ? { ...prev, date: date ? formatDatePoland(date) : '', time: '' } : prev);
+    if (date && editForm.package_id) {
+      setLoadingTimes(true);
+      fetchAvailableTimesCached(editForm.package_id, formatDatePoland(date)).finally(() => setLoadingTimes(false));
+    } else {
+      setAvailableTimes([]);
+    }
+  }
+
+  // Обработка выбора времени
+  function handleTimeChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    setEditForm(prev => prev ? { ...prev, time: e.target.value } : prev);
+  }
+
+  // --- При сохранении вычисляем room_id автоматически ---
+  async function handleSave() {
+    if (!editForm) return;
+    setSaving(true);
+    setError(null);
+    let roomId = '';
+    if (isNew && selectedPackage) {
+      // Получаем room_priority и allowed_rooms
+      const allowedRooms: string[] = selectedPackage.allowed_rooms || [];
+      const roomPriority: string[] = selectedPackage.room_priority && selectedPackage.room_priority.length > 0 ? selectedPackage.room_priority : allowedRooms;
+      // Перебираем комнаты по приоритету и ищем свободную
+      for (const roomIdCandidate of roomPriority) {
+        const { data: bookings } = await supabase.from('bookings').select('id').eq('room_id', roomIdCandidate).eq('date', editForm.date).eq('time', editForm.time);
+        if (!bookings || bookings.length === 0) {
+          roomId = roomIdCandidate;
+          break;
+        }
       }
-      try {
-        const res = await fetch('/api/booking/calc-price', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            packageId: addForm.package_id,
-            date: addForm.date,
-            time: addForm.time,
-            promoCode: addForm.promo_code || null,
-            extraItems: addExtraItems
-          })
-        });
-        const data = await res.json();
-        setAddForm(f => ({ ...f, total_price: data.totalPrice ? String(data.totalPrice) : '' }));
-      } catch {
-        setAddForm(f => ({ ...f, total_price: '' }));
+      if (!roomId) {
+        setError('Brak dostępnych pokoi na wybraną datę i godzinę');
+        setSaving(false);
+      return;
       }
     }
-    fetchPrice();
-  }, [addForm.package_id, addForm.date, addForm.time, addForm.promo_code, addExtraItems]);
+    if (isNew) {
+      const { user_email, name, package_id, date, time, status, phone, total_price, payment_id, promo_code, extra_items } = editForm;
+      const { error } = await supabase.from('bookings').insert([{ user_email, name, package_id, room_id: roomId, date, time, status, phone, total_price: Number(total_price), payment_id, promo_code, extra_items }]);
+      if (error) {
+        setError('Błąd zapisu: ' + error.message);
+      } else {
+        closeModal();
+        setIsNew(false);
+        const dateStr = (editForm.date || new Date().toISOString().slice(0,10));
+        const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
+        setBookings((bookingsData as Booking[]) || []);
+      }
+    } else {
+      const { id, ...fields } = editForm;
+      const { error } = await supabase.from('bookings').update(fields).eq('id', id);
+      if (error) {
+        setError('Błąd zapisu: ' + error.message);
+      } else {
+        closeModal();
+        const dateStr = editForm.date;
+        const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
+        setBookings((bookingsData as Booking[]) || []);
+      }
+    }
+    setSaving(false);
+  }
 
-  // Загружаем extra items при открытии модалки
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    const { name, value } = e.target;
+    setEditForm(prev => prev ? { ...prev, [name]: value } : prev);
+  }
+
+  // Обработка изменения/добавления/удаления extra items
+  function handleExtraItemChange(idx: number, field: 'id' | 'count', value: string) {
+    if (!editForm) return;
+    const items: {id: string, count?: number}[] = Array.isArray(editForm.extra_items) ? [...editForm.extra_items] : [];
+    if (field === 'count') items[idx][field] = Number(value);
+    else items[idx][field] = value;
+    setEditForm(prev => prev ? { ...prev, extra_items: items } : prev);
+  }
+  function handleExtraItemAdd() {
+    if (!editForm || !newExtraItem.id) return;
+    const items: {id: string, count?: number}[] = Array.isArray(editForm.extra_items) ? [...editForm.extra_items] : [];
+    items.push({ id: newExtraItem.id, count: newExtraItem.count });
+    setEditForm(prev => prev ? { ...prev, extra_items: items } : prev);
+    setNewExtraItem({ id: '', count: 1 });
+  }
+  function handleExtraItemRemove(idx: number) {
+    if (!editForm) return;
+    const items: {id: string, count?: number}[] = Array.isArray(editForm.extra_items) ? [...editForm.extra_items] : [];
+    items.splice(idx, 1);
+    setEditForm(prev => prev ? { ...prev, extra_items: items } : prev);
+  }
+
+  // Загружаем promo_codes, цены пакетов и extra_items
   useEffect(() => {
-    if (!addModalOpen) return;
-    fetch('/api/booking/extra-items')
-      .then(res => res.json())
-      .then((items) => setExtraItems(items || []));
-    setAddExtraItems([]);
-  }, [addModalOpen]);
+    async function fetchAll() {
+      // promo_codes
+      const { data: promoData } = await supabase.from('promo_codes').select('*');
+      if (promoData) setPromoCodes(promoData);
+      // package prices
+      const { data: pkgData } = await supabase.from('packages').select('id, price');
+      if (pkgData) setPackagePrices(Object.fromEntries((pkgData as {id: string, price: number}[]).map((p) => [p.id, Number(p.price)])));
+      // extra item prices
+      const { data: extraData } = await supabase.from('extra_items').select('id, price');
+      if (extraData) setExtraItemPrices(Object.fromEntries((extraData as {id: string, price: number}[]).map((ei) => [ei.id, Number(ei.price)])));
+    }
+    fetchAll();
+  }, []);
 
-  useEffect(() => { fetchMaps(); }, []);
-  useEffect(() => { fetchBookings(); }, [searchEmail, searchDate]);
+  // --- Автоматический пересчет цены ---
+  useEffect(() => {
+    async function recalc() {
+      if (!editForm) return;
+      let total = 0;
+      // Цена пакета
+      if (editForm.package_id && packagePrices[editForm.package_id]) {
+        total += packagePrices[editForm.package_id];
+      }
+      // Цена дополнительных предметов
+      if (Array.isArray(editForm.extra_items)) {
+        for (const ei of editForm.extra_items) {
+          if (ei.id && extraItemPrices[ei.id]) {
+            total += extraItemPrices[ei.id] * (ei.count || 1);
+          }
+        }
+      }
+      // Применяем промокод через API, если выбран
+      if (editForm.promo_code) {
+        const promo = promoCodes.find(p => p.code === editForm.promo_code);
+        if (promo) {
+          // Проверяем через API (как на клиенте)
+          const res = await fetch('/api/booking/check-promo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: promo.code, total, time: editForm.time })
+        });
+        const data = await res.json();
+          if (data.valid) {
+            total = data.newTotal;
+          }
+        }
+      }
+      setEditForm(prev => prev ? { ...prev, total_price: total.toFixed(2) } : prev);
+    }
+    recalc();
+  // eslint-disable-next-line
+  }, [editForm?.package_id, editForm?.extra_items, editForm?.promo_code]);
+
+  async function handleSendEmail() {
+    if (!editForm) return;
+    setEmailStatus(null);
+    setEmailSending(true);
+    try {
+      const packageName = packages[editForm.package_id] || '';
+      const cancelLink = editForm.change_token
+        ? `${process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun.pl'}/booking/change?token=${editForm.change_token}`
+        : undefined;
+      const payload = {
+        to: editForm.user_email,
+        booking: {
+          date: editForm.date,
+          time: editForm.time,
+          package: packageName,
+          name: editForm.name || '',
+          phone: editForm.phone || '',
+          extra_items: editForm.extra_items || [],
+          cancel_link: cancelLink,
+        },
+        type: 'new',
+      };
+      const res = await fetch('/api/sendBookingEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (res.ok) {
+        setEmailStatus('E-mail został wysłany!');
+      } else {
+        setEmailStatus('Błąd wysyłki e-maila');
+      }
+    } catch {
+      setEmailStatus('Błąd wysyłki e-maila');
+    }
+    setEmailSending(false);
+  }
 
   return (
-    <div style={{color:'#fff'}}>
-      <h1 style={{fontSize:28, fontWeight:800, color:'#f36e21', marginBottom:18}}>Rezerwacje</h1>
-      <p style={{fontSize:16, opacity:0.9, marginBottom:18}}>Przeglądaj i zarządzaj wszystkimi rezerwacjami klientów.</p>
-      <div style={{display:'flex', gap:16, marginBottom:18, flexWrap:'wrap'}}>
-        <input
-          type="text"
-          placeholder="Szukaj po e-mailu..."
-          value={searchEmail}
-          onChange={e=>setSearchEmail(e.target.value)}
-          style={{background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'8px 14px', fontSize:15, fontWeight:500, outline:'none'}}
-        />
-        <input
-          type="date"
-          value={searchDate}
-          onChange={e=>setSearchDate(e.target.value)}
-          style={{background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'8px 14px', fontSize:15, fontWeight:500, outline:'none'}}
-        />
-        <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'8px 14px', fontSize:15, fontWeight:500, outline:'none'}}>
-          <option value="">Wszystkie statusy</option>
-          <option value="pending">Oczekuje</option>
-          <option value="paid">Opłacone</option>
-          <option value="deposit">Zaliczka</option>
-          <option value="cancelled">Anulowane</option>
-        </select>
-        <select value={filterRoom} onChange={e=>setFilterRoom(e.target.value)} style={{background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'8px 14px', fontSize:15, fontWeight:500, outline:'none'}}>
-          <option value="">Wszystkie pokoje</option>
-          {Object.entries(roomMap).map(([id, name]) => (
-            <option key={id} value={id}>{name}</option>
-          ))}
-        </select>
-        <button onClick={()=>{setSearchEmail('');setSearchDate('');setFilterStatus('');setFilterRoom('');}} style={{background:'#23222a', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'8px 18px', fontWeight:700, fontSize:15, cursor:'pointer'}}>Wyczyść</button>
-        <button onClick={exportCSV} style={{background:'#f36e21', color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontWeight:700, fontSize:15, cursor:'pointer'}}>Eksportuj CSV</button>
-        <button onClick={()=>setAddModalOpen(true)} style={{background:'#4caf50', color:'#fff', border:'none', borderRadius:8, padding:'8px 18px', fontWeight:700, fontSize:15, cursor:'pointer'}}>Dodaj rezerwację</button>
+    <div className="p-4" style={{ background: '#f7f7fa', minHeight: '100vh' }}>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-gray-800">Kalendarz rezerwacji</h1>
+        <button
+          className="px-4 py-2 rounded bg-orange-600 text-white hover:bg-orange-700 font-semibold"
+          onClick={openNewModal}
+          type="button"
+        >
+          Dodaj rezerwację
+        </button>
       </div>
-      <div style={{background:'#23222a', borderRadius:12, padding:32, minHeight:180, color:'#fff', fontSize:16, overflowX:'auto'}}>
-        {loading ? (
-          <div>Ładowanie...</div>
-        ) : error ? (
-          <div style={{color:'#ff4d4f'}}>{error}</div>
-        ) : filtered.length === 0 ? (
-          <div>Brak rezerwacji.</div>
-        ) : (
-          <table style={{width:'100%', borderCollapse:'collapse', minWidth:900}}>
+      <div className="mb-4 flex items-center gap-4">
+        <span className="text-gray-700 relative">Data
+          {loading && (
+            <span className="absolute -right-5 top-1/2 -translate-y-1/2 animate-spin inline-block w-4 h-4 border-2 border-t-transparent border-gray-500 rounded-full ml-2"></span>
+          )}
+        :</span>
+        <DatePicker
+          selected={date}
+          onChange={d => d && setDate(d)}
+          dateFormat="yyyy-MM-dd"
+          className="border rounded px-2 py-1 bg-white text-gray-900"
+          locale="pl"
+          highlightDates={bookedDates}
+        />
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-400 bg-gray-50">
             <thead>
-              <tr style={{background:'#18171c', color:'#ff9f58'}}>
-                <th style={{padding:'8px 12px', textAlign:'left', cursor:'pointer'}} onClick={()=>{setSortField('date');setSortDir(d=>sortField==='date'&&d==='desc'?'asc':'desc')}}>
-                  Data {sortField==='date' ? (sortDir==='asc'?'▲':'▼') : ''}
+            <tr>
+              <th className="border border-gray-400 px-2 py-1 bg-gray-200 w-20 text-gray-700 relative">
+                Godzina
+                {loading && (
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin inline-block w-4 h-4 border-2 border-t-transparent border-gray-500 rounded-full ml-2"></span>
+                )}
                 </th>
-                <th style={{padding:'8px 12px', textAlign:'left'}}>Godzina</th>
-                <th style={{padding:'8px 12px', textAlign:'left'}}>E-mail</th>
-                <th style={{padding:'8px 12px', textAlign:'left'}}>Pakiet</th>
-                <th style={{padding:'8px 12px', textAlign:'left'}}>Pokój</th>
-                <th style={{padding:'8px 12px', textAlign:'left', cursor:'pointer'}} onClick={()=>{setSortField('total_price');setSortDir(d=>sortField==='total_price'&&d==='desc'?'asc':'desc')}}>
-                  Suma (PLN) {sortField==='total_price' ? (sortDir==='asc'?'▲':'▼') : ''}
+              {rooms.map((room) => {
+                const count = bookings.filter(b => b.room_id === room.id).length;
+                return (
+                  <th key={room.id} className="border border-gray-400 px-2 py-1 bg-gray-200 text-center text-gray-700" >
+                    {room.name}
+                    {count > 0 && (
+                      <span className="ml-2 inline-block bg-orange-500 text-white text-xs font-bold rounded-full px-2 py-0.5 align-middle">
+                        {count}
+                      </span>
+                    )}
                 </th>
-                <th style={{padding:'8px 12px', textAlign:'left', cursor:'pointer'}} onClick={()=>{setSortField('status');setSortDir(d=>sortField==='status'&&d==='desc'?'asc':'desc')}}>
-                  Status {sortField==='status' ? (sortDir==='asc'?'▲':'▼') : ''}
-                </th>
-                <th style={{padding:'8px 12px', textAlign:'left', minWidth: 180}}>Dodatki</th>
-                <th style={{padding:'8px 12px'}}></th>
-                <th style={{padding:'8px 12px'}}></th>
+                );
+              })}
               </tr>
             </thead>
             <tbody>
-              {filtered.map(b => (
-                <tr key={b.id} style={{borderBottom:'1px solid #333'}}>
-                  <td style={{padding:'8px 12px'}}>{b.date}</td>
-                  <td style={{padding:'8px 12px'}}>{b.time.slice(0,5)}</td>
-                  <td style={{padding:'8px 12px'}}>{b.user_email}</td>
-                  <td style={{padding:'8px 12px'}}>{packageMap[b.package_id] || b.package_id}</td>
-                  <td style={{padding:'8px 12px'}}>{roomMap[b.room_id] || b.room_id}</td>
-                  <td style={{padding:'8px 12px'}}>{Number(b.total_price).toFixed(2)}</td>
-                  <td style={{padding:'8px 12px', color: b.status==='paid' ? '#4caf50' : b.status==='pending' ? '#ff9f58' : b.status==='deposit' ? '#2196f3' : '#ff4d4f', fontWeight:700}}>{b.status}</td>
-                  <td style={{padding:'8px 12px', minWidth: 180}}>{Array.isArray(b.extra_items) && b.extra_items.length > 0 ? b.extra_items.map((ei: {id: string; count?: number}) => `${extraItemMap[ei.id] || ei.id}${ei.count ? ` ×${ei.count}` : ''}`).join(', ') : '-'}</td>
-                  <td style={{padding:'8px 12px'}}>
-                    <button onClick={()=>openDetails(b.id)} style={{background:'#23222a', color:'#f36e21', border:'2px solid #f36e21', borderRadius:6, padding:'6px 18px', fontWeight:600, cursor:'pointer'}}>Szczegóły</button>
+            {GODZINY.map((hour, rowIdx) => (
+              <tr key={hour}>
+                <td className="border border-gray-300 px-2 py-1 text-center font-semibold text-gray-700 bg-gray-100">{hour}</td>
+                {rooms.map((room) => {
+                  // Проверяем, есть ли бронирование, начинающееся в этот слот
+                  const bks = getBooking(room.id, hour);
+                  // Проверяем, не перекрывает ли этот слот уже занятая ячейка
+                  let isCovered = false;
+                  let isCleanup = false;
+                  // Найдём, есть ли бронирование, которое закончилось ровно перед этим слотом
+                  for (let prev = 0; prev < rowIdx; prev++) {
+                    const prevHour = GODZINY[prev];
+                    const prevBks = getBooking(room.id, prevHour);
+                    if (prevBks.length > 0) {
+                      const pkgId = prevBks[0].package_id;
+                      const duration = packageDurations[pkgId] || 60;
+                      const cleanup = packageCleanupTimes[pkgId] ?? 15;
+                      const slots = Math.floor(duration / 15) + 1;
+                      const prevStartIdx = GODZINY.indexOf(prevBks[0].time.slice(0,5));
+                      // Проверяем, перекрывает ли бронирование текущий слот
+                      if (prevStartIdx >= 0 && rowIdx > prevStartIdx && rowIdx < prevStartIdx + slots) {
+                        isCovered = true;
+                        break;
+                      }
+                      // Проверяем, нужно ли добавить уборку (может быть несколько слотов)
+                      if (prevStartIdx >= 0 && rowIdx >= prevStartIdx + slots && rowIdx < prevStartIdx + slots + Math.ceil(cleanup / 15)) {
+                        isCleanup = true;
+                        break;
+                      }
+                    }
+                  }
+                  if (isCovered) return null;
+                  if (isCleanup) {
+                    return (
+                      <td key={room.id} className="border border-gray-300 px-1 py-1 align-top min-w-[160px] bg-gray-300 text-gray-600 text-center font-semibold">
+                          Czas na czyszczenie
                   </td>
-                  <td style={{padding:'8px 12px', display:'block', verticalAlign:'middle', gap:10}}>
-                    <button onClick={()=>quickStatus(b.id,'paid')} style={{background:'#4caf50', color:'#fff', border:'none', borderRadius:6, padding:'6px 10px', fontWeight:600, cursor:'pointer', fontSize:13, margin: 5}}>Opłać</button>
-                    <button onClick={()=>quickStatus(b.id,'deposit')} style={{background:'#2196f3', color:'#fff', border:'none', borderRadius:6, padding:'6px 10px', fontWeight:600, cursor:'pointer', fontSize:13, margin: 5}}>Zaliczka</button>
-                    <button onClick={()=>quickStatus(b.id,'pending')} style={{background:'#ff9f58', color:'#fff', border:'none', borderRadius:6, padding:'6px 10px', fontWeight:600, cursor:'pointer', fontSize:13, margin: 5}}>Oczekuje</button>
-                    <button onClick={()=>quickStatus(b.id,'cancelled')} style={{background:'#ff4d4f', color:'#fff', border:'none', borderRadius:6, padding:'6px 10px', fontWeight:600, cursor:'pointer', fontSize:13, margin: 5}}>Anuluj</button>
+                    );
+                  }
+                  if (bks.length === 0) return <td key={room.id} className="border border-gray-300 px-1 py-1 align-top min-w-[160px] bg-white" />;
+                  // Если есть бронирование, определяем slots
+                  const pkgId = bks[0].package_id;
+                  const duration = packageDurations[pkgId] || 60;
+                  const slots = Math.floor(duration / 15) + 1;
+                  return (
+                    <td
+                      key={room.id}
+                      rowSpan={slots}
+                      className={`mb-2 p-2 rounded border shadow-sm cursor-pointer align-top min-w-[160px] ${getStatusColor(bks[0].status)}`}
+                      onClick={() => openModal(bks[0])}
+                    >
+                      <div className="font-bold">{bks[0].name || bks[0].user_email}</div>
+                      <div className="text-xs">{bks[0].time.slice(0,5)}{bks[0].time_end ? ` - ${bks[0].time_end.slice(0,5)}` : ''}</div>
+                      <div className="text-xs">Pakiet: {packages[bks[0].package_id] || bks[0].package_id}</div>
                   </td>
-                  <td style={{padding:'8px 12px', textAlign:'center'}}>
-                    {adminRole === 'superadmin' && (
-                      <button onClick={()=>setDeleteId(b.id)} title="Usuń rezerwację" style={{background:'#ff4d4f', color:'#fff', border:'none', borderRadius:6, padding:'6px 12px', fontWeight:600, cursor:'pointer', fontSize:15, display:'flex', alignItems:'center', gap:4, opacity:0.85}}>
-                        <svg width="16" height="16" fill="none" viewBox="0 0 16 16"><path d="M4 6v6a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="#fff" strokeWidth="1.5"/><path d="M2 4h12M6 2h4a1 1 0 0 1 1 1v1H5V3a1 1 0 0 1 1-1Z" stroke="#fff" strokeWidth="1.5"/></svg>
-                        <span style={{fontSize:13}}>Usuń</span>
-                      </button>
-                    )}
-                  </td>
+                  );
+                })}
                 </tr>
               ))}
             </tbody>
           </table>
-        )}
       </div>
-      {/* Модальное окно подробностей */}
-      {detailsId && (
-        <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}}>
-          <div style={{background:'#23222a', borderRadius:14, padding:'36px 32px', minWidth:340, maxWidth:480, boxShadow:'0 4px 32px #0008', color:'#fff', display:'flex', flexDirection:'column', gap:18, position:'relative'}}>
-            <button onClick={()=>{setDetailsId(null);setDetails(null);}} style={{position:'absolute', top:16, right:16, background:'none', border:'none', color:'#fff', fontSize:22, cursor:'pointer'}}>×</button>
-            <h2 style={{color:'#f36e21', fontWeight:800, fontSize:22, marginBottom:8}}>Szczegóły rezerwacji</h2>
-            {detailsLoading || !details ? (
-              <div>Ładowanie...</div>
-            ) : (
-              editMode && editForm ? (
-                <form onSubmit={handleEditSave} style={{display:'flex',flexDirection:'column',gap:12}}>
-                  <label>Data:
-                    <input type="date" value={editForm.date} onChange={e=>setEditForm({...editForm,date:e.target.value})} required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600, marginLeft: 10}} />
-                  </label>
-                  <label>Godzina:
-                    <input type="time" value={editForm.time} onChange={e=>setEditForm({...editForm,time:e.target.value})} required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600, marginLeft: 10}} />
-                  </label>
-                  <label>E-mail:
-                    <input type="email" value={editForm.user_email} onChange={e=>setEditForm({...editForm,user_email:e.target.value})} required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600, marginLeft: 10}} />
-                  </label>
-                  <label>Pakiet:
-                    <select value={editForm.package_id} onChange={e=>setEditForm({...editForm,package_id:e.target.value})} required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600, marginLeft: 10}}>
-                      {Object.entries(packageMap).map(([id, name])=>(<option key={id} value={id}>{name}</option>))}
+      {modalOpen && editForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-gray-100 rounded-lg shadow-lg p-6 w-full max-w-2xl relative">
+            <button onClick={closeModal} className="absolute top-2 right-2 text-gray-500 hover:text-black text-2xl">×</button>
+            <h2 className="text-xl font-bold mb-4 text-gray-900">Edytuj rezerwację</h2>
+            <form className="space-y-2" onSubmit={e => {e.preventDefault(); handleSave();}}>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs text-gray-800">Użytkownik (email)</label>
+                  <input className="w-full border rounded px-2 py-1 bg-white text-gray-900" value={editForm.user_email || ''} name="user_email" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Imię</label>
+                  <input className="w-full border rounded px-2 py-1 bg-white text-gray-900" value={editForm.name || ''} name="name" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Telefon</label>
+                  <input className="w-full border rounded px-2 py-1 bg-white text-gray-900" value={editForm.phone || ''} name="phone" onChange={handleChange} />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Pakiet</label>
+                  <select
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="package_id"
+                    value={editForm.package_id || ''}
+                    onChange={handlePackageChange}
+                  >
+                    <option value="">Wybierz pakiet...</option>
+                    {Object.entries(packages).map(([id, name]) => (
+                      <option key={id} value={id}>{name}</option>
+                    ))}
                     </select>
-                  </label>
-                  <label>Pokój:
-                    <select value={editForm.room_id} onChange={e=>setEditForm({...editForm,room_id:e.target.value})} required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600, marginLeft: 10}}>
-                      {Object.entries(roomMap).map(([id, name])=>(<option key={id} value={id}>{name}</option>))}
-                    </select>
-                  </label>
-                  <label>Status:
-                    <select value={editForm.status} onChange={e=>setEditForm({...editForm,status:e.target.value})} required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600, marginLeft: 10}}>
-                      <option value="pending">Oczekuje</option>
-                      <option value="paid">Opłacone</option>
-                      <option value="deposit">Zaliczka</option>
-                      <option value="cancelled">Anulowane</option>
-                    </select>
-                  </label>
-                  <label>Kod promocyjny:
-                    <input type="text" value={editForm.promo_code||''} onChange={e=>setEditForm({...editForm,promo_code:e.target.value})} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600, marginLeft: 10}} />
-                  </label>
-                  <label>Suma:
-                    <input type="number" value={editForm.total_price} onChange={e=>setEditForm({...editForm,total_price:Number(e.target.value)})} required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600, marginLeft: 10}} />
-                  </label>
-                  {/* Можно добавить редактирование доп. предметов при необходимости */}
-                  <div style={{display:'flex',gap:12,marginTop:8}}>
-                    <button type="submit" style={{background:'#f36e21',color:'#fff',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:700,fontSize:17,cursor:'pointer'}}>Zapisz</button>
-                    <button type="button" onClick={()=>setEditMode(false)} style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'10px 28px',fontWeight:700,fontSize:17,cursor:'pointer'}}>Anuluj</button>
                   </div>
-                </form>
-              ) : (
-              <div style={{fontSize:16, lineHeight:1.7}}>
-                <div><b>Data:</b> {details.date}</div>
-                <div><b>Godzina:</b> {details.time?.slice(0,5)}</div>
-                <div><b>E-mail:</b> {details.user_email}</div>
-                <div><b>Pakiet:</b> {packageMap[details.package_id] || details.package_id}</div>
-                <div><b>Pokój:</b> {roomMap[details.room_id] || details.room_id}</div>
-                <div><b>Suma:</b> {Number(details.total_price).toFixed(2)} PLN</div>
-                <div><b>Status:</b> {details.status}</div>
-                {details.promo_code && <div><b>Kod promocyjny:</b> {details.promo_code}</div>}
-                {details.extra_items && Array.isArray(details.extra_items) && details.extra_items.length > 0 && (
-                  <div><b>Dodatkowe przedmioty:</b>
-                    <ul style={{margin:'6px 0 0 18px'}}>
-                      {details.extra_items.map((ei, idx) => (
-                        <li key={idx}>{extraItemMap[ei.id] || ei.id}{ei.count ? ` × ${ei.count}` : ''}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <div style={{fontSize:13, color:'#aaa', marginTop:8}}><b>Utworzono:</b> {details.created_at?.replace('T',' ').slice(0,16)}</div>
-                <div style={{marginTop:18}}>
-                  <b>Historia zmian:</b>
-                  {historyLoading ? (
-                    <div style={{color:'#ff9f58', fontSize:14, marginTop:6}}>Ładowanie historii...</div>
-                  ) : history.length === 0 ? (
-                    <div style={{color:'#aaa', fontSize:14, marginTop:6}}>Brak historii zmian.</div>
+                <div>
+                  <label className="block text-xs text-gray-800">Data</label>
+                  {(loadingDates || (editForm.package_id && availableDates.length === 0)) ? (
+                    <div className="flex justify-center items-center h-10">
+                      <span className="animate-spin inline-block w-6 h-6 border-4 border-t-transparent border-gray-500 rounded-full"></span>
+                    </div>
                   ) : (
-                    <ul style={{margin:'8px 0 0 18px', fontSize:14}}>
-                      {history.map(h => (
-                        <li key={h.id} style={{marginBottom:4}}>
-                          <span style={{color:'#ff9f58'}}>{h.created_at.replace('T',' ').slice(0,16)}</span>: <b>{h.action}</b>{h.comment ? ` — ${h.comment}` : ''}
-                        </li>
-                      ))}
-                    </ul>
+                    <DatePicker
+                      selected={editForm.date ? parsePolandDate(editForm.date) : null}
+                      onChange={handleDateChange}
+                      dateFormat="yyyy-MM-dd"
+                      className="border rounded px-2 py-1 bg-white text-gray-900 w-full"
+                      locale="pl"
+                      includeDates={availableDates.map(d => parsePolandDate(d))}
+                      placeholderText="Wybierz datę"
+                    />
                   )}
                 </div>
-                <div style={{marginTop:18}}>
-                  <b>Komentarze:</b>
-                  {commentsLoading ? (
-                    <div style={{color:'#ff9f58', fontSize:14, marginTop:6}}>Ładowanie komentarzy...</div>
-                  ) : comments.length === 0 ? (
-                    <div style={{color:'#aaa', fontSize:14, marginTop:6}}>Brak komentarzy.</div>
+                <div>
+                  <label className="block text-xs text-gray-800">Godzina</label>
+                  {(loadingTimes || (editForm.package_id && editForm.date && availableTimes.length === 0)) ? (
+                    <div className="flex justify-center items-center h-10">
+                      <span className="animate-spin inline-block w-6 h-6 border-4 border-t-transparent border-gray-500 rounded-full"></span>
+                    </div>
                   ) : (
-                    <ul style={{margin:'8px 0 0 18px', fontSize:14}}>
-                      {comments.map(c => (
-                        <li key={c.id} style={{marginBottom:4}}>
-                          <span style={{color:'#ff9f58'}}>{c.created_at.replace('T',' ').slice(0,16)}</span> <b>{c.author_role === 'admin' ? 'Admin' : 'Klient'}:</b> {c.text}
-                        </li>
+                    <select
+                      className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                      name="time"
+                      value={editForm.time || ''}
+                      onChange={handleTimeChange}
+                      disabled={!editForm.date}
+                    >
+                      <option value="">Wybierz godzinę...</option>
+                      {availableTimes.map(t => (
+                        <option key={t} value={t}>{t}</option>
                       ))}
-                    </ul>
+                    </select>
                   )}
                 </div>
-                <div style={{marginTop:18,display:'flex',gap:12}}>
-                  <button onClick={()=>{if(details) {setEditForm({...details});setEditMode(true);}}} style={{background:'#2196f3',color:'#fff',border:'none',borderRadius:8,padding:'10px 28px',fontWeight:700,fontSize:17,cursor:'pointer'}}>Edytuj</button>
-                </div>
-              </div>
-              )
-            )}
-            {adminRole === 'superadmin' && details && (
-              <button onClick={()=>setDeleteId(details.id)} style={{marginTop:24, background:'#ff4d4f', color:'#fff', border:'none', borderRadius:8, padding:'10px 0', fontWeight:700, fontSize:16, cursor:'pointer', opacity:0.85, display:'flex', alignItems:'center', gap:8, justifyContent:'center'}}>
-                <svg width="18" height="18" fill="none" viewBox="0 0 16 16"><path d="M4 6v6a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6" stroke="#fff" strokeWidth="1.5"/><path d="M2 4h12M6 2h4a1 1 0 0 1 1 1v1H5V3a1 1 0 0 1 1-1Z" stroke="#fff" strokeWidth="1.5"/></svg>
-                <span style={{fontSize:15}}>Usuń rezerwację</span>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Модальное окно добавления бронирования */}
-      {addModalOpen && (
-        <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}}>
-          <div className="modal-booking-simple">
-            <div className="modal-simple-header">
-              <span className="modal-simple-title">Dodaj rezerwację</span>
-              <button className="modal-simple-close" type="button" onClick={()=>setAddModalOpen(false)} title="Zamknij">×</button>
-            </div>
-            <form onSubmit={handleAddBooking} className="form-simple">
-              <label>Pakiet:
-                <select value={addForm.package_id} onChange={e=>setAddForm({...addForm,package_id:e.target.value})} required>
-                  <option value="">Wybierz pakiet</option>
-                  {Object.entries(packageMap).map(([id, name])=>(<option key={id} value={id}>{name}</option>))}
-                </select>
-              </label>
-              <label>Data:
-                <DatePicker
-                  selected={addForm.date ? new Date(addForm.date + 'T12:00:00') : null}
-                  onChange={date => {
-                    if (date) {
-                      const iso = date.getFullYear() + '-' +
-                        String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                        String(date.getDate()).padStart(2, '0');
-                      setAddForm(f => ({ ...f, date: iso, time: '' }));
-                    }
-                  }}
-                  filterDate={isDateAvailable}
-                  minDate={new Date()}
-                  maxDate={new Date(new Date().getFullYear(), new Date().getMonth() + 6, 0)}
-                  onMonthChange={handleMonthChange}
-                  placeholderText="Wybierz datę"
-                  dateFormat="yyyy-MM-dd"
-                  className="datepicker-input"
-                  disabled={loadingDates || availableDates.length === 0}
-                  popperPlacement="bottom"
-                  locale="pl"
-                />
-                {loadingDates && <span className="modal-hint" style={{color:'#fff', background:'#009900', borderRadius:6, padding:'4px 10px', fontSize:14, fontWeight:600}}>Ładowanie...</span>}
-                {!loadingDates && addForm.package_id === '' && <span className="modal-hint">Najpierw wybierz pakiet</span>}
-                {!loadingDates && addForm.package_id !== '' && availableDates.length === 0 && <span className="modal-hint">Brak dostępnych dat</span>}
-              </label>
-              <label>Godzina:
-                {timesLoading ? (
-                  <span className="modal-hint">Ładowanie...</span>
-                ) : availableTimes.length === 0 ? (
-                  <span className="modal-hint">Najpierw wybierz datę</span>
-                ) : (
-                  <select value={addForm.time} onChange={e=>setAddForm({...addForm,time:e.target.value})} required>
-                    <option value="">Wybierz godzinę</option>
-                    {availableTimes.map(time => (
-                      <option key={time} value={time}>{time}</option>
+                <div>
+                  <label className="block text-xs text-gray-800">Kod promocyjny</label>
+                  <select
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="promo_code"
+                    value={editForm.promo_code || ''}
+                    onChange={handleChange}
+                  >
+                    <option value="">Brak</option>
+                    {promoCodes.map(pc => (
+                      <option key={pc.id} value={pc.code}>{pc.code}</option>
                     ))}
                   </select>
-                )}
-              </label>
-              <label>E-mail:
-                <input type="email" value={addForm.user_email} onChange={e=>setAddForm({...addForm,user_email:e.target.value})} required />
-              </label>
-              <label>Imię:
-                <input type="text" value={addForm.name} onChange={e=>setAddForm({...addForm,name:e.target.value})} />
-              </label>
-              <label>Telefon:
-                <input type="text" value={addForm.phone} onChange={e=>setAddForm({...addForm,phone:e.target.value})} />
-              </label>
-              <label>Suma (PLN):
-                <input type="number" value={addForm.total_price} readOnly tabIndex={-1} style={{background:'#222', color:'#fff', opacity:0.8, cursor:'not-allowed'}} />
-              </label>
-              <label>Status:
-                <select value={addForm.status} onChange={e=>setAddForm({...addForm,status:e.target.value})} required>
-                  <option value="pending">Oczekuje</option>
-                  <option value="paid">Opłacone</option>
-                  <option value="deposit">Zaliczka</option>
-                  <option value="cancelled">Anulowane</option>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Cena</label>
+                  <input className="w-full border rounded px-2 py-1 bg-white text-gray-900" value={editForm.total_price || ''} name="total_price" readOnly />
+              </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Status</label>
+                  <select
+                    className={`w-full border rounded px-2 py-1 bg-white text-gray-900 ${getStatusColor(editForm.status)}`}
+                    name="status"
+                    value={editForm.status || ''}
+                    onChange={handleChange}
+                  >
+                    {STATUS_OPTIONS.map(opt => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs text-gray-800">Extra items</label>
+                  <div className="w-full border rounded px-2 py-1 bg-white min-h-[38px] text-gray-900">
+                    {/* Список выбранных */}
+                    {Array.isArray(editForm.extra_items) && editForm.extra_items.length > 0 ? (
+                      <ul className="mb-2">
+                        {editForm.extra_items.map((ei: {id: string, count?: number}, idx: number) => (
+                          <li key={ei.id + '-' + idx} className="flex items-center gap-2 mb-1">
+                            <select
+                              className="border rounded px-1 py-0.5 text-xs"
+                              value={ei.id}
+                              onChange={e => handleExtraItemChange(idx, 'id', e.target.value)}
+                            >
+                              <option value="">Wybierz...</option>
+                              {Object.entries(extraItemMap).map(([id, name]) => (
+                                <option key={id} value={id}>{name}</option>
+                              ))}
+                            </select>
+                            <input
+                              type="number"
+                              min={1}
+                              className="border rounded px-1 py-0.5 w-14 text-xs"
+                              value={ei.count || 1}
+                              onChange={e => handleExtraItemChange(idx, 'count', e.target.value)}
+                            />
+                            <span className="text-xs">{extraItemMap[ei.id] || ei.id}</span>
+                            <button type="button" className="text-red-500 text-xs ml-1" onClick={() => handleExtraItemRemove(idx)}>Usuń</button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <span className="text-gray-400">Brak</span>}
+                    {/* Добавление нового */}
+                    <div className="flex items-center gap-2 mt-2">
+                      <select
+                        className="border rounded px-1 py-0.5 text-xs"
+                        value={newExtraItem.id}
+                        onChange={e => setNewExtraItem(prev => ({ ...prev, id: e.target.value }))}
+                      >
+                        <option value="">Dodaj...</option>
+                        {Object.entries(extraItemMap).map(([id, name]) => (
+                          <option key={id} value={id}>{name}</option>
+                        ))}
                 </select>
-              </label>
-              <label>Kod promocyjny:
-                <input type="text" value={addForm.promo_code} onChange={e=>setAddForm({...addForm,promo_code:e.target.value})} />
-              </label>
-              {extraItems.length > 0 && (
-                <label>Dodatki:
-                  <div style={{margin:'8px 0 8px 0',display:'flex',flexDirection:'column',gap:8}}>
-                    {extraItems.map(item => {
-                      const selected = addExtraItems.find(ei => ei.id === item.id)?.count || 0;
-                      return (
-                        <div key={item.id} style={{display:'flex',alignItems:'center',background:'#18171c',border:'1.5px solid #f36e21',borderRadius:6,padding:'6px 10px',fontSize:15,fontWeight:600}}>
-                          <span style={{flex:1}}>{item.name} (+{item.price} zł)</span>
-                          <button type="button" onClick={()=>setAddExtraItems(eis=>eis.map(ei=>ei.id===item.id?{...ei,count:Math.max(0,ei.count-1)}:ei))} disabled={selected===0} style={{marginRight:6}}>-</button>
-                          <input type="number" min={0} value={selected} onChange={e=>{
-                            const value = Math.max(0,Number(e.target.value));
-                            setAddExtraItems(eis=>[...eis.filter(ei=>ei.id!==item.id),...(value>0?[{id:item.id,count:value}]:[])]);
-                          }} style={{width:78,textAlign:'center'}} />
-                          <button type="button" onClick={()=>setAddExtraItems(eis=>[...eis.filter(ei=>ei.id!==item.id),{id:item.id,count:selected+1}])} style={{marginLeft:6}}>+</button>
+                      <input
+                        type="number"
+                        min={1}
+                        className="border rounded px-1 py-0.5 w-14 text-xs"
+                        value={newExtraItem.count}
+                        onChange={e => setNewExtraItem(prev => ({ ...prev, count: Number(e.target.value) }))}
+                      />
+                      <button type="button" className="px-2 py-1 rounded bg-blue-500 text-white text-xs" onClick={handleExtraItemAdd}>Dodaj</button>
                         </div>
-                      );
-                    })}
                   </div>
-                </label>
-              )}
-              <div className="modal-simple-actions">
-                <button type="submit" disabled={addLoading} className="modal-btn-simple modal-btn-main">{addLoading ? 'Dodawanie...' : 'Dodaj'}</button>
-                <button type="button" onClick={()=>setAddModalOpen(false)} className="modal-btn-simple modal-btn-cancel">Anuluj</button>
+                </div>
+              </div>
+              {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
+              {emailStatus && <div className="text-blue-700 text-sm mt-2">{emailStatus}</div>}
+              <div className="flex gap-2 mt-4 justify-end">
+                <button type="button" onClick={closeModal} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Zamknij</button>
+                <button type="submit" disabled={saving} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">{saving ? 'Zapisywanie...' : 'Zapisz'}</button>
+                <div style={{display:'flex', alignItems:'center', gap:4}}>
+                  <button
+                    type="button"
+                    onClick={handleSendEmail}
+                    disabled={emailSending || !editForm.user_email || !editForm.date || !editForm.time || !editForm.package_id}
+                    className="px-4 py-2 rounded bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
+                    style={{minWidth:140}}
+                  >
+                    {emailSending ? 'Wysyłanie...' : 'Wyślij e-mail'}
+                  </button>
+                  <EmailInfoTooltip />
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
-      {/* Модальное окно подтверждения удаления */}
-      {deleteId && (
-        <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.55)', zIndex:2000, display:'flex', alignItems:'center', justifyContent:'center'}}>
-          <div style={{background:'#23222a', borderRadius:14, padding:'36px 32px', minWidth:320, boxShadow:'0 4px 32px #0008', color:'#fff', display:'flex', flexDirection:'column', gap:18, alignItems:'center'}}>
-            <div style={{fontSize:18, fontWeight:700, marginBottom:8}}>Czy na pewno chcesz usunąć tę rezerwację?</div>
-            <div style={{display:'flex', gap:12}}>
-              <button onClick={()=>handleDeleteBooking(deleteId)} disabled={deleteLoading} style={{background:'#ff4d4f', color:'#fff', border:'none', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, cursor:deleteLoading?'not-allowed':'pointer'}}>{deleteLoading ? 'Usuwanie...' : 'Usuń'}</button>
-              <button onClick={()=>setDeleteId(null)} style={{background:'#23222a', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, cursor:'pointer'}}>Anuluj</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Глобальные стили для react-datepicker */}
-      <style jsx global>{`
-        .modal-booking-simple {
-          background: #23222a;
-          border-radius: 10px;
-          color: #fff;
-          max-width: 420px;
-          min-width: 260px;
-          width: 100%;
-          max-height: 90vh;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-          overflow-y: auto;
-          box-shadow: 0 4px 24px #0007;
-        }
-        .modal-simple-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 16px 18px 8px 18px;
-        }
-        .modal-simple-title {
-          font-size: 20px;
-          font-weight: 700;
-          color: #f36e21;
-        }
-        .modal-simple-close {
-          background: none;
-          border: none;
-          color: #fff;
-          font-size: 28px;
-          font-weight: 700;
-          cursor: pointer;
-          line-height: 1;
-          padding: 0 6px;
-        }
-        .modal-simple-close:hover {
-          color: #f36e21;
-        }
-        .form-simple {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          padding: 10px 18px 18px 18px;
-        }
-        .form-simple label {
-          font-weight: 500;
-          font-size: 15px;
-          margin-bottom: 2px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .form-simple input,
-        .form-simple select,
-        .form-simple .datepicker-input {
-          min-height: 36px;
-          width: 100%;
-          box-sizing: border-box;
-          background: #18171c;
-          color: #fff;
-          border: 1.5px solid #f36e21;
-          border-radius: 6px;
-          padding: 7px 12px;
-          font-size: 15px;
-          font-weight: 500;
-        }
-        .modal-hint {
-          display: block;
-          margin-top: 2px;
-          color: #aaa;
-          font-size: 13px;
-        }
-        .modal-simple-actions {
-          display: flex;
-          gap: 10px;
-          justify-content: flex-end;
-          margin-top: 10px;
-        }
-        .modal-btn-simple {
-          border: none;
-          border-radius: 6px;
-          font-size: 15px;
-          font-weight: 700;
-          padding: 9px 22px;
-          cursor: pointer;
-        }
-        .modal-btn-main {
-          background: #f36e21;
-          color: #fff;
-        }
-        .modal-btn-main:disabled {
-          background: #bdbdbd;
-          color: #fff;
-          cursor: not-allowed;
-        }
-        .modal-btn-cancel {
-          background: #23222a;
-          color: #fff;
-          border: 1.5px solid #f36e21;
-        }
-        .modal-btn-cancel:hover {
-          background: #18171c;
-          color: #f36e21;
-        }
-        @media (max-width: 600px) {
-          .modal-booking-simple {
-            max-width: 100vw;
-            min-width: 0;
-            width: 100vw;
-            height: 100vh;
-            border-radius: 0;
-          }
-          .modal-simple-header, .form-simple {
-            padding-left: 8px;
-            padding-right: 8px;
-          }
-        }
-        /* Остальные стили react-datepicker — как раньше */
-        .datepicker-input {
-          background: #18171c;
-          color: #fff;
-          border: 1.5px solid #f36e21;
-          border-radius: 6px;
-          padding: 7px 12px;
-          font-size: 15px;
-          font-weight: 500;
-          width: 100%;
-        }
-        .react-datepicker__input-container input {
-          background: #18171c;
-          color: #fff;
-          border: 1.5px solid #f36e21;
-          border-radius: 6px;
-          padding: 7px 12px;
-          font-size: 15px;
-          font-weight: 500;
-          width: 100%;
-        }
-        .react-datepicker {
-          background: #23222a;
-          border: 1.5px solid #f36e21;
-          color: #fff;
-        }
-        .react-datepicker__header {
-          background: #18171c;
-          border-bottom: 1px solid #f36e21;
-        }
-        .react-datepicker__day,
-        .react-datepicker__day-name {
-          color: #fff;
-        }
-        .react-datepicker__day--selected,
-        .react-datepicker__day--keyboard-selected {
-          background: #f36e21;
-          color: #fff;
-        }
-        .react-datepicker__day--today {
-          box-shadow: 0 0 0 2px #f36e21;
-          border-radius: 6px;
-        }
-        .react-datepicker__day--disabled {
-          color: #888;
-          background: #02020290;
-          color: #990000;
-          border-radius: 8px;
-          font-weight: 600;
-        }
-        .react-datepicker__current-month,
-        .react-datepicker__navigation-icon {
-          color: #fff;
-        }
-        .react-datepicker__triangle {
-          display: none;
-        }
-      `}</style>
+      {loading && <div className="mt-4 text-gray-700">Ładowanie...</div>}
     </div>
   );
 }
+
+export default withAdminAuth(BookingsPage);

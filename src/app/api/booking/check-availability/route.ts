@@ -25,7 +25,17 @@ function getTimeSlots(start: string, end: string, interval: number, minStart: st
 }
 
 export async function POST(req: Request) {
-  const { packageId, date } = await req.json();
+  const { packageId, date, token } = await req.json();
+  let ignoreBookingId: string | null = null;
+  if (token) {
+    // Получаем bookingId по токену
+    const { data: booking } = await supabase
+      .from('bookings')
+      .select('id')
+      .eq('change_token', token)
+      .single();
+    if (booking) ignoreBookingId = booking.id;
+  }
 
   // Получаем пакет и список допустимых комнат
   const { data: pkg, error: pkgError } = await supabase
@@ -69,7 +79,7 @@ export async function POST(req: Request) {
       // Получаем все бронирования в этой комнате на этот день
       const { data: bookings, error: bookingError } = await supabase
         .from('bookings')
-        .select('time, package_id')
+        .select('time, package_id, id')
         .eq('room_id', roomId)
         .eq('date', date);
       if (bookingError) continue;
@@ -79,6 +89,7 @@ export async function POST(req: Request) {
       const slotEnd = addMinutes(slotStart, duration + cleanup);
       let overlap = false;
       for (const b of bookings || []) {
+        if (ignoreBookingId && b.id === ignoreBookingId) continue;
         const bStart = b.time;
         const bEnd = addMinutes(bStart, duration + cleanup);
         // Проверяем пересечение интервалов

@@ -26,7 +26,7 @@ export async function POST(req: Request) {
   // --- Проверка времени действия промокода ---
   if (promo.time_from && promo.time_to && time) {
     // time, time_from, time_to — строки вида '14:00'
-    if (time < promo.time_from || time >= promo.time_to) {
+    if (time < promo.time_from || time > promo.time_to) {
       return NextResponse.json({ valid: false, message: 'Промокод действует только в определённые часы' }, { status: 400 });
     }
   }

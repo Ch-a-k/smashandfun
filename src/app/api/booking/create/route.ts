@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import crypto from 'crypto';
 
 export async function POST(req: Request) {
   const { email, packageId, date, time, extraItems, promoCode, name, phone } = await req.json();
@@ -96,6 +97,9 @@ export async function POST(req: Request) {
     }
   }
 
+  // Генерируем change_token
+  const changeToken = crypto.randomBytes(24).toString('hex');
+
   // Создаём бронирование
   const { data: booking, error: bookingError } = await supabase
     .from('bookings')
@@ -111,7 +115,8 @@ export async function POST(req: Request) {
         status: 'pending',
         promo_code: promoCode || null,
         name: name || null,
-        phone: phone || null
+        phone: phone || null,
+        change_token: changeToken
       }
     ])
     .select()

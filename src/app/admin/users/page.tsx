@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from '@/lib/supabaseClient';
+import { withAdminAuth } from '../components/withAdminAuth';
 
 interface User {
   id: string;
@@ -15,7 +16,7 @@ interface UserStats extends User {
   bookingsSum: number;
 }
 
-export default function UsersPage() {
+function UsersPage() {
   const [users, setUsers] = useState<UserStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -125,4 +126,6 @@ export default function UsersPage() {
       </div>
     </div>
   );
-} 
+}
+
+export default withAdminAuth(UsersPage); 

@@ -15,13 +15,20 @@ const menu = [
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [role, setRole] = useState<string | null>(null);
+  const [isAuth, setIsAuth] = useState(true);
   useEffect(() => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
     const email = typeof window !== 'undefined' ? localStorage.getItem('admin_email') : null;
-    if (!email) return;
+    if (!token || !email) {
+      setIsAuth(false);
+      return;
+    }
+    setIsAuth(true);
     import('@/lib/supabaseClient').then(({ supabase }) => {
       supabase.from('admins').select('role').eq('email', email).single().then(({ data }) => setRole(data?.role || null));
     });
   }, []);
+  if (!isAuth) return null;
   return (
     <aside style={{
       width: 220,

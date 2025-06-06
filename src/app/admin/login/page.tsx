@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+
 import { supabase } from '@/lib/supabaseClient';
 
 export default function AdminLogin() {
@@ -8,7 +8,6 @@ export default function AdminLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +45,11 @@ export default function AdminLogin() {
       localStorage.setItem('admin_token', data.session.access_token);
     }
     setLoading(false);
-    router.push("/admin");
+    if (adminData.role === 'superadmin') {
+      window.location.replace('/admin/admins');
+    } else {
+      window.location.replace('/admin');
+    }
   };
 
   return (

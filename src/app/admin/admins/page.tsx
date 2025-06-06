@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabaseClient';
+import { withAdminAuth } from '../components/withAdminAuth';
 
 interface Admin {
   id: string;
@@ -9,8 +9,7 @@ interface Admin {
   role: 'admin' | 'superadmin';
 }
 
-export default function AdminsPage() {
-  const router = useRouter();
+function AdminsPage() {
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -24,25 +23,6 @@ export default function AdminsPage() {
   const [newPwd, setNewPwd] = useState("");
   const [pwdLoading, setPwdLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function checkRole() {
-      const email = typeof window !== "undefined" ? localStorage.getItem("admin_email") : null;
-      if (!email) {
-        router.replace("/admin/login");
-        return;
-      }
-      const { data } = await supabase
-        .from("admins")
-        .select("role")
-        .eq("email", email)
-        .single();
-      if (!data || data.role !== "superadmin") {
-        router.replace("/admin/bookings");
-      }
-    }
-    checkRole();
-  }, [router]);
 
   async function fetchAdmins() {
     setLoading(true);
@@ -240,4 +220,6 @@ export default function AdminsPage() {
       </div>
     </div>
   );
-} 
+}
+
+export default withAdminAuth(AdminsPage); 

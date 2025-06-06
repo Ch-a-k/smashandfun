@@ -49,12 +49,28 @@ const flyingImages = [
   '/images/6o.png',
 ];
 
-// --- Функция для корректного преобразования строки даты в локальный объект Date ---
-function parseLocalDate(str: string): Date | null {
+// Возвращает текущую дату/время в зоне Europe/Warsaw
+function getPolandDate(): Date {
+  const now = new Date();
+  const polandString = now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
+  return new Date(polandString);
+}
+
+// Преобразует строку 'YYYY-MM-DD' в Date в зоне Europe/Warsaw
+function parsePolandDate(str: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
   const [y, m, d] = str.split('-').map(Number);
-  // Ставим полдень, чтобы избежать смещения накануне
-  return new Date(y, m - 1, d, 12, 0, 0);
+  const polandString = new Date(y, m - 1, d).toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
+  return new Date(polandString);
+}
+
+// Возвращает YYYY-MM-DD для даты в зоне Europe/Warsaw
+function formatDatePoland(date: Date): string {
+  const poland = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
+  const year = poland.getFullYear();
+  const month = (poland.getMonth() + 1).toString().padStart(2, '0');
+  const day = poland.getDate().toString().padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function FlyingObjects() {
@@ -131,6 +147,9 @@ export default function BookingPage() {
   const [loadingDates, setLoadingDates] = useState(false);
   const [promoStatus, setPromoStatus] = useState<'idle'|'checking'|'valid'|'invalid'>('idle');
   const [promoDiscount, setPromoDiscount] = useState<{amount: number, percent: number, newTotal: number}|null>(null);
+  // Валидация email и телефона
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
+  const phoneValid = /^[+]?[(]?[0-9]{2,4}[)]?[-\s./0-9]*$/.test(form.phone) && form.phone.replace(/\D/g, '').length >= 9;
 
   // Селектор языка (PL/EN)
   const LangSelector = (
@@ -180,8 +199,8 @@ export default function BookingPage() {
   // Функция для загрузки дат по диапазону
   const loadDates = async (start: Date, end: Date) => {
     setLoadingDates(true);
-    const startDate = start.toISOString().slice(0, 10);
-    const endDate = end.toISOString().slice(0, 10);
+    const startDate = formatDatePoland(start);
+    const endDate = formatDatePoland(end);
     const res = await fetch('/api/booking/available-dates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -197,7 +216,7 @@ export default function BookingPage() {
   // Загружаем даты для текущего месяца при инициализации
   useEffect(() => {
     if (!packageId) return;
-    const today = new Date();
+    const today = getPolandDate();
     const start = new Date(today.getFullYear(), today.getMonth(), 1);
     const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
     const monthKey = `${start.getFullYear()}-${start.getMonth()}`;
@@ -229,7 +248,7 @@ export default function BookingPage() {
   // Step 1: выбор даты и времени
   const availableDatesSet = new Set(availableDates);
   function isDateAvailable(date: Date) {
-    const iso = date.toISOString().slice(0, 10);
+    const iso = formatDatePoland(date);
     return availableDatesSet.has(iso);
   }
   // При смене месяца подгружаем даты для нового месяца
@@ -267,18 +286,15 @@ export default function BookingPage() {
       )}
       <label>{t('booking.date')}<br />
         <DatePicker
-          selected={parseLocalDate(form.date)}
+          selected={form.date ? parsePolandDate(form.date) : null}
           onChange={date => {
             if (date) {
-              const iso = date.getFullYear() + '-' +
-                String(date.getMonth() + 1).padStart(2, '0') + '-' +
-                String(date.getDate()).padStart(2, '0');
+              const iso = formatDatePoland(date);
               setForm(f => ({ ...f, date: iso, time: '' }));
-              console.log('Wybrana data:', iso);
             }
           }}
           filterDate={isDateAvailable}
-          minDate={new Date()}
+          minDate={getPolandDate()}
           maxDate={new Date(new Date().getFullYear() + 1, new Date().getMonth(), new Date().getDate())}
           onMonthChange={handleMonthChange}
           placeholderText={t('booking.date')}
@@ -390,26 +406,38 @@ export default function BookingPage() {
         <input
           type="email"
           value={form.email}
-          onChange={e => setForm((f: BookingForm) => ({ ...f, email: e.target.value }))}
+          onChange={e => {
+            setForm((f: BookingForm) => ({ ...f, email: e.target.value }));
+          }}
           required
         />
       </label>
+      {!emailValid && form.email && <div style={{color: 'red', fontSize: 13, marginTop: 2}}>Nieprawidłowy adres e-mail</div>}
       <br />
       <label>{t('booking.phone')}<br />
         <input
           type="tel"
           value={form.phone}
-          onChange={e => setForm((f: BookingForm) => ({ ...f, phone: e.target.value }))}
+          onChange={e => {
+            setForm((f: BookingForm) => ({ ...f, phone: e.target.value }));
+          }}
           required
         />
       </label>
+      {!phoneValid && form.phone && <div style={{color: 'red', fontSize: 13, marginTop: 2}}>Nieprawidłowy numer telefonu</div>}
       <br />
       <div style={{ display: 'flex', gap: 16, marginTop: 18 }}>
         <button onClick={prevStep} style={{ background: '#23222a', color: '#fff', border: '2px solid #f36e21', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: 17, cursor: 'pointer' }}>Powrót</button>
         <button
-          onClick={nextStep}
-          disabled={!form.name || !form.email || !form.phone}
-          style={{ background: '#f36e21', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: 17, cursor: !form.name || !form.email || !form.phone ? 'not-allowed' : 'pointer', marginTop: 0 }}
+          onClick={() => {
+            const errors: {email?: string, phone?: string} = {};
+            if (!emailValid) errors.email = 'Nieprawidłowy adres e-mail';
+            if (!phoneValid) errors.phone = 'Nieprawidłowy numer telefonu';
+            if (!form.name || !form.email || !form.phone || !emailValid || !phoneValid) return;
+            nextStep();
+          }}
+          disabled={!form.name || !form.email || !form.phone || !emailValid || !phoneValid}
+          style={{ background: '#f36e21', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: 17, cursor: !form.name || !form.email || !form.phone || !emailValid || !phoneValid ? 'not-allowed' : 'pointer', marginTop: 0 }}
         >
           {t('booking.next')}
         </button>
@@ -609,7 +637,11 @@ export default function BookingPage() {
               alert(data.error || 'Ошибка бронирования');
               return;
             }
-            // 2. Отправить письмо клиенту
+            // Временно: отправляем письмо сразу после создания бронирования
+            const changeToken = data.booking.change_token;
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun.pl';
+            const changeLink = `${baseUrl}/booking/change?token=${changeToken}`;
+            const cancelLink = `${baseUrl}/booking/cancel?token=${changeToken}`;
             await fetch('/api/sendBookingEmail', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -620,6 +652,9 @@ export default function BookingPage() {
                   time: form.time,
                   package: pkg?.name || '',
                   people: pkg?.people_count || '',
+                  name: form.name || '',
+                  change_link: changeLink,
+                  cancel_link: cancelLink
                 },
                 type: 'new'
               })

@@ -146,6 +146,10 @@ function AdminDashboard() {
 
   const COLORS = ['#f36e21', '#ff9f58', '#4caf50', '#2196f3', '#ff4d4f', '#9c27b0', '#00bcd4'];
 
+  if (admin && admin.role !== 'superadmin') {
+    return <div style={{color:'#fff',marginTop:80,textAlign:'center',fontSize:22}}>Dostęp tylko dla superadmina</div>;
+  }
+
   if (loading) {
     return <div style={{ color: '#fff', textAlign: 'center', marginTop: 80 }}>Ładowanie...</div>;
   }

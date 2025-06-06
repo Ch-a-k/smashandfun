@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabaseClient';
 
-export function withAdminAuth<P>(WrappedComponent: React.ComponentType<React.PropsWithChildren<P>>) {
-  return function AdminProtected(props: React.PropsWithChildren<P>) {
+export function withAdminAuth(WrappedComponent: React.ComponentType) {
+  return function AdminProtected() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -47,6 +47,6 @@ export function withAdminAuth<P>(WrappedComponent: React.ComponentType<React.Pro
     if (!isAdmin) {
       return null;
     }
-    return <WrappedComponent {...props} />;
+    return <WrappedComponent />;
   };
 } 

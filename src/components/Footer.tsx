@@ -77,9 +77,7 @@ export default function Footer() {
                 className="w-full sm:w-auto"
               >
                 <Link 
-                  href="https://smashandfun.simplybook.it/v2/#book/count/1/"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/rezerwacja"
                   className="inline-block px-6 py-3 bg-[#f36e21] text-white font-bold rounded-lg 
                     transform transition-all duration-200 hover:bg-[#ff7b2e] 
                     focus:outline-none focus:ring-2 focus:ring-[#f36e21] focus:ring-opacity-50

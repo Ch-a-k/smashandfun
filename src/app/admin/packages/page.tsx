@@ -6,20 +6,28 @@ import { supabase } from '@/lib/supabaseClient';
 interface Package {
   id: string;
   name: string;
-  price: number;
-  duration: number;
-  people_count: number;
+  price: string;
+  duration: string;
+  people: string;
   description: string;
+  items: string[];
+  tools: string[];
+  isBestseller: boolean;
   allowed_rooms?: string[];
   room_priority?: string[];
+  position: number;
 }
 
 const emptyPackage: Omit<Package, 'id'> = {
   name: '',
-  price: 0,
-  duration: 30,
-  people_count: 1,
+  price: '',
+  duration: '',
+  people: '',
   description: '',
+  items: [],
+  tools: [],
+  isBestseller: false,
+  position: 0,
 };
 
 export default function PackagesAdmin() {
@@ -62,7 +70,7 @@ export default function PackagesAdmin() {
     const { data, error } = await supabase
       .from('packages')
       .select('*')
-      .order('price', { ascending: true });
+      .order('position', { ascending: true });
     if (error) {
       setError("Błąd ładowania pakietów");
       setLoading(false);
@@ -85,10 +93,14 @@ export default function PackagesAdmin() {
     setEditId(pkg.id);
     setForm({
       name: pkg.name,
-      price: pkg.price,
-      duration: pkg.duration,
-      people_count: pkg.people_count,
-      description: pkg.description,
+      price: pkg.price || '',
+      duration: pkg.duration || '',
+      people: pkg.people || '',
+      description: pkg.description || '',
+      items: pkg.items || [],
+      tools: pkg.tools || [],
+      isBestseller: !!pkg.isBestseller,
+      position: pkg.position,
     });
     // allowed_rooms и room_priority могут быть undefined
     const allowed = Array.isArray(pkg.allowed_rooms) ? pkg.allowed_rooms : [];
@@ -107,7 +119,12 @@ export default function PackagesAdmin() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const dataToSave = { ...form, allowed_rooms: roomOrder, room_priority: roomOrder };
+    const dataToSave = { 
+      ...form, 
+      allowed_rooms: roomOrder, 
+      room_priority: roomOrder,
+      people_count: Number(form.people) || 0
+    };
     if (editId) {
       // Update
       const { error } = await supabase
@@ -121,9 +138,12 @@ export default function PackagesAdmin() {
       }
     } else {
       // Insert
+      // Получаем максимальное значение position
+      const { data: allPkgs } = await supabase.from('packages').select('position');
+      const maxPosition = allPkgs && allPkgs.length > 0 ? Math.max(...(allPkgs as {position: number}[]).map((p) => p.position || 0)) : 0;
       const { error } = await supabase
         .from('packages')
-        .insert([dataToSave]);
+        .insert([{ ...dataToSave, position: maxPosition + 1 }]);
       if (error) {
         alert('Błąd dodawania: ' + error.message);
         setSaving(false);
@@ -175,18 +195,42 @@ export default function PackagesAdmin() {
               </tr>
             </thead>
             <tbody>
-              {packages.map(pkg => (
+              {packages.map((pkg, idx) => (
                 <tr key={pkg.id} style={{borderBottom:'1px solid #333'}}>
                   <td style={{padding:'8px 12px', fontWeight:700, color:'#f36e21'}}>{pkg.name}</td>
                   <td style={{padding:'8px 12px'}}>{pkg.price}</td>
                   <td style={{padding:'8px 12px'}}>{pkg.duration}</td>
-                  <td style={{padding:'8px 12px'}}>{pkg.people_count}</td>
+                  <td style={{padding:'8px 12px'}}>{pkg.people}</td>
                   <td style={{padding:'8px 12px', maxWidth:220, whiteSpace:'pre-line', overflow:'hidden', textOverflow:'ellipsis'}}>{pkg.description}</td>
                   <td style={{padding:'8px 12px'}}>{Array.isArray(pkg.allowed_rooms) && pkg.allowed_rooms.length > 0 ? pkg.allowed_rooms.map(id => roomMap[id] || id).join(', ') : '—'}</td>
                   <td style={{padding:'8px 12px'}}>{Array.isArray(pkg.room_priority) && pkg.room_priority.length > 0 ? pkg.room_priority.map(id => roomMap[id] || id).join(', ') : '—'}</td>
-                  <td style={{padding:'8px 12px', display:'flex', gap:8}}>
+                  <td style={{padding:'8px 12px', display:'flex', gap:8, alignItems:'center'}}>
                     <button onClick={() => openEdit(pkg)} style={{background:'#f36e21', color:'#fff', border:'none', borderRadius:6, padding:'6px 18px', fontWeight:600, cursor:'pointer'}}>Edytuj</button>
                     <button onClick={() => setDeleteId(pkg.id)} style={{background:'#ff4d4f', color:'#fff', border:'none', borderRadius:6, padding:'6px 14px', fontWeight:600, cursor:'pointer'}}>Usuń</button>
+                    <button
+                      type="button"
+                      disabled={idx === 0}
+                      onClick={async () => {
+                        if (idx === 0) return;
+                        const above = packages[idx - 1];
+                        await supabase.from('packages').update({ position: above.position }).eq('id', pkg.id);
+                        await supabase.from('packages').update({ position: pkg.position }).eq('id', above.id);
+                        fetchPackages();
+                      }}
+                      style={{background:'#23222a', color:'#fff', border:'1px solid #f36e21', borderRadius:4, padding:'2px 7px', fontWeight:700, fontSize:15, cursor:idx===0?'not-allowed':'pointer'}}
+                    >▲</button>
+                    <button
+                      type="button"
+                      disabled={idx === packages.length - 1}
+                      onClick={async () => {
+                        if (idx === packages.length - 1) return;
+                        const below = packages[idx + 1];
+                        await supabase.from('packages').update({ position: below.position }).eq('id', pkg.id);
+                        await supabase.from('packages').update({ position: pkg.position }).eq('id', below.id);
+                        fetchPackages();
+                      }}
+                      style={{background:'#23222a', color:'#fff', border:'1px solid #f36e21', borderRadius:4, padding:'2px 7px', fontWeight:700, fontSize:15, cursor:idx===packages.length-1?'not-allowed':'pointer'}}
+                    >▼</button>
                   </td>
                 </tr>
               ))}
@@ -202,14 +246,30 @@ export default function PackagesAdmin() {
             <label>Nazwa
               <input type="text" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} required style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
             </label>
-            <label>Cena (PLN)
-              <input type="number" value={form.price} onChange={e => setForm(f => ({...f, price: Number(e.target.value)}))} required min={0} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+            <label>Przedmioty (każdy w nowej linii)
+              <textarea value={form.items.join('\n')} onChange={e => setForm(f => ({...f, items: e.target.value.split(/\r?\n/).filter(Boolean)}))} rows={3} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none', resize:'vertical'}} />
             </label>
-            <label>Czas (min)
-              <input type="number" value={form.duration} onChange={e => setForm(f => ({...f, duration: Number(e.target.value)}))} required min={1} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+            <label>Narzędzia (sprzęt ochronny):<br/>
+              <span style={{fontSize:13, color:'#aaa'}}>Выберите доступные опции</span>
+              <div style={{display:'flex', gap:12, marginTop:6}}>
+                {['ubranie','kask','rękawice'].map(tool => (
+                  <label key={tool} style={{display:'flex',alignItems:'center',gap:4}}>
+                    <input type="checkbox" checked={form.tools.includes(tool)} onChange={e => setForm(f => ({...f, tools: e.target.checked ? [...f.tools, tool] : f.tools.filter(t => t !== tool)}))} /> {tool}
+                  </label>
+                ))}
+              </div>
             </label>
             <label>Liczba osób
-              <input type="number" value={form.people_count} onChange={e => setForm(f => ({...f, people_count: Number(e.target.value)}))} required min={1} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+              <input type="text" value={form.people} onChange={e => setForm(f => ({...f, people: e.target.value}))} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+            </label>
+            <label>Czas trwania
+              <input type="text" value={form.duration} onChange={e => setForm(f => ({...f, duration: e.target.value}))} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+            </label>
+            <label>Cena (PLN)
+              <input type="text" value={form.price} onChange={e => setForm(f => ({...f, price: e.target.value}))} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+            </label>
+            <label style={{display:'flex',alignItems:'center',gap:8}}>
+              <input type="checkbox" checked={form.isBestseller} onChange={e => setForm(f => ({...f, isBestseller: e.target.checked}))} /> Bestseller
             </label>
             <label>Opis
               <textarea value={form.description} onChange={e => setForm(f => ({...f, description: e.target.value}))} rows={3} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none', resize:'vertical'}} />

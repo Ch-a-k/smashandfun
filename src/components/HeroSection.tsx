@@ -5,8 +5,6 @@ import { useEffect, useRef } from 'react'
 import { useI18n } from '@/i18n/I18nContext'
 import Link from 'next/link'
 
-const BOOKING_URL = 'https://smashandfun.simplybook.it/v2/#book/count/1/'
-
 const VIDEO_SOURCES = [
   { src: '/video/hero-background.MOV', type: 'video/quicktime' },
   { src: '/video/hero-background.mp4', type: 'video/mp4' }
@@ -146,9 +144,7 @@ export function HeroSection() {
         </motion.p>
 
         <Link 
-          href={BOOKING_URL}
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/rezerwacja"
         >
           <motion.button
             {...buttonAnimation}

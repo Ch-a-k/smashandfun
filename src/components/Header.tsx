@@ -116,11 +116,6 @@ export default function Header() {
     { href: '/kontakt', label: t('nav.contact') },
   ];
 
-  const scrollToServices = () => {
-    window.open('https://smashandfun.simplybook.it/v2/#book/count/1/', '_blank');
-    setIsMobileMenuOpen(false);
-  };
-
   const openHappyHours = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -259,12 +254,12 @@ export default function Header() {
             >
               <Clock className="w-5 h-5" />
             </button>
-            <button
-              onClick={scrollToServices}
+            <Link
+              href="/rezerwacja"
               className="hidden md:block bg-[#f36e21] text-white px-4 py-2 rounded-lg font-impact uppercase tracking-wide hover:bg-[#f36e21]/90 transition-colors"
             >
               {t('common.bookNow')}
-            </button>
+            </Link>
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -379,12 +374,13 @@ export default function Header() {
                     transition={{ delay: 0.3 }}
                     className="pt-4"
                   >
-                    <button
-                      onClick={scrollToServices}
+                    <Link
+                      href="/rezerwacja"
                       className="bg-[#f36e21] text-white px-6 py-2.5 rounded-lg font-impact uppercase tracking-wide hover:bg-[#f36e21]/90 transition-colors text-lg"
+                      onClick={() => setIsMobileMenuOpen(false)}
                     >
                       {t('common.bookNow')}
-                    </button>
+                    </Link>
                   </motion.div>
 
                   {/* Happy Hours Button */}

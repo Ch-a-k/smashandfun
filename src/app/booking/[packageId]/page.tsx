@@ -510,12 +510,12 @@ export default function BookingPage() {
 
   // Step 4: выбор типа оплаты
   function getTotal() {
-    let total = pkg ? pkg.price : 0;
+    let total = pkg ? Number(pkg.price) : 0;
     for (const sel of form.extraItems) {
       const item = extraItems.find((ei: ExtraItem) => ei.id === sel.id);
-      if (item) total += item.price * sel.count;
+      if (item) total += Number(item.price) * sel.count;
     }
-    return total;
+    return Number.isFinite(total) ? total : 0;
   }
 
   function getTotalWithPromo() {

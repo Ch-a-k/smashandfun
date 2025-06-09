@@ -364,10 +364,6 @@ export default function BookingPage() {
         </label>
       )}
       <br />
-      {/* ВРЕМЕННО: выводим массив доступных времён для отладки */}
-      {/*
-      <pre style={{color: 'red', fontSize: 12}}>{JSON.stringify(availableTimes, null, 2)}</pre>
-      */}
       <button
         onClick={nextStep}
         disabled={!form.date || !form.time}

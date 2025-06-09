@@ -163,7 +163,7 @@ export default function ThankYouPage() {
             {/* SVG: галочка в круге */}
             <svg width="72" height="72" viewBox="0 0 72 72" fill="none"><circle cx="36" cy="36" r="34" fill="#23222a" stroke="#f36e21" strokeWidth="4"/><path d="M24 38.5L33.5 48L50 28" stroke="#f36e21" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <h1 style={{fontSize: '2.1rem', fontWeight: 900, color: '#f36e21', marginBottom: 12, letterSpacing: 0.2}}>
+          <h1 style={{fontSize: '2.1rem', fontWeight: 100, color: '#f36e21', marginBottom: 12, letterSpacing: 1}}>
             {t('thankYou.title') !== 'thankYou.title' ? t('thankYou.title') : texts.title}
           </h1>
           <p style={{fontSize: '1.15rem', color: '#fff', opacity: 0.93, marginBottom: 28, fontWeight: 500}}>

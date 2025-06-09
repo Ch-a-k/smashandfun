@@ -93,8 +93,8 @@ export default function PackagesAdmin() {
     setEditId(pkg.id);
     setForm({
       name: pkg.name,
-      price: pkg.price || '',
-      duration: pkg.duration || '',
+      price: pkg.price !== undefined && pkg.price !== null ? String(pkg.price) : '',
+      duration: pkg.duration !== undefined && pkg.duration !== null ? String(pkg.duration) : '',
       people: pkg.people || '',
       description: pkg.description || '',
       items: pkg.items || [],
@@ -123,7 +123,9 @@ export default function PackagesAdmin() {
       ...form, 
       allowed_rooms: roomOrder, 
       room_priority: roomOrder,
-      people_count: Number(form.people) || 0
+      people_count: Number(form.people) || 0,
+      duration: Number(form.duration) || 0,
+      price: Number(form.price) || 0
     };
     if (editId) {
       // Update
@@ -273,8 +275,8 @@ export default function PackagesAdmin() {
                 type="number"
                 min={1}
                 step={1}
-                value={form.duration}
-                onChange={e => setForm(f => ({...f, duration: e.target.value.replace(/[^0-9]/g, '')}))}
+                value={String(form.duration ?? '')}
+                onChange={e => setForm(f => ({...f, duration: e.target.value}))}
                 style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}}
                 required
               />
@@ -284,8 +286,8 @@ export default function PackagesAdmin() {
                 type="number"
                 min={0}
                 step={0.01}
-                value={form.price}
-                onChange={e => setForm(f => ({...f, price: e.target.value.replace(/[^0-9.]/g, '')}))}
+                value={String(form.price ?? '')}
+                onChange={e => setForm(f => ({...f, price: e.target.value}))}
                 style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}}
                 required
               />

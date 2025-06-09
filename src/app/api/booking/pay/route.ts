@@ -5,7 +5,7 @@ const PRZELEWY24_MERCHANT_ID = process.env.PRZELEWY24_MERCHANT_ID;
 const PRZELEWY24_POS_ID = process.env.PRZELEWY24_POS_ID || process.env.PRZELEWY24_MERCHANT_ID;
 const PRZELEWY24_API_KEY = process.env.PRZELEWY24_API_KEY;
 const PRZELEWY24_CRC = process.env.PRZELEWY24_CRC;
-const IS_SANDBOX = process.env.PRZELEWY24_SANDBOX === 'true';
+const IS_SANDBOX = process.env.PRZELEWY24_SANDBOX === 'false';
 
 export async function POST(req: Request) {
   const { bookingId, amount, email } = await req.json();

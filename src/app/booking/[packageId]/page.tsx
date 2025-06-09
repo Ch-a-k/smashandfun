@@ -151,6 +151,17 @@ export default function BookingPage() {
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
   const phoneValid = /^[+]?[(]?[0-9]{2,4}[)]?[-\s./0-9]*$/.test(form.phone) && form.phone.replace(/\D/g, '').length >= 9;
 
+  // Для анимации unicode-иконки в option
+  const loadingIcons = ['🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛'];
+  const [loadingIconIdx, setLoadingIconIdx] = useState(0);
+  useEffect(() => {
+    if (!loading) return;
+    const interval = setInterval(() => {
+      setLoadingIconIdx(idx => (idx + 1) % loadingIcons.length);
+    }, 200);
+    return () => clearInterval(interval);
+  }, [loading]);
+
   // Селектор языка (PL/EN)
   const LangSelector = (
     <div style={{ position: 'absolute', top: 18, right: 24, zIndex: 10 }}>
@@ -268,20 +279,33 @@ export default function BookingPage() {
       {loadingDates && (
         <div style={{
           position: 'absolute',
-          top: 60,
+          top: 0,
           left: 0,
           right: 0,
           bottom: 0,
           zIndex: 10,
-          background: 'rgba(255,255,255,0.7)',
+          background: 'rgba(24,24,28,0.85)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          flexDirection: 'column',
         }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <span className="custom-spinner" style={{ width: 48, height: 48, marginBottom: 8 }} />
-            <span style={{ color: '#f36e21', fontWeight: 500 }}>Ładowanie dat...</span>
-          </div>
+          <div className="custom-spinner-big" />
+          <div style={{ color: '#fff', marginTop: 24, fontSize: 20, fontWeight: 600 }}>Ładowanie dat...</div>
+          <style>{`
+            .custom-spinner-big {
+              width: 56px;
+              height: 56px;
+              border: 7px solid #f3f3f3;
+              border-top: 7px solid #f36e21;
+              border-radius: 50%;
+              animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
         </div>
       )}
       <label>{t('booking.date')}<br />
@@ -330,7 +354,7 @@ export default function BookingPage() {
             }}
             size={1}
           >
-            {loading && <option value="">Ładowanie godzin...</option>}
+            {loading && <option value={""}>{`Ładowanie godzin... ${loadingIcons[loadingIconIdx]}`}</option>}
             {!loading && availableTimes.length === 0 && <option value="">Brak dostępnych godzin</option>}
             {!loading && availableTimes.length > 0 && <option value="">{t('booking.selectTime')}</option>}
             {!loading && availableTimes.length > 0 && availableTimes.map(time => (

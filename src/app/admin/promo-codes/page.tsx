@@ -172,7 +172,7 @@ function PromoCodesPage() {
 
   return (
     <div style={{color:'#fff'}}>
-      <h1 style={{fontSize:28, fontWeight:800, color:'#f36e21', marginBottom:18}}>Promocje</h1>
+      <h1 style={{fontSize:28, fontWeight:100, color:'#f36e21', marginBottom:18}}>Promocje</h1>
       <p style={{fontSize:16, opacity:0.9, marginBottom:18}}>Twórz i zarządzaj kodami promocyjnymi oraz rabatami (procent lub zł).</p>
       <button onClick={openAdd} style={{background:'#f36e21', color:'#fff', border:'none', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, marginBottom:24, cursor:'pointer'}}>Dodaj kod promocyjny</button>
       <div style={{background:'#23222a', borderRadius:12, padding:32, minHeight:180, color:'#fff', fontSize:16}}>

@@ -176,7 +176,7 @@ function AdminDashboard() {
       >
         {/* Блок приветствия и кнопка выхода */}
         <div style={{gridColumn: '1 / -1', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6}}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: "#f36e21", margin: 0 }}>Panel administracyjny</h1>
+          <h1 style={{ fontSize: 28, fontWeight: 100, color: "#f36e21", margin: 0 }}>Panel administracyjny</h1>
           <button onClick={handleLogout} style={{ background: '#23222a', color: '#fff', border: '2px solid #f36e21', borderRadius: 8, padding: '6px 18px', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>Wyloguj się</button>
         </div>
         <div style={{gridColumn: '1 / -1', background: "rgba(30,30,30,0.98)", borderRadius: 14, boxShadow: "0 2px 12px 0 rgba(0,0,0,0.18)", padding: 14, marginBottom: 0, fontSize:15}}>

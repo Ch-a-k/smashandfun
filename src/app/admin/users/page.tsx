@@ -79,7 +79,7 @@ function UsersPage() {
 
   return (
     <div style={{color:'#fff', maxWidth:900, margin:'0 auto', padding:'48px 0'}}>
-      <h1 style={{fontSize:28, fontWeight:800, color:'#f36e21', marginBottom:18}}>Klienci</h1>
+      <h1 style={{fontSize:28, fontWeight:100, color:'#f36e21', marginBottom:18}}>Klienci</h1>
       <p style={{fontSize:16, opacity:0.9, marginBottom:18}}>Lista wszystkich klientów, którzy dokonali rezerwacji lub zostali dodani przez panel administracyjny.</p>
       <div style={{display:'flex', gap:16, marginBottom:18}}>
         <input

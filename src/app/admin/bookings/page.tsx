@@ -559,7 +559,7 @@ function BookingsPage() {
   return (
     <div className="p-4" style={{ background: '#f7f7fa', minHeight: '100vh' }}>
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-gray-800">Kalendarz rezerwacji</h1>
+        <h1 className="text-2xl font-bold text-gray-100">Kalendarz rezerwacji</h1>
         <button
           className="px-4 py-2 rounded bg-orange-600 text-white hover:bg-orange-700 font-semibold"
           onClick={openNewModal}
@@ -624,8 +624,8 @@ function BookingsPage() {
                     const prevBks = getBooking(room.id, prevHour);
                     if (prevBks.length > 0) {
                       const pkgId = prevBks[0].package_id;
-                      const duration = packageDurations[pkgId] || 60;
-                      const cleanup = packageCleanupTimes[pkgId] ?? 15;
+                      const duration = Number(packageDurations[pkgId]) || 60;
+                      const cleanup = Number(packageCleanupTimes[pkgId]) || 15;
                       const slots = Math.floor(duration / 15) + 1;
                       const prevStartIdx = GODZINY.indexOf(prevBks[0].time.slice(0,5));
                       // Проверяем, перекрывает ли бронирование текущий слот
@@ -651,12 +651,12 @@ function BookingsPage() {
                   if (bks.length === 0) return <td key={room.id} className="border border-gray-300 px-1 py-1 align-top min-w-[160px] bg-white" />;
                   // Если есть бронирование, определяем slots
                   const pkgId = bks[0].package_id;
-                  const duration = packageDurations[pkgId] || 60;
+                  const duration = Number(packageDurations[pkgId]) || 60;
                   const slots = Math.floor(duration / 15) + 1;
                   return (
                     <td
                       key={room.id}
-                      rowSpan={slots}
+                      rowSpan={isNaN(slots) ? 1 : slots}
                       className={`mb-2 p-2 rounded border shadow-sm cursor-pointer align-top min-w-[160px] ${getStatusColor(bks[0].status)}`}
                       onClick={() => openModal(bks[0])}
                     >

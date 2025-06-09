@@ -148,7 +148,7 @@ function AdminsPage() {
 
   return (
     <div style={{color:'#fff'}}>
-      <h1 style={{fontSize:28, fontWeight:800, color:'#f36e21', marginBottom:18}}>Administratorzy</h1>
+      <h1 style={{fontSize:28, fontWeight:100, color:'#f36e21', marginBottom:18}}>Administratorzy</h1>
       <p style={{fontSize:16, opacity:0.9, marginBottom:18}}>Zarządzaj dostępem: dodawaj, usuwaj i zmieniaj role administratorów. Możesz ustawić lub zmienić hasło.</p>
       <form onSubmit={handleAdd} style={{display:'flex',gap:12,marginBottom:24,alignItems:'center'}}>
         <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600}} />

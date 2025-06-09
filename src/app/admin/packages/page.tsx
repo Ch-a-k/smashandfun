@@ -260,13 +260,35 @@ export default function PackagesAdmin() {
               </div>
             </label>
             <label>Liczba osób
-              <input type="text" value={form.people} onChange={e => setForm(f => ({...f, people: e.target.value}))} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+              <input
+                type="text"
+                value={form.people}
+                onChange={e => setForm(f => ({...f, people: e.target.value}))}
+                style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}}
+                required
+              />
             </label>
             <label>Czas trwania
-              <input type="text" value={form.duration} onChange={e => setForm(f => ({...f, duration: e.target.value}))} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={form.duration}
+                onChange={e => setForm(f => ({...f, duration: e.target.value.replace(/[^0-9]/g, '')}))}
+                style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}}
+                required
+              />
             </label>
             <label>Cena (PLN)
-              <input type="text" value={form.price} onChange={e => setForm(f => ({...f, price: e.target.value}))} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={form.price}
+                onChange={e => setForm(f => ({...f, price: e.target.value.replace(/[^0-9.]/g, '')}))}
+                style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}}
+                required
+              />
             </label>
             <label style={{display:'flex',alignItems:'center',gap:8}}>
               <input type="checkbox" checked={form.isBestseller} onChange={e => setForm(f => ({...f, isBestseller: e.target.checked}))} /> Bestseller

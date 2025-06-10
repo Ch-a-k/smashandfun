@@ -8,7 +8,7 @@ import {
 } from "@ingameltd/node-przelewy24";
 
 const merchantId = parseInt(process.env.PRZELEWY24_MERCHANT_ID || '0', 10);
-const posId = process.env.PRZELEWY24_POS_ID || '';
+const posId = parseInt(process.env.PRZELEWY24_POS_ID || '0', 10);
 const crcKey = process.env.PRZELEWY24_CRC || '';
 const apiKey = process.env.PRZELEWY24_API_KEY || '';
 const isSandbox = process.env.PRZELEWY24_SANDBOX === "true";

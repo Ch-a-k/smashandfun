@@ -50,12 +50,6 @@ const sectionAnimation = {
   transition: { duration: 0.6 }
 };
 
-const cardAnimation = (index: number) => ({
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, delay: index * 0.1 }
-});
-
 const itemAnimation = (index: number) => ({
   initial: { opacity: 0, x: -10 },
   animate: { opacity: 1, x: 0 },
@@ -166,7 +160,7 @@ function PackageInfo({ people, duration }: { people: string, duration: string })
   );
 }
 
-function PricingCard({ pkg, index }: { pkg: Package, index: number }) {
+function PricingCard({ pkg }: { pkg: Package }) {
   const isBestseller = pkg.isBestseller;
   return (
     <div
@@ -282,8 +276,8 @@ export default function RezerwacjaPage() {
           <div className="text-white text-center py-20 text-xl">Ładowanie...</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-            {packages.map((pkg, index) => (
-              <PricingCard key={pkg.id} pkg={pkg} index={index} />
+            {packages.map((pkg) => (
+              <PricingCard key={pkg.id} pkg={pkg} />
             ))}
           </div>
         )}

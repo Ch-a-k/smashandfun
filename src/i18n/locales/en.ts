@@ -863,7 +863,7 @@ export const en = {
     chooseDateTime: 'Choose date and time',
     date: 'Date',
     time: 'Time',
-    selectTime: 'Select time',
+    selectTime: 'Select time ✅',
     loading: 'Loading...',
     next: 'Next',
     enterDetails: 'Enter your details',

@@ -1,67 +1,63 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
+import {
+  P24,
+  Currency,
+  Country,
+  Language,
+  Encoding,
+} from "@ingameltd/node-przelewy24";
 
-// Здесь должны быть реальные ключи Przelewy24 из process.env
-const PRZELEWY24_MERCHANT_ID = process.env.PRZELEWY24_MERCHANT_ID;
-const PRZELEWY24_POS_ID = process.env.PRZELEWY24_POS_ID || process.env.PRZELEWY24_MERCHANT_ID;
-const PRZELEWY24_API_KEY = process.env.PRZELEWY24_API_KEY;
-const PRZELEWY24_CRC = process.env.PRZELEWY24_CRC;
-const IS_SANDBOX = process.env.PRZELEWY24_SANDBOX === 'false';
+const merchantId = parseInt(process.env.PRZELEWY24_MERCHANT_ID || '0', 10);
+const posId = process.env.PRZELEWY24_POS_ID || '';
+const crcKey = process.env.PRZELEWY24_CRC || '';
+const apiKey = process.env.PRZELEWY24_API_KEY || '';
+const isSandbox = process.env.PRZELEWY24_SANDBOX === "true";
+
+// Логируем для отладки (не выводим секреты в ответ клиенту)
+console.log('[P24] merchantId:', merchantId);
+console.log('[P24] posId:', posId);
+console.log('[P24] crcKey:', crcKey ? '***' : 'MISSING');
+console.log('[P24] apiKey:', apiKey ? '***' : 'MISSING');
+console.log('[P24] isSandbox:', isSandbox);
+
+const p24 = new P24(merchantId, posId, apiKey, crcKey, { sandbox: isSandbox });
 
 export async function POST(req: Request) {
-  const { bookingId, amount, email } = await req.json();
-
-  // Проверка обязательных данных
-  if (!PRZELEWY24_MERCHANT_ID || !PRZELEWY24_API_KEY || !PRZELEWY24_CRC) {
-    return NextResponse.json({ error: 'Brak konfiguracji Przelewy24' }, { status: 500 });
-  }
-
-  // Формируем данные для транзакции
-  const sessionId = bookingId + '-' + Date.now();
-  const amountInt = Math.round(Number(amount) * 100); // PLN -> grosze
-  const data = {
-    merchantId: PRZELEWY24_MERCHANT_ID,
-    posId: PRZELEWY24_POS_ID,
-    sessionId,
-    amount: amountInt,
-    currency: 'PLN',
-    description: 'Rezerwacja Smash&Fun',
-    email,
-    country: 'PL',
-    language: 'pl',
-    urlReturn: process.env.PRZELEWY24_URL_RETURN || 'https://smashandfun.pl/booking/thank-you',
-    urlStatus: process.env.PRZELEWY24_URL_STATUS || 'https://smashandfun.pl/api/booking/p24-status',
-    encoding: 'UTF-8',
-  };
-
-  // URL для sandbox/prod
-  const apiUrl = IS_SANDBOX
-    ? 'https://sandbox.przelewy24.pl/api/v1/transaction/register'
-    : 'https://secure.przelewy24.pl/api/v1/transaction/register';
-  const redirectBase = IS_SANDBOX
-    ? 'https://sandbox.przelewy24.pl/trnRequest/'
-    : 'https://secure.przelewy24.pl/trnRequest/';
-
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Basic ' + Buffer.from(`${PRZELEWY24_POS_ID}:${PRZELEWY24_API_KEY}`).toString('base64'),
-      },
-      body: JSON.stringify(data),
-    });
-    const result = await response.json();
-    if (result && result.data && result.data.token) {
-      return NextResponse.json({ redirectUrl: redirectBase + result.data.token });
-    } else {
-      // Логируем ответ для отладки
-      // eslint-disable-next-line no-console
-      console.error('Przelewy24 error:', result);
-      return NextResponse.json({ error: 'Błąd rejestracji płatności Przelewy24', details: result }, { status: 500 });
+    const { bookingId, amount, email } = await req.json();
+    // Проверяем наличие всех ключей
+    if (!merchantId) {
+      return NextResponse.json({ error: 'Przelewy24: отсутствует PRZELEWY24_MERCHANT_ID' }, { status: 500 });
     }
-  } catch (err) {
+    if (!posId) {
+      return NextResponse.json({ error: 'Przelewy24: отсутствует PRZELEWY24_POS_ID' }, { status: 500 });
+    }
+    if (!apiKey) {
+      return NextResponse.json({ error: 'Przelewy24: отсутствует PRZELEWY24_API_KEY' }, { status: 500 });
+    }
+    if (!crcKey) {
+      return NextResponse.json({ error: 'Przelewy24: отсутствует PRZELEWY24_CRC' }, { status: 500 });
+    }
+    const sessionId = `${bookingId}-${Date.now()}`;
+    const order = {
+      sessionId,
+      amount: Math.round(Number(amount) * 100), // PLN -> grosze
+      currency: Currency.PLN,
+      description: "Rezerwacja Smash&Fun",
+      email,
+      country: Country.Poland,
+      language: Language.PL,
+      channel: 1,
+      urlReturn: process.env.PRZELEWY24_URL_RETURN || '',
+      urlStatus: process.env.PRZELEWY24_URL_STATUS || '',
+      timeLimit: 20,
+      encoding: Encoding.UTF8,
+    };
+    const transactionResult = await p24.createTransaction(order);
+    return NextResponse.json({ paymentUrl: transactionResult.link });
+  } catch (error) {
     // eslint-disable-next-line no-console
-    console.error('Przelewy24 connection error:', err);
-    return NextResponse.json({ error: 'Błąd połączenia z Przelewy24' }, { status: 500 });
+    console.error('[P24] Ошибка:', error);
+    return NextResponse.json({ error: "Internal Server Error", details: String(error) }, { status: 500 });
   }
 } 

@@ -863,7 +863,7 @@ export const pl = {
     chooseDateTime: 'Wybierz datę i godzinę',
     date: 'Data',
     time: 'Godzina',
-    selectTime: 'Wybierz godzinę',
+    selectTime: 'Wybierz godzinę ✅',
     loading: 'Ładowanie...',
     next: 'Dalej',
     enterDetails: 'Wprowadź swoje dane',

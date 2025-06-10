@@ -691,8 +691,8 @@ export default function BookingPage() {
             });
             const payData = await payRes.json();
             setPayLoading(false);
-            if (payData.redirectUrl) {
-              window.location.href = payData.redirectUrl;
+            if (payData.paymentUrl) {
+              window.location.href = payData.paymentUrl;
             } else {
               alert(payData.error || 'Ошибка оплаты');
             }

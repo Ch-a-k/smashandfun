@@ -736,7 +736,7 @@ function BookingsPage() {
                       onChange={handleTimeChange}
                       disabled={!editForm.date}
                     >
-                      <option value="">Wybierz godzinę...</option>
+                      <option value="">Wybierz godzinę ✅</option>
                       {availableTimes.map(t => (
                         <option key={t} value={t}>{t}</option>
                       ))}

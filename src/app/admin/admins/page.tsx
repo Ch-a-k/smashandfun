@@ -83,7 +83,7 @@ function AdminsPage() {
 
   async function handleDelete(id: string, email: string) {
     if (email === meEmail) {
-      setError('Нельзя удалить самого себя');
+      setError('Nie możesz usunąć samego siebie');
       return;
     }
     setError("");
@@ -96,14 +96,14 @@ function AdminsPage() {
       });
       const result = await res.json();
       if (!res.ok) {
-        setError('Ошибка удаления: ' + (result.error || 'Неизвестная ошибка'));
+        setError('Błąd usuwania: ' + (result.error || 'Nieznany błąd'));
         setDeletingId(null);
         return;
       }
       fetchAdmins();
       setError("");
     } catch (e) {
-      setError('Ошибка удаления: ' + (e as Error).message);
+      setError('Błąd usuwania: ' + (e as Error).message);
     } finally {
       setDeletingId(null);
     }

@@ -26,7 +26,7 @@ export const en = {
       title: 'RAGE ROOM #1 IN WARSAW',
       subtitle: 'Release stress and emotions in the most exciting way!',
       description: 'Break, smash, and destroy in a safe environment. Experience the ultimate stress relief therapy in our specially designed rage room.',
-      cta: 'I WANT TO TRY!'
+      cta: 'BOOK NOW!'
     },
     pricing: {
       title: 'CHOOSE YOUR PACKAGE',

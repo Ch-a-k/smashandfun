@@ -152,7 +152,7 @@ export default function BookingPage() {
   const phoneValid = /^[+]?[(]?[0-9]{2,4}[)]?[-\s./0-9]*$/.test(form.phone) && form.phone.replace(/\D/g, '').length >= 9;
 
   // Для анимации unicode-иконки в option
-  const loadingIcons = ['🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '🕗', '🕘', '🕙', '🕚', '🕛'];
+  const loadingIcons = ['10', '10', '10', '9', '9', '9', '8', '8', '8', '7', '7', '7', '6', '6', '6', '5', '5', '5', '4', '4', '4', '3', '3', '3', '2', '2', '2', '1', '1', '1', '0', '0', '0'];
   const [loadingIconIdx, setLoadingIconIdx] = useState(0);
   useEffect(() => {
     if (!loading) return;
@@ -679,20 +679,37 @@ export default function BookingPage() {
                 type: 'new'
               })
             });
-            // 3. Получить ссылку на оплату
-            const payRes = await fetch('/api/booking/pay', {
+            // 3. Получить ссылку на оплату через PayU
+            const payRes = await fetch('/api/payu/order', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                bookingId: data.booking.id,
-                amount: form.paymentType === 'full' ? getTotalWithPromo() : 20,
-                email: form.email
+                amount: String(Math.round((form.paymentType === 'full' ? getTotalWithPromo() : 20) * 100)), // PayU требует сумму в грошах, строкой
+                currency: 'PLN',
+                description: `Rezerwacja: ${pkg?.name || ''} (${form.date} ${form.time})`,
+                email: form.email,
+                products: [
+                  {
+                    name: pkg?.name || 'Pakiet',
+                    unitPrice: String(Math.round((form.paymentType === 'full' ? getTotalWithPromo() : 20) * 100)),
+                    quantity: 1
+                  },
+                  ...form.extraItems.map(sel => {
+                    const item = extraItems.find(ei => ei.id === sel.id);
+                    if (!item) return null;
+                    return {
+                      name: item.name,
+                      unitPrice: String(Math.round(item.price * 100)),
+                      quantity: sel.count
+                    };
+                  }).filter(Boolean)
+                ]
               })
             });
             const payData = await payRes.json();
             setPayLoading(false);
-            if (payData.paymentUrl) {
-              window.location.href = payData.paymentUrl;
+            if (payData.redirectUri) {
+              window.location.href = payData.redirectUri;
             } else {
               alert(payData.error || 'Ошибка оплаты');
             }

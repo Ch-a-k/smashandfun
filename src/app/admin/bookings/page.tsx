@@ -5,6 +5,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import React from 'react';
 import { withAdminAuth } from '../components/withAdminAuth';
+import { FaTrash } from 'react-icons/fa';
 
 // Интерфейсы для типизации
 interface Booking {
@@ -556,6 +557,25 @@ function BookingsPage() {
     setEmailSending(false);
   }
 
+  async function handleDelete() {
+    if (!editForm) return;
+    if (!window.confirm('Czy na pewno chcesz usunąć tę rezerwację?')) return;
+    setSaving(true);
+    setError(null);
+    const { id } = editForm;
+    const { error } = await supabase.from('bookings').delete().eq('id', id);
+    if (error) {
+      setError('Błąd usuwania: ' + error.message);
+    } else {
+      closeModal();
+      // Odśwież listę rezerwacji na wybrany dzień
+      const dateStr = editForm.date;
+      const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
+      setBookings((bookingsData as Booking[]) || []);
+    }
+    setSaving(false);
+  }
+
   return (
     <div className="p-4" style={{ background: '#f7f7fa', minHeight: '100vh' }}>
       <div className="flex justify-between items-center mb-4">
@@ -834,6 +854,16 @@ function BookingsPage() {
               <div className="flex gap-2 mt-4 justify-end">
                 <button type="button" onClick={closeModal} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Zamknij</button>
                 <button type="submit" disabled={saving} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">{saving ? 'Zapisywanie...' : 'Zapisz'}</button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={saving}
+                  className="p-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
+                  title="Usuń rezerwację"
+                  style={{ minWidth: 44, minHeight: 44 }}
+                >
+                  <FaTrash size={18} />
+                </button>
                 <div style={{display:'flex', alignItems:'center', gap:4}}>
                   <button
                     type="button"

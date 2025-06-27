@@ -30,7 +30,7 @@ export const pl = {
     cta: 'ZAREZERWUJ HAPPY HOURS'
   },
   nav: {
-    home: 'Strona główna',
+    home: 'Główna',
     organizeParty: 'Organizacja imprez',
     blog: 'Blog',
     faq: 'FAQ',
@@ -44,7 +44,7 @@ export const pl = {
       title: 'DEMOLKA #1 W WARSZAWIE',
       subtitle: 'Uwolnij stres i emocje w najbardziej ekscytujący sposób!',
       description: 'Rozbijaj, niszcz i demoluj w bezpiecznym otoczeniu. Doświadcz najlepszej terapii antystresowej w naszym specjalnie zaprojektowanym pokoju złości.',
-      cta: 'CHCĘ SPRÓBOWAĆ!'
+      cta: 'ZAREZERWUJ!'
     },
     pricing: {
       title: 'WYBIERZ SWÓJ PAKIET',

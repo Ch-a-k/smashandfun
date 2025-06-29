@@ -147,6 +147,7 @@ export default function BookingPage() {
   const [loadingDates, setLoadingDates] = useState(false);
   const [promoStatus, setPromoStatus] = useState<'idle'|'checking'|'valid'|'invalid'>('idle');
   const [promoDiscount, setPromoDiscount] = useState<{amount: number, percent: number, newTotal: number}|null>(null);
+  const [bookingId, setBookingId] = useState<string | null>(null);
   // Валидация email и телефона
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email);
   const phoneValid = /^[+]?[(]?[0-9]{2,4}[)]?[-\s./0-9]*$/.test(form.phone) && form.phone.replace(/\D/g, '').length >= 9;
@@ -635,50 +636,33 @@ export default function BookingPage() {
         <button
           onClick={async () => {
             setPayLoading(true);
-            // 1. Создать бронирование
-            const res = await fetch('/api/booking/create', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                email: form.email,
-                packageId: packageId,
-                date: form.date,
-                time: form.time,
-                extraItems: form.extraItems,
-                promoCode: form.promoCode,
-                paymentType: form.paymentType,
-                name: form.name,
-                phone: form.phone
-              })
-            });
-            const data = await res.json();
-            if (!data.booking || data.error) {
-              setPayLoading(false);
-              alert(data.error || 'Ошибка бронирования');
-              return;
-            }
-            // Временно: отправляем письмо сразу после создания бронирования
-            const changeToken = data.booking.change_token;
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun.pl';
-            const changeLink = `${baseUrl}/booking/change?token=${changeToken}`;
-            const cancelLink = `${baseUrl}/booking/cancel?token=${changeToken}`;
-            await fetch('/api/sendBookingEmail', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                to: form.email,
-                booking: {
+            let currentBookingId = bookingId;
+            if (!currentBookingId) {
+              // 1. Создать бронирование, если ещё не создана
+              const res = await fetch('/api/booking/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: form.email,
+                  packageId: packageId,
                   date: form.date,
                   time: form.time,
-                  package: pkg?.name || '',
-                  people: pkg?.people_count || '',
-                  name: form.name || '',
-                  change_link: changeLink,
-                  cancel_link: cancelLink
-                },
-                type: 'new'
-              })
-            });
+                  extraItems: form.extraItems,
+                  promoCode: form.promoCode,
+                  paymentType: form.paymentType,
+                  name: form.name,
+                  phone: form.phone
+                })
+              });
+              const data = await res.json();
+              if (!data.booking || data.error) {
+                setPayLoading(false);
+                alert(data.error || 'Ошибка бронирования');
+                return;
+              }
+              currentBookingId = data.booking.id;
+              setBookingId(currentBookingId);
+            }
             // 3. Получить ссылку на оплату через PayU
             const payRes = await fetch('/api/payu/order', {
               method: 'POST',
@@ -704,7 +688,7 @@ export default function BookingPage() {
                     };
                   }).filter(Boolean)
                 ],
-                extOrderId: data.booking.id
+                extOrderId: currentBookingId
               })
             });
             const payData = await payRes.json();
@@ -803,6 +787,11 @@ export default function BookingPage() {
       setPromoDiscount(null);
     }
   }
+
+  // Сброс bookingId при изменении даты, времени или packageId
+  useEffect(() => {
+    setBookingId(null);
+  }, [form.date, form.time, packageId]);
 
   if (!pkg) return <div style={{color:'#fff',textAlign:'center',marginTop:80}}>{t('booking.loading')}</div>;
 

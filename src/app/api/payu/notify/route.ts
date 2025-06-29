@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabaseClient';
 
 export async function POST(req: Request) {
   try {
@@ -9,6 +10,18 @@ export async function POST(req: Request) {
 
     // Для отладки можно логировать:
     console.log('PayU notify:', JSON.stringify(body));
+
+    if (body.order && body.order.status === 'COMPLETED' && body.order.extOrderId) {
+      const bookingId = body.order.extOrderId;
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'paid' })
+        .eq('id', bookingId);
+      if (error) {
+        console.error('Ошибка обновления бронирования:', error);
+        return NextResponse.json({ error: 'Ошибка обновления бронирования', details: error }, { status: 500 });
+      }
+    }
 
     // PayU требует ответить 200 OK и вернуть пустой body
     return new Response('', { status: 200 });

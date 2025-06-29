@@ -59,10 +59,10 @@ export default function HappyHoursModal({ isOpen, onClose }: HappyHoursModalProp
 
   const handleBooking = () => {
     try {
-      window.open('https://smashandfun.simplybook.it/v2/#book/count/1/', '_blank');
+      window.location.href = 'http://localhost:3000/rezerwacja';
       onClose();
     } catch (error) {
-      console.error('Error opening booking page:', error);
+      console.error('Error redirecting to booking page:', error);
     }
   };
 

@@ -684,7 +684,7 @@ export default function BookingPage() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                amount: String(Math.round((form.paymentType === 'full' ? getTotalWithPromo() : 20) * 100)), // PayU требует сумму в грошах, строкой
+                amount: String(Math.round((form.paymentType === 'full' ? getTotalWithPromo() : 20) * 100)),
                 currency: 'PLN',
                 description: `Rezerwacja: ${pkg?.name || ''} (${form.date} ${form.time})`,
                 email: form.email,
@@ -703,7 +703,8 @@ export default function BookingPage() {
                       quantity: sel.count
                     };
                   }).filter(Boolean)
-                ]
+                ],
+                extOrderId: data.booking.id
               })
             });
             const payData = await payRes.json();

@@ -165,7 +165,7 @@ function PricingCard({ pkg }: { pkg: Package }) {
   return (
     <div
       className={cn(
-        "relative group w-full h-full",
+        "relative group w-full h-full flex flex-col",
         isBestseller && "z-10"
       )}
     >
@@ -173,7 +173,7 @@ function PricingCard({ pkg }: { pkg: Package }) {
         <div className="absolute -inset-[2px] rounded-[20px] bg-gradient-to-r from-[#f36e21] via-[#ff9f58] to-[#f36e21] animate-border-flow" />
       )}
       <div className={cn(
-        "relative rounded-[18px] p-6",
+        "relative rounded-[18px] p-6 h-full",
         "bg-black/40 backdrop-blur-xl",
         "border transition-all duration-300",
         "flex flex-col",
@@ -277,7 +277,9 @@ export default function RezerwacjaPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {packages.map((pkg) => (
-              <PricingCard key={pkg.id} pkg={pkg} />
+              <div key={pkg.id} className="h-full min-h-[440px] flex">
+                <PricingCard pkg={pkg} />
+              </div>
             ))}
           </div>
         )}

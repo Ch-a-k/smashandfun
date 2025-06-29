@@ -18,7 +18,7 @@ export const pl = {
       title: 'Harmonogram',
       weekdays: 'Poniedziałek - Piątek',
       time: '14:00 - 16:00',
-      discountname: 'Rabat',
+      discountname: 'Kod promocyjny: "HAPPYHOURS"',
       discount: '-20%'
     },
     benefits: [

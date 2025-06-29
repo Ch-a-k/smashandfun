@@ -14,12 +14,13 @@ export async function POST(req: Request) {
 
   // Получаем параметры заказа из тела запроса
   const body = await req.json();
-  const { amount, currency, description, email, products } = body as {
+  const { amount, currency, description, email, products, extOrderId } = body as {
     amount: string;
     currency: string;
     description: string;
     email: string;
     products: Product[];
+    extOrderId?: string;
   };
 
   // Логируем входящие данные для отладки
@@ -109,6 +110,7 @@ export async function POST(req: Request) {
       unitPrice: p.unitPrice,
       quantity: p.quantity,
     })),
+    ...(extOrderId ? { extOrderId } : {}),
   };
 
   // Логируем payload для PayU

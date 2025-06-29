@@ -735,7 +735,7 @@ export const en = {
       title: 'Schedule',
       weekdays: 'Monday - Friday',
       time: '14:00 - 16:00',
-      discountname: 'Discount',
+      discountname: 'Discount by code "HAPPYHOURS"',
       discount: '-20%'
     },
     benefits: [

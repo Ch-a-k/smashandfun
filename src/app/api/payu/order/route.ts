@@ -8,7 +8,7 @@ interface Product {
 
 export async function POST(req: Request) {
   const env = process.env.PAYU_ENV || 'sandbox';
-  const posId = process.env.PAYU_POS_ID;
+  const posId = env === 'sandbox' ? process.env.PAYU_SANDBOX_POS_ID: process.env.PAYU_POS_ID;
   const notifyUrl = process.env.PAYU_NOTIFY_URL;
   const continueUrl = process.env.PAYU_CONTINUE_URL;
 
@@ -53,20 +53,33 @@ export async function POST(req: Request) {
     }
   }
 
+  if (!process.env.PAYU_CLIENT_ID || !process.env.PAYU_CLIENT_SECRET ) {
+    throw new Error('PAYU_CLIENT_ID and PAYU_CLIENT_SECRET must be defined');
+  }
+
+  if (!process.env.PAYU_SANDBOX_CLIENT_ID || !process.env.PAYU_SANDBOX_CLIENT_SECRET) {
+    throw new Error('PAYU_SANDBOX_CLIENT_ID and PAYU_SANDBOX_CLIENT_SECRET must be defined');
+  }
+
   // Получаем access token
   const tokenUrl = env === 'sandbox'
     ? 'https://secure.snd.payu.com/pl/standard/user/oauth/authorize'
     : 'https://secure.payu.com/pl/standard/user/oauth/authorize';
-  const clientId = process.env.PAYU_CLIENT_ID;
-  const clientSecret = process.env.PAYU_CLIENT_SECRET;
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const clientId: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID : process.env.PAYU_CLIENT_ID;
+  const clientSecret: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET : process.env.PAYU_CLIENT_SECRET;
+
+  const params = new URLSearchParams();
+  params.append('grant_type', 'client_credentials');
+  params.append('client_id', clientId);
+  params.append('client_secret', clientSecret);
+
   const tokenRes = await fetch(tokenUrl, {
     method: 'POST',
     headers: {
-      'Authorization': `Basic ${credentials}`,
       'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept': 'application/json',
     },
-    body: 'grant_type=client_credentials',
+    body: params.toString(),
   });
   const tokenData = await tokenRes.json();
   if (!tokenRes.ok) {
@@ -110,18 +123,12 @@ export async function POST(req: Request) {
     },
     body: JSON.stringify(orderPayload),
   });
-  const text = await orderRes.text();
-  let orderData;
-  try {
-    orderData = JSON.parse(text);
-  } catch (e) {
-    console.error('PayU: Ответ не JSON, а текст:', text);
-    return NextResponse.json({ error: 'PayU вернул не JSON', details: text }, { status: 500 });
-  }
   if (!orderRes.ok) {
-    console.error('PayU: Ошибка создания заказа', orderData);
-    return NextResponse.json({ error: 'Ошибка создания заказа PayU', details: orderData }, { status: 500 });
+    console.error('PayU: Ошибка создания заказа', orderRes);
+    return NextResponse.json({ error: 'Ошибка создания заказа PayU', details: orderRes }, { status: 500 });
   }
+  const parsedUrl = new URL(orderRes.url);
+  const orderId = parsedUrl.searchParams.get('orderId');
   // Возвращаем ссылку для оплаты
-  return NextResponse.json({ redirectUri: orderData.redirectUri, orderId: orderData.orderId });
+  return NextResponse.json({ redirectUri: orderRes.url, orderId });
 } 

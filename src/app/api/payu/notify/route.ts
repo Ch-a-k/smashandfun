@@ -111,7 +111,7 @@ export async function POST(req: Request) {
           {
             booking_id: bookingId,
             status: body.order.status,
-            ammount: body.order.totalAmount,
+            amount: body.order.totalAmount,
             transactionId: body.order.orderId
           }
         ]);

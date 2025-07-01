@@ -110,7 +110,7 @@ export async function POST(req: Request) {
         .insert([
           {
             booking_id: bookingId,
-            status: body.order.status,
+            status: 'paid',
             amount: body.order.totalAmount,
             transaction_id: body.order.orderId
           }

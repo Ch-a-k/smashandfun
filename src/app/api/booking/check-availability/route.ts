@@ -72,17 +72,23 @@ export async function POST(req: Request) {
   const slots = getTimeSlots(WORK_START, WORK_END, interval, minStart);
   const availableTimes: string[] = [];
 
+  // Получаем все бронирования на этот день
+  const { data: bookings, error: bookingError } = await supabase
+        .from('bookings')
+        .select('time, package_id, id, room_id')
+        .in('room_id', allowedRooms)
+        .eq('date', date);
+
+  if (bookingError) {
+    console.error('Error', bookingError);
+    return NextResponse.json({ error: `Помилка отримання бронювання на ${date}`, details: bookingError }, { status: 500});
+  };
+
   for (const time of slots) {
     // Для каждого слота проверяем, что в каждой комнате нет пересечений с другими бронированиями на весь период (услуга + уборка)
     let found = false;
     for (const roomId of allowedRooms) {
-      // Получаем все бронирования в этой комнате на этот день
-      const { data: bookings, error: bookingError } = await supabase
-        .from('bookings')
-        .select('time, package_id, id')
-        .eq('room_id', roomId)
-        .eq('date', date);
-      if (bookingError) continue;
+      console.log('roomId', roomId);
       // Проверяем, что ни одно бронирование не пересекается с выбранным слотом
       const slotStart = time;
       // slotEnd = slotStart + duration + cleanup

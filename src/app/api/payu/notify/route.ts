@@ -80,15 +80,15 @@ export async function POST(req: Request) {
     if (body.order && body.order.status === 'COMPLETED' && body.order.extOrderId) {
       const bookingId = body.order.extOrderId;
       // 1. Обновляем статус
-      const { data: booking, error } = await supabase
+      const { data: booking, error: bookingError } = await supabase
         .from('bookings')
         .update({ status: 'paid' })
         .eq('id', bookingId)
         .select()
         .single();
-      if (error) {
-        console.error('Ошибка обновления бронирования:', error);
-        return NextResponse.json({ error: 'Ошибка обновления бронирования', details: error }, { status: 500 });
+      if (bookingError) {
+        console.error('Ошибка обновления бронирования:', bookingError);
+        return NextResponse.json({ error: 'Ошибка обновления бронирования', details: bookingError }, { status: 500 });
       }
       // 2. Получаем название пакета
       let packageName = '';
@@ -104,7 +104,24 @@ export async function POST(req: Request) {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun-admin.vercel.app'; // 'https://smashandfun.pl';
       const changeLink = `${baseUrl}/booking/change?token=${booking.change_token}`;
       const cancelLink = `${baseUrl}/booking/cancel?token=${booking.change_token}`;
-      // 4. Отправляем письмо
+      // 4. Додаємо дані про оплату в нашу БД
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .insert([
+          {
+            booking_id: bookingId,
+            status: body.order.status,
+            ammount: body.order.totalAmount,
+            transactionId: body.order.orderId
+          }
+        ]);
+
+      if (paymentsError) {
+        console.error('Помилка інсерту в таблицю payments', paymentsError);
+        return NextResponse.json({error: 'Помилка інсерту в таблицю payments', details: paymentsError}, {status: 500}); 
+      }
+
+      // 5. Отправляем письмо
       await fetch(baseUrl + '/api/sendBookingEmail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -126,6 +126,7 @@ export async function POST(req: Request) {
     // PayU требует ответить 200 OK и вернуть пустой body
     return new Response('', { status: 200 });
   } catch (e) {
+    console.error('PayU Webhook Error:', e);
     return NextResponse.json({ error: 'Ошибка обработки уведомления PayU', details: e }, { status: 500 });
   }
 } 

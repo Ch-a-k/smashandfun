@@ -3,13 +3,79 @@ import { supabase } from '@/lib/supabaseClient';
 
 export async function POST(req: Request) {
   try {
+    const env = process.env.PAYU_ENV || 'sandbox';
     const body = await req.json();
     // Здесь можно добавить свою обработку уведомления:
     // Например, обновить статус заказа в базе данных
     // body.order.status === 'COMPLETED' и т.д.
 
     // Для отладки можно логировать:
-    console.log('PayU notify:', JSON.stringify(body));
+
+    if (body.order && body.order.status === 'WAITING_FOR_CONFIRMATION' && body.order.extOrderId && body.order.orderId) {
+      if (!process.env.PAYU_CLIENT_ID || !process.env.PAYU_CLIENT_SECRET) {
+        return NextResponse.json({ error: 'PAYU_CLIENT_ID and PAYU_CLIENT_SECRET must be defined' }, { status: 400 });
+      }
+
+      if (!process.env.PAYU_SANDBOX_CLIENT_ID || !process.env.PAYU_SANDBOX_CLIENT_SECRET) {
+        return NextResponse.json({ error: 'PAYU_SANDBOX_CLIENT_ID and PAYU_SANDBOX_CLIENT_SECRET must be defined' }, { status: 400 });
+      }
+      // Получаем access token
+      const tokenUrl = env === 'sandbox'
+        ? 'https://secure.snd.payu.com/pl/standard/user/oauth/authorize'
+        : 'https://secure.payu.com/pl/standard/user/oauth/authorize';
+      const clientId: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID : process.env.PAYU_CLIENT_ID;
+      const clientSecret: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET : process.env.PAYU_CLIENT_SECRET;
+
+      const params = new URLSearchParams();
+      params.append('grant_type', 'client_credentials');
+      params.append('client_id', clientId);
+      params.append('client_secret', clientSecret);
+
+      const tokenRes = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        body: params.toString(),
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenRes.ok) {
+        console.error('PayU: Ошибка получения токена', tokenData);
+        return NextResponse.json({ error: 'Ошибка получения токена PayU', details: tokenData }, { status: 500 });
+      }
+      const accessToken = tokenData.access_token;
+
+      // const retriveUrl = env === 'sandbox'
+      // ? `https://secure.snd.payu.com/api/v2_1/orders/${body.order.orderId}`
+      // : `https://secure.payu.com/api/v2_1/orders/${body.order.orderId}`;
+
+      // const retriveRes = await fetch(retriveUrl, {
+      //   method: 'GET',
+      //   headers: {
+      //     'Authorization': `Bearer ${accessToken}`,
+      //     'Content-Type': 'application/json',
+      //   },
+      // });
+
+      // console.log('retriveRes', await retriveRes.json());
+
+      const confirmUrl = env === 'sandbox'
+        ? `https://secure.snd.payu.com/api/v2_1/orders/${body.order.orderId}/captures`
+        : `https://secure.payu.com/api/v2_1/orders/${body.order.orderId}/captures`;
+
+      const confirmRes = await fetch(confirmUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('confirmRes', await confirmRes.json());
+
+      return NextResponse.json({ confirmRes, orderId: body.order.orderId});
+    }
 
     if (body.order && body.order.status === 'COMPLETED' && body.order.extOrderId) {
       const bookingId = body.order.extOrderId;

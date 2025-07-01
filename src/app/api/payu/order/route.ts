@@ -54,12 +54,12 @@ export async function POST(req: Request) {
     }
   }
 
-  if (!process.env.PAYU_CLIENT_ID || !process.env.PAYU_CLIENT_SECRET ) {
-    throw new Error('PAYU_CLIENT_ID and PAYU_CLIENT_SECRET must be defined');
+  if (!process.env.PAYU_CLIENT_ID || !process.env.PAYU_CLIENT_SECRET) {
+    return NextResponse.json({ error: 'PAYU_CLIENT_ID and PAYU_CLIENT_SECRET must be defined' }, { status: 400 });
   }
 
   if (!process.env.PAYU_SANDBOX_CLIENT_ID || !process.env.PAYU_SANDBOX_CLIENT_SECRET) {
-    throw new Error('PAYU_SANDBOX_CLIENT_ID and PAYU_SANDBOX_CLIENT_SECRET must be defined');
+    return NextResponse.json({ error: 'PAYU_SANDBOX_CLIENT_ID and PAYU_SANDBOX_CLIENT_SECRET must be defined' }, { status: 400 });
   }
 
   // Получаем access token

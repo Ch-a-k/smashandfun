@@ -101,7 +101,7 @@ export async function POST(req: Request) {
         packageName = pkg?.name || '';
       }
       // 3. Формируем ссылки
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun.pl';
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun-admin.vercel.app'; // 'https://smashandfun.pl';
       const changeLink = `${baseUrl}/booking/change?token=${booking.change_token}`;
       const cancelLink = `${baseUrl}/booking/cancel?token=${booking.change_token}`;
       // 4. Отправляем письмо

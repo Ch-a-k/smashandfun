@@ -1,0 +1,13 @@
+{
+  "nav": {
+    "home": "Główna",
+    "booking": "Rezerwacja",
+    "organizeParty": "Zorganizuj imprezę",
+    "b2c": "Dla osób prywatnych",
+    "b2b": "Dla firm",
+    "vouchers": "Vouchery",
+    "blog": "Blog",
+    "faq": "FAQ",
+    "contact": "Kontakt"
+  }
+} 

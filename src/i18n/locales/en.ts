@@ -13,6 +13,7 @@ export const en = {
   },
   nav: {
     home: 'Home',
+    booking: 'Booking',
     organizeParty: 'Organize Party',
     blog: 'Blog',
     faq: 'FAQ',

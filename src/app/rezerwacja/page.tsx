@@ -8,6 +8,7 @@ import { Hammer, Users, Clock, CheckCircle2, Sparkles, Shirt, HardHat, Glasses, 
 import Link from 'next/link';
 import { FloatingImages } from '@/components/FloatingImages';
 import { ExtraItemsSection } from '@/components/ExtraItemsSection';
+import InFomoFooterButton from '@/components/InFomoFooterButton';
 
 // Типы
 type Tool = 'ubranie' | 'kask' | 'rękawice';
@@ -195,13 +196,10 @@ function PricingCard({ pkg }: { pkg: Package }) {
             </div>
           </div>
           {isBestseller && (
-            <Badge 
-              variant="featured"
-              className="flex items-center gap-1"
-            >
-              <Sparkles className="w-3 h-3" />
-              Bestseller
-            </Badge>
+            <Badge className="flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />
+            Bestseller
+          </Badge>
           )}
         </div>
         {/* Content */}
@@ -264,7 +262,7 @@ export default function RezerwacjaPage() {
   return (
     <section className="relative w-full bg-[#231f20] py-24 overflow-hidden">
       {/* Background effects */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" style={{ pointerEvents: 'none' }} />
       <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-[#f36e21]/5 rounded-full blur-[150px]" />
       <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-[#231f20]/90 rounded-full blur-[150px]" />
       {/* Floating images */}
@@ -285,6 +283,8 @@ export default function RezerwacjaPage() {
         )}
       </div>
       <ExtraItemsSection />
+      {/* IN-FOMO button */}
+      <InFomoFooterButton />
     </section>
   );
 } 

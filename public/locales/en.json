@@ -1,0 +1,13 @@
+{
+  "nav": {
+    "home": "Home",
+    "booking": "Booking",
+    "organizeParty": "Organize a party",
+    "b2c": "For individuals",
+    "b2b": "For companies",
+    "vouchers": "Vouchers",
+    "blog": "Blog",
+    "faq": "FAQ",
+    "contact": "Contact"
+  }
+} 

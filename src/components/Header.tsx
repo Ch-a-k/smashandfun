@@ -103,6 +103,7 @@ export default function Header() {
 
   const navLinks = [
     { href: '/', label: t('nav.home') },
+    { href: '/rezerwacja', label: t('nav.booking') },
     {
       label: t('nav.organizeParty'),
       dropdown: [

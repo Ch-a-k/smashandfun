@@ -17,11 +17,11 @@ export default function InFomoFooterButton() {
     });
     setTimeout(() => {
       window.location.href = 'https://in-fomo.com';
-    }, 3000);
+    }, 1500);
   }, []);
 
   return (
-    <div style={{ width: '100%', display: 'flex', justifyContent: 'center', marginTop: 18 }}>
+    <div style={{ zIndex: 2147483647, width: '100%', display: 'flex', justifyContent: 'center', marginTop: 18 }}>
       <button
         ref={btnRef}
         onClick={handleClick}

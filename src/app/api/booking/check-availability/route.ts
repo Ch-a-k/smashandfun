@@ -17,7 +17,7 @@ function getTimeSlots(start: string, end: string, interval: number, minStart: st
   // interval — шаг в минутах (например, 15)
   const slots: string[] = [];
   let current = start;
-  while (current < end) {
+  while (current <= end) {
     if (current >= minStart) slots.push(current);
     current = addMinutes(current, interval);
   }
@@ -51,26 +51,28 @@ export async function POST(req: Request) {
   const allowedRooms: string[] = pkg.allowed_rooms;
   const duration = Number(pkg.duration) || 60; // минуты
   const cleanup = 15; // уборка
-  const interval = 15; // шаг слота (15 минут)
+  const interval = 15; // шаг слота 15 минут
 
   // Время работы
-  const WORK_START = '09:00';
-  const WORK_END = '21:00';
+  let WORK_START = '14:00';
+  const WORK_END = '20:30';
+
+  // Определяем день недели (0 - воскресенье, 6 - суббота)
+  const dayOfWeek = new Date(date).getDay();
+  if (dayOfWeek === 0 || dayOfWeek === 6) {
+    WORK_START = '12:00';
+  }
 
   // Минимальное время старта: через 1 час от текущего времени (если дата сегодня)
   let minStart = WORK_START;
   if(time) {
     const [hours, minutes] = time.split(':').map(Number);
-
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0); 
-
-    date.setMinutes(date.getMinutes() + 60);
-
-    const newHours = date.getHours().toString().padStart(2, '0');
-    const newMinutes = date.getMinutes().toString().padStart(2, '0');
+    const now = new Date();
+    now.setHours(hours, minutes, 0, 0);
+    now.setMinutes(now.getMinutes() + 60);
+    const newHours = now.getHours().toString().padStart(2, '0');
+    const newMinutes = now.getMinutes().toString().padStart(2, '0');
     minStart = `${newHours}:${newMinutes}`;
-
     if (minStart < WORK_START) minStart = WORK_START;
     if (minStart > WORK_END) minStart = WORK_END;
   }

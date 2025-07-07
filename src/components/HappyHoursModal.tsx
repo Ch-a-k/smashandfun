@@ -59,7 +59,7 @@ export default function HappyHoursModal({ isOpen, onClose }: HappyHoursModalProp
 
   const handleBooking = () => {
     try {
-      window.location.href = 'http://localhost:3000/rezerwacja';
+      window.location.href = '/rezerwacja';
       onClose();
     } catch (error) {
       console.error('Error redirecting to booking page:', error);

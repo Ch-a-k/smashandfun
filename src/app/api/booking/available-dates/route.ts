@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 
-const WORK_START = '09:00';
-const WORK_END = '21:00';
-
 function pad(num: number) {
   return num.toString().padStart(2, '0');
 }
@@ -19,7 +16,7 @@ function addMinutes(time: string, minutes: number) {
 function getTimeSlots(start: string, end: string, step: number) {
   const slots: string[] = [];
   let current = start;
-  while (current < end) {
+  while (current <= end) {
     slots.push(current);
     current = addMinutes(current, step);
   }
@@ -51,8 +48,6 @@ export async function POST(req: Request) {
     dateList.push(d.toISOString().slice(0, 10));
   }
 
-  const timeSlots = getTimeSlots(WORK_START, WORK_END, step);
-
   const { data: bookings, error: bookingsError } = await supabase
     .from('bookings')
     .select('room_id, date, time')
@@ -77,6 +72,11 @@ export async function POST(req: Request) {
   const availableDates: string[] = [];
 
   for (const date of dateList) {
+    const dayOfWeek = new Date(date).getDay();
+    const workStart = (dayOfWeek === 0 || dayOfWeek === 6) ? '12:00' : '14:00';
+    const workEnd = '20:30';
+    const timeSlots = getTimeSlots(workStart, workEnd, step);
+
     let found = false;
     for (const time of timeSlots) {
       for (const roomId of allowedRooms) {

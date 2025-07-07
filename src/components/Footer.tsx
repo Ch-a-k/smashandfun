@@ -19,6 +19,7 @@ export default function Footer() {
     {
       title: t('footer.navigation.title'),
       links: [
+        { name: t('nav.booking'), href: '/rezerwacja' },
         { name: t('footer.navigation.links.organizeParty'), href: '/organizacja-imprez' },
         { name: t('footer.navigation.links.blog'), href: '/blog' },
         { name: t('footer.navigation.links.faq'), href: '/faq' },

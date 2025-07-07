@@ -31,6 +31,7 @@ export const pl = {
   },
   nav: {
     home: 'Główna',
+    booking: 'Rezerwacja',
     organizeParty: 'Organizacja imprez',
     blog: 'Blog',
     faq: 'FAQ',

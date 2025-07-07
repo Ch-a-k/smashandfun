@@ -25,7 +25,7 @@ function getTimeSlots(start: string, end: string, interval: number, minStart: st
 }
 
 export async function POST(req: Request) {
-  const { packageId, date, token } = await req.json();
+  const { packageId, date, token, time } = await req.json();
   let ignoreBookingId: string | null = null;
   if (token) {
     // Получаем bookingId по токену
@@ -59,11 +59,18 @@ export async function POST(req: Request) {
 
   // Минимальное время старта: через 1 час от текущего времени (если дата сегодня)
   let minStart = WORK_START;
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  if (date === todayStr) {
-    now.setMinutes(now.getMinutes() + 60);
-    minStart = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  if(time) {
+    const [hours, minutes] = time.split(':').map(Number);
+
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0); 
+
+    date.setMinutes(date.getMinutes() + 60);
+
+    const newHours = date.getHours().toString().padStart(2, '0');
+    const newMinutes = date.getMinutes().toString().padStart(2, '0');
+    minStart = `${newHours}:${newMinutes}`;
+
     if (minStart < WORK_START) minStart = WORK_START;
     if (minStart > WORK_END) minStart = WORK_END;
   }

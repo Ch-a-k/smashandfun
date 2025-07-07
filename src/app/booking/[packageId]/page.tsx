@@ -240,11 +240,14 @@ export default function BookingPage() {
 
   useEffect(() => {
     if (!form.date) return;
+    const today = new Date().setHours(0,0,0,0);
+    const hours = new Date().getHours();
+    const minutes = new Date().getMinutes();
     setLoading(true);
     fetch(`/api/booking/check-availability`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ packageId: packageId, date: form.date, time: null })
+      body: JSON.stringify({ packageId: packageId, date: form.date, time: today === new Date(form.date).setHours(0,0,0,0) ? `${hours}:${minutes}` : null })
     })
       .then(res => res.json())
       .then(data => {

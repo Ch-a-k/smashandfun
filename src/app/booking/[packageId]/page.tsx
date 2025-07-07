@@ -52,7 +52,7 @@ const flyingImages = [
 // Возвращает текущую дату/время в зоне Europe/Warsaw
 function getPolandDate(): Date {
   const now = new Date();
-  const polandString = now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
+  const polandString = now.toLocaleString('en-US');
   return new Date(polandString);
 }
 
@@ -60,13 +60,13 @@ function getPolandDate(): Date {
 function parsePolandDate(str: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
   const [y, m, d] = str.split('-').map(Number);
-  const polandString = new Date(y, m - 1, d).toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
+  const polandString = new Date(y, m - 1, d).toLocaleString('en-US');
   return new Date(polandString);
 }
 
 // Возвращает YYYY-MM-DD для даты в зоне Europe/Warsaw
 function formatDatePoland(date: Date): string {
-  const poland = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
+  const poland = new Date(date.toLocaleString('en-US'));
   const year = poland.getFullYear();
   const month = (poland.getMonth() + 1).toString().padStart(2, '0');
   const day = poland.getDate().toString().padStart(2, '0');
@@ -311,7 +311,7 @@ export default function BookingPage() {
       )}
       <label>{t('booking.date')}<br />
         <DatePicker
-          selected={form.date ? parsePolandDate(form.date) : null}
+          selected={form.date ? parsePolandDate(form.date) : null} 
           onChange={date => {
             if (date) {
               const iso = formatDatePoland(date);

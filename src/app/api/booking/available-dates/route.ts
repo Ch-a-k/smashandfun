@@ -29,7 +29,6 @@ function getTimeSlots(start: string, end: string, step: number) {
 export async function POST(req: Request) {
   const { packageId, startDate, endDate } = await req.json();
 
-  // Получаем пакет
   const { data: pkg, error: pkgError } = await supabase
     .from('packages')
     .select('allowed_rooms, duration')
@@ -37,43 +36,61 @@ export async function POST(req: Request) {
     .single();
 
   if (pkgError || !pkg) {
-    return NextResponse.json({ error: 'Пакет не найден' }, { status: 404 });
+    return NextResponse.json({ error: 'Пакет не знайдено' }, { status: 404 });
   }
 
   const allowedRooms: string[] = pkg.allowed_rooms;
   const duration = Number(pkg.duration) || 60;
   const step = duration + 15;
 
-  const availableDates: string[] = [];
   const start = new Date(startDate);
   const end = new Date(endDate);
 
-  for (
-    let date = new Date(start);
-    date <= end;
-    date.setDate(date.getDate() + 1)
-  ) {
-    const dateStr = date.toISOString().slice(0, 10);
-    const slots = getTimeSlots(WORK_START, WORK_END, step);
+  const dateList: string[] = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    dateList.push(d.toISOString().slice(0, 10));
+  }
+
+  const timeSlots = getTimeSlots(WORK_START, WORK_END, step);
+
+  const { data: bookings, error: bookingsError } = await supabase
+    .from('bookings')
+    .select('room_id, date, time')
+    .in('room_id', allowedRooms)
+    .gte('date', start.toISOString().slice(0, 10))
+    .lte('date', end.toISOString().slice(0, 10));
+
+  if (bookingsError) {
+    return NextResponse.json({ error: 'Помилка при отриманні бронювань' }, { status: 500 });
+  }
+
+  const bookedMap = new Map<string, Set<string>>(); // key = `${date}|${time}` => Set(roomId)
+
+  for (const b of bookings || []) {
+    const key = `${b.date}|${b.time}`;
+    if (!bookedMap.has(key)) {
+      bookedMap.set(key, new Set());
+    }
+    bookedMap.get(key)!.add(b.room_id);
+  }
+
+  const availableDates: string[] = [];
+
+  for (const date of dateList) {
     let found = false;
-    for (const time of slots) {
+    for (const time of timeSlots) {
       for (const roomId of allowedRooms) {
-        const { data: bookings, error: bookingError } = await supabase
-          .from('bookings')
-          .select('id')
-          .eq('room_id', roomId)
-          .eq('date', dateStr)
-          .eq('time', time);
-        if (bookingError) continue;
-        if (!bookings || bookings.length === 0) {
+        const key = `${date}|${time}`;
+        const busyRooms = bookedMap.get(key);
+        if (!busyRooms || !busyRooms.has(roomId)) {
           found = true;
           break;
         }
       }
       if (found) break;
     }
-    if (found) availableDates.push(dateStr);
+    if (found) availableDates.push(date);
   }
 
   return NextResponse.json({ dates: availableDates });
-} 
+}

@@ -88,6 +88,7 @@ function VideoBackground() {
         {VIDEO_SOURCES.map(({ src, type }) => (
           <source key={src} src={src} type={type} />
         ))}
+        <img src="/images/hero-fallback.png" alt="Fallback" className="w-full h-full object-cover" />
         Your browser does not support the video tag.
       </video>
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />

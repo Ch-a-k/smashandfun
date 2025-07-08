@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   const allowedRooms: string[] = pkg.allowed_rooms;
   const duration = Number(pkg.duration) || 60; // минуты
   const cleanup = 15; // уборка
-  const interval = 15; // шаг слота 15 минут
+  const interval = 30; // шаг слота 30 минут
 
   // Время работы
   let WORK_START = '14:00';

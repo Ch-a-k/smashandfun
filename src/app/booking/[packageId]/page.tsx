@@ -809,6 +809,8 @@ export default function BookingPage() {
       overflow: 'hidden'
     }}>
       <FlyingObjects />
+      {/* IN-FOMO button */}
+      <InFomoFooterButton />
       <div style={{
         maxWidth: 540,
         margin: '0 auto',
@@ -840,8 +842,6 @@ export default function BookingPage() {
           {step === 5 && Step5}
           {error && <div style={{ color: 'red' }}>{error}</div>}
         </div>
-        {/* IN-FOMO button */}
-        <InFomoFooterButton />
       </div>
       <style>{`
         .datepicker-input {

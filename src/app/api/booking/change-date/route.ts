@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
   // Отправляем письмо с подтверждением изменения
   try {
-    const cancelLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun.pl'}/booking/change?token=USED`;
+    const cancelLink = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun.pl'}/booking/cancel?token=${token}`;
     const emailRes = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/api/sendBookingEmail', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

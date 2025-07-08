@@ -107,8 +107,8 @@ export const en = {
       duration: {
         '30': 'up to 30 min',
         '45': 'up to 45 min',
-        '120': 'up to 120 min',
-        '180': 'up to 180 min'
+        '90': 'up to 90 min',
+        '150': 'up to 150 min'
       },
       equipment: {
         included: 'Included:',

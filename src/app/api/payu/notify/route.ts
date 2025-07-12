@@ -1,10 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import Decimal from 'decimal.js-light';
-
-const a = new Decimal('0.1');
-const b = new Decimal('0.2');
-console.log(a.plus(b).toString());
 
 export async function POST(req: Request) {
   try {

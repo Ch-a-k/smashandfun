@@ -78,28 +78,62 @@ export async function POST(req: Request) {
     }
 
     if (body.order && body.order.status === 'COMPLETED' && body.order.extOrderId) {
-      console.log('body', body.order);
       const bookingId = body.order.extOrderId;
-      const { data: getPriceForBooking } = await supabase
+
+      // 1. Отримуємо інфу про ордер
+      const { data: booking, error: bookingError  } = await supabase
         .from('bookings')
         .select()
         .eq('id', bookingId)
         .single();
 
-      console.log('getPriceForBooking', getPriceForBooking);
-
-      // 1. Обновляем статус
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
-        .update({ status: 'paid' })
-        .eq('id', bookingId)
-        .select()
-        .single();
-      if (bookingError) {
-        console.error('Ошибка обновления бронирования:', bookingError);
-        return NextResponse.json({ error: 'Ошибка обновления бронирования', details: bookingError }, { status: 500 });
+      if (bookingError || !booking) {
+        console.error('Booking not found:', bookingError);
+        return NextResponse.json({ error: 'Бронювання не знайдено', details: bookingError }, { status: 404 });
       }
-      // 2. Получаем название пакета
+
+      const orderTotal = Number(booking.total_price);
+      const newPaymentAmount = Number(body.order.totalAmount) / 100;
+
+      // 2. Отримуємо інфу про оплати по даному ордеру
+      const { data: getExistingPayments, error: getPaymentsError } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('booking_id', bookingId);
+
+      if (getPaymentsError) {
+        console.error('Помилка отримання попередніх платежів:', getPaymentsError);
+        return NextResponse.json({ error: 'Помилка отримання попередніх платежів', details: getPaymentsError }, { status: 500 });
+      }
+
+      const previousTotal = getExistingPayments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
+      const newTotal = previousTotal + newPaymentAmount;
+
+      let bookingStatus: 'paid' | 'deposit' = 'deposit';
+      let paymentStatus: 'paid' | 'deposit' = 'deposit';
+
+      if (newTotal >= orderTotal) {
+        bookingStatus = 'paid';
+      }
+
+      if (getExistingPayments.length === 0 && newPaymentAmount < orderTotal) {
+        paymentStatus = 'paid';
+      } else if (newTotal >= orderTotal) {
+        paymentStatus = 'paid';
+      }
+
+      // 3. Обновляем статус ордера
+      const { error: updateBookingError } = await supabase
+        .from('bookings')
+        .update({ status: bookingStatus })
+        .eq('id', bookingId);
+
+      if (updateBookingError) {
+        console.error('Ошибка обновления бронирования:', updateBookingError);
+        return NextResponse.json({ error: 'Ошибка обновления бронирования', details: updateBookingError }, { status: 500 });
+      }
+
+      // 4. Получаем название пакета
       let packageName = '';
       if (booking && booking.package_id) {
         const { data: pkg } = await supabase
@@ -109,17 +143,14 @@ export async function POST(req: Request) {
           .single();
         packageName = pkg?.name || '';
       }
-      // 3. Формируем ссылки
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun-admin.vercel.app'; // 'https://smashandfun.pl';
-      const changeLink = `${baseUrl}/booking/change?token=${booking.change_token}`;
-      const cancelLink = `${baseUrl}/booking/cancel?token=${booking.change_token}`;
-      // 4. Додаємо дані про оплату в нашу БД
+      
+      // 5. Додаємо дані про оплату в нашу БД
       const { error: paymentsError } = await supabase
         .from('payments')
         .insert([
           {
             booking_id: bookingId,
-            status: 'paid',
+            status: paymentStatus,
             amount: body.order.totalAmount,
             transaction_id: body.order.orderId
           }
@@ -130,7 +161,12 @@ export async function POST(req: Request) {
         return NextResponse.json({error: 'Помилка інсерту в таблицю payments', details: paymentsError}, {status: 500}); 
       }
 
-      // 5. Отправляем письмо
+      // 6. Формируем ссылки
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun-admin.vercel.app'; // 'https://smashandfun.pl';
+      const changeLink = `${baseUrl}/booking/change?token=${booking.change_token}`;
+      const cancelLink = `${baseUrl}/booking/cancel?token=${booking.change_token}`;
+
+      // 7. Отправляем письмо
       await fetch(baseUrl + '/api/sendBookingEmail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -147,6 +183,8 @@ export async function POST(req: Request) {
           type: 'new'
         })
       });
+
+      return new Response('', { status: 200 });
     }
 
     // PayU требует ответить 200 OK и вернуть пустой body

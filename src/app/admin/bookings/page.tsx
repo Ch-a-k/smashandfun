@@ -26,6 +26,7 @@ interface Booking {
   updated_at?: string;
   extra_items?: object | null;
   change_token?: string;
+  payments?: Payment[];
 }
 interface Room {
   id: string;
@@ -45,6 +46,14 @@ interface PromoCode {
   used_count?: number | null;
   time_from?: string | null;
   time_to?: string | null;
+}
+interface Payment {
+  id: string;
+  booking_id: string;
+  status: 'paid' | 'deposit' | 'unpaid';
+  amount: number;
+  transaction_id?: string;
+  created_at: string;
 }
 
 // Генерация времени с шагом 15 минут с 09:00 до 21:00
@@ -241,7 +250,19 @@ function BookingsPage() {
       setPackageCleanupTimes(Object.fromEntries(((packagesData as {id: string, cleanup_time?: number}[])||[]).map((p) => [p.id, p.cleanup_time ?? 15])));
       // Получаем бронирования на выбранную дату
       const dateStr = formatDatePoland(date);
-      const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
+      const { data: bookingsData } = await supabase
+        .from('bookings')
+        .select(`
+          *,
+          payments (
+            id,
+            status,
+            amount,
+            transaction_id,
+            created_at
+          )
+        `)
+        .eq('date', dateStr);
       setBookings((bookingsData as Booking[]) || []);
       setLoading(false);
     }
@@ -673,16 +694,24 @@ function BookingsPage() {
                   const pkgId = bks[0].package_id;
                   const duration = Number(packageDurations[pkgId]) || 60;
                   const slots = Math.floor(duration / 15) + 1;
+
+                  const paymentsSum = bks?.[0]?.payments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
+                  const price = Number(bks?.[0]?.total_price) || 0; 
+                  const diff = price-paymentsSum;
+                  const status = bks[0].status === 'paid' && diff > 0 ? 'deposit' : bks[0].status;
                   return (
                     <td
                       key={room.id}
                       rowSpan={isNaN(slots) ? 1 : slots}
-                      className={`mb-2 p-2 rounded border shadow-sm cursor-pointer align-top min-w-[160px] ${getStatusColor(bks[0].status)}`}
+                      className={`mb-2 p-2 rounded border shadow-sm cursor-pointer align-top min-w-[160px] ${getStatusColor(status)}`}
                       onClick={() => openModal(bks[0])}
                     >
                       <div className="font-bold">{bks[0].name || bks[0].user_email}</div>
                       <div className="text-xs">{bks[0].time.slice(0,5)}{bks[0].time_end ? ` - ${bks[0].time_end.slice(0,5)}` : ''}</div>
                       <div className="text-xs">Pakiet: {packages[bks[0].package_id] || bks[0].package_id}</div>
+                      <div className="text-xs">Kwota: {price}</div>
+                      <div className="text-xs">Zapłacono: {paymentsSum}</div>
+                      <div className="text-xs">Saldo: {diff}</div>
                   </td>
                   );
                 })}

@@ -94,16 +94,15 @@ export async function POST(req: Request) {
   };
 
   for (const time of slots) {
-    // Для каждого слота проверяем, что в каждой комнате нет пересечений с другими бронированиями на весь период (услуга + уборка)
+     // Для каждого слота проверяем, что в каждой комнате нет пересечений с другими бронированиями на весь период (услуга + уборка)
+    const slotStart = time;
+    const slotEnd = addMinutes(slotStart, duration + cleanup);
     let found = false;
     for (const roomId of allowedRooms) {
-      console.log('roomId', roomId);
       // Проверяем, что ни одно бронирование не пересекается с выбранным слотом
-      const slotStart = time;
-      // slotEnd = slotStart + duration + cleanup
-      const slotEnd = addMinutes(slotStart, duration + cleanup);
+      const roomBookings = bookings.filter(b => b.room_id === roomId);
       let overlap = false;
-      for (const b of bookings || []) {
+      for (const b of roomBookings) {
         if (ignoreBookingId && b.id === ignoreBookingId) continue;
         const bStart = b.time;
         const bEnd = addMinutes(bStart, duration + cleanup);

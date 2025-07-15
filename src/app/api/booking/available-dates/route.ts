@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import dayjs from 'dayjs';
 
 function pad(num: number) {
   return num.toString().padStart(2, '0');
@@ -71,7 +72,22 @@ export async function POST(req: Request) {
 
   const availableDates: string[] = [];
 
-  for (const date of dateList) {
+  let holidayDates = [];
+  const { data: holidays, error: holidaysError } = await supabase
+    .from('holidays')
+    .select('date')
+    .gte('date', dayjs(start).format('YYYY-MM-DD'))
+    .lte('date', dayjs(end).format('YYYY-MM-DD'));
+
+  if (holidaysError) {
+    return NextResponse.json({ error: holidaysError }, { status: 500 });
+  } else {
+    holidayDates = holidays.map(h => h.date);
+  }
+
+  const filteredDatelist = dateList.filter(el => !holidayDates.includes(el));
+
+  for (const date of filteredDatelist) {
     const dayOfWeek = new Date(date).getDay();
     const workStart = (dayOfWeek === 0 || dayOfWeek === 6) ? '12:00' : '14:00';
     const workEnd = '20:30';

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { BookingWithPackage } from '../create/route';
+import dayjs from 'dayjs';
 
 function pad(num: number) {
   return num.toString().padStart(2, '0');
@@ -65,28 +67,43 @@ export async function POST(req: Request) {
 
   // Минимальное время старта: через 1 час от текущего времени (если дата сегодня)
   let minStart = WORK_START;
-  if(time) {
-    const [hours, minutes] = time.split(':').map(Number);
-    const now = new Date();
-    now.setHours(hours, minutes, 0, 0);
-    now.setMinutes(now.getMinutes() + 60);
-    const newHours = now.getHours().toString().padStart(2, '0');
-    const newMinutes = now.getMinutes().toString().padStart(2, '0');
-    minStart = `${newHours}:${newMinutes}`;
-    if (minStart < WORK_START) minStart = WORK_START;
-    if (minStart > WORK_END) minStart = WORK_END;
-  }
 
+  if (time) {
+    const [hours, minutes] = time.split(':').map(Number);
+
+    const now = dayjs();
+    const workEndToday = dayjs(now.format('YYYY-MM-DD') + ' ' + WORK_END);
+
+    const inputTime = now.hour(hours).minute(minutes).second(0).millisecond(0);
+    const updatedTime = inputTime.add(60, 'minute');
+
+    let newTimeStr = updatedTime.format('HH:mm');
+
+    if (newTimeStr < WORK_START) newTimeStr = WORK_START;
+
+    if (now.isBefore(workEndToday) && updatedTime.isAfter(workEndToday)) {
+      newTimeStr = WORK_END;
+    }
+    
+    minStart = newTimeStr;
+  }
   // Генерируем слоты каждые 15 минут
   const slots = getTimeSlots(WORK_START, WORK_END, interval, minStart);
   const availableTimes: string[] = [];
 
   // Получаем все бронирования на этот день
   const { data: bookings, error: bookingError } = await supabase
-        .from('bookings')
-        .select('time, package_id, id, room_id')
-        .in('room_id', allowedRooms)
-        .eq('date', date);
+    .from('bookings')
+    .select(`
+      time,
+      package_id,
+      id,
+      room_id,
+      package:package_id (duration)
+    `)
+    .in('room_id', allowedRooms)
+    .eq('date', date)
+    .returns<BookingWithPackage[]>();
 
   if (bookingError) {
     console.error('Error', bookingError);
@@ -105,7 +122,8 @@ export async function POST(req: Request) {
       for (const b of roomBookings) {
         if (ignoreBookingId && b.id === ignoreBookingId) continue;
         const bStart = b.time;
-        const bEnd = addMinutes(bStart, duration + cleanup);
+        const bDuration = b.package && b.package.duration ? Number(b.package.duration) : duration;
+        const bEnd = addMinutes(bStart, bDuration + cleanup);
         // Проверяем пересечение интервалов
         if (!(slotEnd <= bStart || slotStart >= bEnd)) {
           overlap = true;

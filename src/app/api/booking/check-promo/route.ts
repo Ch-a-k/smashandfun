@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import dayjs from 'dayjs';
+
 
 export async function POST(req: Request) {
-  const { code, total, time } = await req.json();
+  const { code, total, time, date } = await req.json();
   if (!code) {
     return NextResponse.json({ valid: false, message: 'Промокод не указан' }, { status: 400 });
   }
@@ -15,8 +17,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ valid: false, message: 'Промокод не найден' }, { status: 404 });
   }
   // Проверка срока действия
-  const today = new Date().toISOString().slice(0, 10);
-  if ((promo.valid_from && today < promo.valid_from) || (promo.valid_to && today > promo.valid_to)) {
+  const dayOfWeek = dayjs(date).get('day');
+  const isWeekend = (dayOfWeek === 6) || (dayOfWeek  === 0);
+  if(isWeekend) {
+    return NextResponse.json({ valid: false, message: 'Промокод неактивен в выходные' }, { status: 400 });
+  }
+  
+  if (date && (promo.valid_from && date < promo.valid_from) || (promo.valid_to && date > promo.valid_to)) {
     return NextResponse.json({ valid: false, message: 'Промокод неактивен' }, { status: 400 });
   }
   // Проверка лимита

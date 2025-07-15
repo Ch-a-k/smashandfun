@@ -779,7 +779,7 @@ export default function BookingPage() {
     const res = await fetch('/api/booking/check-promo', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: form.promoCode, total, time: form.time })
+      body: JSON.stringify({ code: form.promoCode, total, time: form.time, date: form.date })
     });
     const data = await res.json();
     if (data.valid) {

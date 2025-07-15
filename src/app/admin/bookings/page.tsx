@@ -6,6 +6,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import React from 'react';
 import { withAdminAuth } from '../components/withAdminAuth';
 import { FaTrash } from 'react-icons/fa';
+import dayjs from "dayjs";
 
 // Интерфейсы для типизации
 interface Booking {
@@ -18,6 +19,7 @@ interface Booking {
   time: string;
   time_end?: string;
   status?: string;
+  comment?: string;
   phone?: string;
   total_price?: string;
   payment_id?: string;
@@ -219,6 +221,8 @@ function BookingsPage() {
   const [timesCache, setTimesCache] = useState<{[key: string]: string[]}>({});
   const [loadingDates, setLoadingDates] = useState(false);
   const [loadingTimes, setLoadingTimes] = useState(false);
+  const [promoError, setPromoError] = useState(false);
+  const [isHoliday, setHoliday] = useState(false);
 
   // Загружаем даты с резервациями и extra items
   useEffect(() => {
@@ -269,9 +273,9 @@ function BookingsPage() {
     fetchData();
   }, [date]);
 
-  function getBooking(roomId: string, hour: string) {
+  function getBooking(roomId: string, hour: string, date: string) {
     // hour теперь полный формат, например 09:15
-    return bookings.filter(b => b.room_id === roomId && b.time.slice(0,5) === hour);
+    return bookings.filter(b => b.room_id === roomId && b.time.slice(0,5) === hour && b.date === date);
   }
 
   function openModal(booking: Booking) {
@@ -432,8 +436,8 @@ function BookingsPage() {
       }
     }
     if (isNew) {
-      const { user_email, name, package_id, date, time, status, phone, total_price, payment_id, promo_code, extra_items } = editForm;
-      const { error } = await supabase.from('bookings').insert([{ user_email, name, package_id, room_id: roomId, date, time, status, phone, total_price: Number(total_price), payment_id, promo_code, extra_items }]);
+      const { user_email, name, package_id, date, time, status, phone, total_price, payment_id, promo_code, extra_items, comment } = editForm;
+      const { error } = await supabase.from('bookings').insert([{ user_email, name, package_id, room_id: roomId, date, time, status, phone, total_price: Number(total_price), payment_id, promo_code, extra_items, comment }]);
       if (error) {
         setError('Błąd zapisu: ' + error.message);
       } else {
@@ -444,7 +448,8 @@ function BookingsPage() {
         setBookings((bookingsData as Booking[]) || []);
       }
     } else {
-      const { id, ...fields } = editForm;
+      const { id, payments, ...fields } = editForm;
+      console.log('payments', payments);
       const { error } = await supabase.from('bookings').update(fields).eq('id', id);
       if (error) {
         setError('Błąd zapisu: ' + error.message);
@@ -526,11 +531,15 @@ function BookingsPage() {
           const res = await fetch('/api/booking/check-promo', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code: promo.code, total, time: editForm.time })
+            body: JSON.stringify({ code: promo.code, total, time: editForm.time, date: editForm.date  })
         });
         const data = await res.json();
           if (data.valid) {
             total = data.newTotal;
+            setPromoError(false);
+          } else {
+            setEditForm(prev => prev ? { ...prev, promo_code: '' } : prev);
+            setPromoError(data.message)
           }
         }
       }
@@ -539,6 +548,24 @@ function BookingsPage() {
     recalc();
   // eslint-disable-next-line
   }, [editForm?.package_id, editForm?.extra_items, editForm?.promo_code]);
+
+  useEffect(() => {
+    async function fetch() {
+      const { data: holidaysData } = await supabase.from('holidays').select('date').eq('date', dayjs(date).format('YYYY-MM-DD')).single();
+
+      setHoliday(!!holidaysData?.date);
+    }
+    fetch();
+  }, [date]);
+
+  async function updateHoliday(isHoliday: boolean) {
+    if (isHoliday) {
+        await supabase.from('holidays').insert([{ date: dayjs(date).format('YYYY-MM-DD') }]);
+      } else {
+        await supabase.from('holidays').delete().eq('date', dayjs(date).format('YYYY-MM-DD'));
+    }
+    setHoliday(isHoliday);
+  }
 
   async function handleSendEmail() {
     if (!editForm) return;
@@ -623,7 +650,16 @@ function BookingsPage() {
           locale="pl"
           highlightDates={bookedDates}
         />
+
+        <label style={{display:'flex',alignItems:'center',gap:4}}>
+          <input 
+            type="checkbox" 
+            checked={isHoliday} 
+            onChange={() => updateHoliday(!isHoliday)} /> <span className="text-gray-700 relative">Holiday</span>
+        </label>
+          
       </div>
+
       <div className="overflow-x-auto">
         <table className="min-w-full border border-gray-400 bg-gray-50">
             <thead>
@@ -655,19 +691,19 @@ function BookingsPage() {
                 <td className="border border-gray-300 px-2 py-1 text-center font-semibold text-gray-700 bg-gray-100">{hour}</td>
                 {rooms.map((room) => {
                   // Проверяем, есть ли бронирование, начинающееся в этот слот
-                  const bks = getBooking(room.id, hour);
+                  const bks = getBooking(room.id, hour, date.toISOString().slice(0, 10));
                   // Проверяем, не перекрывает ли этот слот уже занятая ячейка
                   let isCovered = false;
                   let isCleanup = false;
                   // Найдём, есть ли бронирование, которое закончилось ровно перед этим слотом
                   for (let prev = 0; prev < rowIdx; prev++) {
                     const prevHour = GODZINY[prev];
-                    const prevBks = getBooking(room.id, prevHour);
+                    const prevBks = getBooking(room.id, prevHour, date.toISOString().slice(0, 10));
                     if (prevBks.length > 0) {
                       const pkgId = prevBks[0].package_id;
                       const duration = Number(packageDurations[pkgId]) || 60;
                       const cleanup = Number(packageCleanupTimes[pkgId]) || 15;
-                      const slots = Math.floor(duration / 15) + 1;
+                      const slots = Math.floor(duration / 15);
                       const prevStartIdx = GODZINY.indexOf(prevBks[0].time.slice(0,5));
                       // Проверяем, перекрывает ли бронирование текущий слот
                       if (prevStartIdx >= 0 && rowIdx > prevStartIdx && rowIdx < prevStartIdx + slots) {
@@ -681,19 +717,19 @@ function BookingsPage() {
                       }
                     }
                   }
-                  if (isCovered) return null;
+                  if (isCovered) return <td key={room.id} className="hidden" />;
                   if (isCleanup) {
                     return (
                       <td key={room.id} className="border border-gray-300 px-1 py-1 align-top min-w-[160px] bg-gray-300 text-gray-600 text-center font-semibold">
                           Czas na czyszczenie
-                  </td>
+                      </td>
                     );
                   }
                   if (bks.length === 0) return <td key={room.id} className="border border-gray-300 px-1 py-1 align-top min-w-[160px] bg-white" />;
                   // Если есть бронирование, определяем slots
                   const pkgId = bks[0].package_id;
                   const duration = Number(packageDurations[pkgId]) || 60;
-                  const slots = Math.floor(duration / 15) + 1;
+                  const slots = Math.floor(duration / 15);
 
                   const paymentsSum = bks?.[0]?.payments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
                   const price = Number(bks?.[0]?.total_price) || 0; 
@@ -805,6 +841,7 @@ function BookingsPage() {
                       <option key={pc.id} value={pc.code}>{pc.code}</option>
                     ))}
                   </select>
+                  {promoError && <div className="text-red-600 text-sm mt-2">{promoError}</div>}
                 </div>
                 <div>
                   <label className="block text-xs text-gray-800">Cena</label>
@@ -822,6 +859,15 @@ function BookingsPage() {
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs text-gray-800">Comment</label>
+                  <textarea 
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="comment"
+                    value={editForm.comment || ''}
+                    onChange={handleChange}
+                    ></textarea>
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs text-gray-800">Extra items</label>

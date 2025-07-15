@@ -2,6 +2,17 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import crypto from 'crypto';
 
+import dayjs from 'dayjs';
+
+export type BookingWithPackage = {
+  id: string;
+  room_id: string;
+  date: string;
+  time: string;
+  package: { duration: number };
+};
+
+
 export async function POST(req: Request) {
   const { email, packageId, date, time, extraItems, promoCode, name, phone } = await req.json();
 
@@ -40,18 +51,40 @@ export async function POST(req: Request) {
   const sortedRooms = roomOrder.filter(id => allowedRooms.includes(id));
   let selectedRoomId: string | null = null;
 
-  // Перебираем комнаты по приоритету
+  const { data: getBookings, error: getBookingError } = await supabase
+    .from('bookings')
+    .select(`
+      id,
+      room_id,
+      date,
+      time,
+      package:package_id (duration)
+    `)
+    .in('room_id', sortedRooms)
+    .eq('date', date)
+    .returns<BookingWithPackage[]>();
+
+  if (getBookingError) {
+    return NextResponse.json({ error: getBookingError.message }, { status: 500 });
+  }
+  const bufferMinutes = 15;
+
+  const targetTime = dayjs(`${date} ${time}`);
+  const targetEndTime = dayjs(`${date} ${time}`).add(pkg.duration  + bufferMinutes, 'm');
+
   for (const roomId of sortedRooms) {
-    const { data: bookings, error: bookingError } = await supabase
-      .from('bookings')
-      .select('id')
-      .eq('room_id', roomId)
-      .eq('date', date)
-      .eq('time', time);
-    if (bookingError) {
-      return NextResponse.json({ error: bookingError.message }, { status: 500 });
-    }
-    if (!bookings || bookings.length === 0) {
+    const bookingsForRoom = getBookings.filter(b => b.room_id === roomId);
+
+    const conflict = bookingsForRoom.some((b: BookingWithPackage) => {
+      const startTime = dayjs(`${b.date} ${b.time}`);
+      const duration = b.package?.duration || 0;
+      const endTime = startTime.add(duration + bufferMinutes, 'm');
+
+      return targetTime.isSame(startTime) || (targetEndTime.isAfter(startTime) && targetEndTime.isBefore(endTime)) || 
+            (targetTime.isAfter(startTime) && targetTime.isBefore(endTime));
+    });
+
+    if (!conflict) {
       selectedRoomId = roomId;
       break;
     }
@@ -88,12 +121,28 @@ export async function POST(req: Request) {
       .select('*')
       .eq('code', promoCode)
       .single();
+
+    if (promoError) {
+      console.error(promoError);
+      return NextResponse.json({ error: promoError.message }, { status: 500 });;
+    }
     if (!promoError && promo) {
       if (promo.discount_amount) {
         totalPrice = Math.max(0, totalPrice - Number(promo.discount_amount));
       } else if (promo.discount_percent) {
         totalPrice = totalPrice * (1 - promo.discount_percent / 100);
       }
+    }
+
+    const currentCount = promo.used_count || 0;
+    // 2. Оновити з інкрементом +1
+    const { error: updateError } = await supabase
+      .from('promo_codes')
+      .update({ used_count: currentCount + 1 })
+      .eq('code', promoCode);
+  
+    if(updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
   }
 

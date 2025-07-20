@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   console.log('PayU ORDER BODY:', JSON.stringify(body, null, 2));
 
   // Простая валидация
-  if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+  if (!amount || isNaN(Number(amount))) {
     console.error('PayU: Некорректная сумма', amount);
     return NextResponse.json({ error: 'Некорректная сумма' }, { status: 400 });
   }
@@ -46,6 +46,10 @@ export async function POST(req: Request) {
   if (!Array.isArray(products) || products.length === 0) {
     console.error('PayU: Не передан массив товаров', products);
     return NextResponse.json({ error: 'Не передан массив товаров' }, { status: 400 });
+  }
+  if (Number(amount) <= 0) {
+    console.log('PayU: Оплачений Ордер', amount, extOrderId);
+    return NextResponse.json({ redirectUri: continueUrl });
   }
   for (const p of products) {
     if (!p.name || !p.unitPrice || isNaN(Number(p.unitPrice)) || Number(p.unitPrice) <= 0 || !p.quantity || p.quantity <= 0) {

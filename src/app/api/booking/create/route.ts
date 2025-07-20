@@ -161,7 +161,7 @@ export async function POST(req: Request) {
         time,
         extra_items: extraItems || [],
         total_price: totalPrice,
-        status: 'pending',
+        status: totalPrice == 0 ? 'paid' : 'pending',
         promo_code: promoCode || null,
         name: name || null,
         phone: phone || null,

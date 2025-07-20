@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import dayjs from 'dayjs';
 
+function timeToMinutes(timeStr:any) {
+  const parts = timeStr.split(':');
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+
+  return hours * 60 + minutes;
+}
 
 export async function POST(req: Request) {
   const { code, total, time, date } = await req.json();
@@ -33,7 +40,7 @@ export async function POST(req: Request) {
   // --- Проверка времени действия промокода ---
   if (promo.time_from && promo.time_to && time) {
     // time, time_from, time_to — строки вида '14:00'
-    if (time < promo.time_from || time > promo.time_to) {
+    if (timeToMinutes(time) < timeToMinutes(promo.time_from) || timeToMinutes(time) > timeToMinutes(promo.time_to)) {
       return NextResponse.json({ valid: false, message: 'Промокод действует только в определённые часы' }, { status: 400 });
     }
   }

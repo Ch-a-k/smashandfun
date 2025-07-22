@@ -107,7 +107,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (err) {
     // Логируем ошибку для отладки
     // eslint-disable-next-line no-console
-    console.error('Ошибка отправки email:', err);
+    console.error('Błąd wysyłania e -maila:', err);
     res.status(500).json({ error: 'Błąd wysyłki emaila' });
   }
 } 

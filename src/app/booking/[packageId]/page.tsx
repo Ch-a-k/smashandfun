@@ -660,7 +660,7 @@ export default function BookingPage() {
               const data = await res.json();
               if (!data.booking || data.error) {
                 setPayLoading(false);
-                alert(data.error || 'Ошибка бронирования');
+                alert(data.error || 'Błąd rezerwacji');
                 return;
               }
               currentBookingId = data.booking.id;
@@ -699,7 +699,7 @@ export default function BookingPage() {
             if (payData.redirectUri) {
               window.location.href = payData.redirectUri;
             } else {
-              alert(payData.error || 'Ошибка оплаты');
+              alert(payData.error || 'Błąd płatności');
             }
           }}
           disabled={payLoading}

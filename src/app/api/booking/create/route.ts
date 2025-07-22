@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     .single();
 
   if (pkgError || !pkg) {
-    return NextResponse.json({ error: 'Пакет не найден' }, { status: 404 });
+    return NextResponse.json({ error: 'Pakiet nie został znaleziony' }, { status: 404 });
   }
 
   // Получаем название пакета
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
   }
 
   if (!selectedRoomId) {
-    return NextResponse.json({ error: 'Нет доступных комнат на выбранное время' }, { status: 409 });
+    return NextResponse.json({ error: 'Brak dostępnych pokoi na wybrany czas' }, { status: 409 });
   }
 
   // Считаем сумму: базовая цена + доп. предметы

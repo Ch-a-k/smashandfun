@@ -42,7 +42,7 @@ export function withAdminAuth(WrappedComponent: React.ComponentType) {
     }, [router]);
 
     if (loading) {
-      return <div style={{ color: '#fff', textAlign: 'center', marginTop: 80 }}>Проверка доступа...</div>;
+      return <div style={{ color: '#fff', textAlign: 'center', marginTop: 80 }}>Sprawdź dostępu ...</div>;
     }
     if (!isAdmin) {
       return null;

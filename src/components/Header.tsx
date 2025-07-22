@@ -240,7 +240,7 @@ export default function Header() {
             <a
               href="tel:+48881281313"
               className="flex items-center gap-2 text-white hover:text-[#f36e21] transition-colors"
-              aria-label="Позвонить по номеру +48 881 281 313"
+              aria-label="Zadzwoń pod numer +48 881 281 313"
             >
               <Phone className="w-5 h-5 text-[#f36e21]" />
               <span className="hidden sm:inline font-impact tracking-wide">+48 881 281 313</span>

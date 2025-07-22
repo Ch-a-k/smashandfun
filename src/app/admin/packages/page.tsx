@@ -252,7 +252,7 @@ export default function PackagesAdmin() {
               <textarea value={form.items.join('\n')} onChange={e => setForm(f => ({...f, items: e.target.value.split(/\r?\n/).filter(Boolean)}))} rows={3} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none', resize:'vertical'}} />
             </label>
             <label>Narzędzia (sprzęt ochronny):<br/>
-              <span style={{fontSize:13, color:'#aaa'}}>Выберите доступные опции</span>
+              <span style={{fontSize:13, color:'#aaa'}}>Wybierz dostępne opcje</span>
               <div style={{display:'flex', gap:12, marginTop:6}}>
                 {['ubranie','kask','rękawice'].map(tool => (
                   <label key={tool} style={{display:'flex',alignItems:'center',gap:4}}>

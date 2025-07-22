@@ -45,14 +45,14 @@ export default function Kontakt() {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Произошла ошибка при отправке сообщения');
+        throw new Error(result.message || 'Wystąpił błąd podczas wysyłania wiadomości');
       }
 
       setIsSuccess(true);
       reset();
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {
-      console.error('Ошибка при отправке формы:', error);
+      console.error('Błąd podczas wysyłania formularza:', error);
       // Здесь можно добавить обработку ошибок, например, показать сообщение пользователю
     }
   };

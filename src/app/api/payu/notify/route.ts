@@ -41,8 +41,8 @@ export async function POST(req: Request) {
       });
       const tokenData = await tokenRes.json();
       if (!tokenRes.ok) {
-        console.error('PayU: Ошибка получения токена', tokenData);
-        return NextResponse.json({ error: 'Ошибка получения токена PayU', details: tokenData }, { status: 500 });
+        console.error('PayU: Błąd tokenu', tokenData);
+        return NextResponse.json({ error: 'Błąd tokenu Payu', details: tokenData }, { status: 500 });
       }
       const accessToken = tokenData.access_token;
 
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
 
       if (bookingError || !booking) {
         console.error('Booking not found:', bookingError);
-        return NextResponse.json({ error: 'Бронювання не знайдено', details: bookingError }, { status: 404 });
+        return NextResponse.json({ error: 'Nie znaleziono rezerwacji', details: bookingError }, { status: 404 });
       }
 
       const orderTotal = Number(booking.total_price);
@@ -102,8 +102,8 @@ export async function POST(req: Request) {
         .eq('booking_id', bookingId);
 
       if (getPaymentsError) {
-        console.error('Помилка отримання попередніх платежів:', getPaymentsError);
-        return NextResponse.json({ error: 'Помилка отримання попередніх платежів', details: getPaymentsError }, { status: 500 });
+        console.error('Błąd odbierający poprzednie płatności:', getPaymentsError);
+        return NextResponse.json({ error: 'Błąd odbierający poprzednie płatności', details: getPaymentsError }, { status: 500 });
       }
 
       const previousTotal = getExistingPayments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
@@ -129,8 +129,8 @@ export async function POST(req: Request) {
         .eq('id', bookingId);
 
       if (updateBookingError) {
-        console.error('Ошибка обновления бронирования:', updateBookingError);
-        return NextResponse.json({ error: 'Ошибка обновления бронирования', details: updateBookingError }, { status: 500 });
+        console.error('Błąd aktualizacji rezerwacji:', updateBookingError);
+        return NextResponse.json({ error: 'Błąd rezerwacji', details: updateBookingError }, { status: 500 });
       }
 
       // 4. Получаем название пакета
@@ -157,8 +157,8 @@ export async function POST(req: Request) {
         ]);
 
       if (paymentsError) {
-        console.error('Помилка інсерту в таблицю payments', paymentsError);
-        return NextResponse.json({error: 'Помилка інсерту в таблицю payments', details: paymentsError}, {status: 500}); 
+        console.error('Wstaw błąd w tabeli płatności', paymentsError);
+        return NextResponse.json({error: 'Wstaw błąd w tabeli płatności', details: paymentsError}, {status: 500}); 
       }
 
       // 6. Формируем ссылки
@@ -191,6 +191,6 @@ export async function POST(req: Request) {
     return new Response('', { status: 200 });
   } catch (e) {
     console.error('PayU Webhook Error:', e);
-    return NextResponse.json({ error: 'Ошибка обработки уведомления PayU', details: e }, { status: 500 });
+    return NextResponse.json({ error: 'Błąd przetwarzania powiadomień Payu', details: e }, { status: 500 });
   }
 } 

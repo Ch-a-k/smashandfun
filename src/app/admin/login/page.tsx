@@ -14,7 +14,7 @@ export default function AdminLogin() {
     setError("");
     setLoading(true);
     if (!email || !password) {
-      setError("Введите email и пароль");
+      setError("Wpisz e -mail i hasło");
       setLoading(false);
       return;
     }
@@ -35,7 +35,7 @@ export default function AdminLogin() {
       .eq('email', email)
       .single();
     if (adminError || !adminData) {
-      setError("Нет доступа: вы не администратор");
+      setError("Brak dostępu: nie jesteś administratorem");
       setLoading(false);
       return;
     }
@@ -96,7 +96,7 @@ export default function AdminLogin() {
             autoComplete="username"
           />
         </label>
-        <label style={{ fontWeight: 600 }}>Пароль
+        <label style={{ fontWeight: 600 }}>Hasło
           <input
             type="password"
             value={password}
@@ -132,7 +132,7 @@ export default function AdminLogin() {
             transition: "background 0.2s"
           }}
         >
-          {loading ? "Вход..." : "Войти"}
+          {loading ? "Wejście..." : "Wchodzić"}
         </button>
         {error && <div style={{ color: "#ff4d4f", marginTop: 4, fontWeight: 600 }}>{error}</div>}
       </form>

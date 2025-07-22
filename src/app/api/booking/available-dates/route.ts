@@ -34,7 +34,7 @@ export async function POST(req: Request) {
     .single();
 
   if (pkgError || !pkg) {
-    return NextResponse.json({ error: 'Пакет не знайдено' }, { status: 404 });
+    return NextResponse.json({ error: 'Pakiet nie został znaleziony' }, { status: 404 });
   }
 
   const allowedRooms: string[] = pkg.allowed_rooms;
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     .lte('date', end.toISOString().slice(0, 10));
 
   if (bookingsError) {
-    return NextResponse.json({ error: 'Помилка при отриманні бронювань' }, { status: 500 });
+    return NextResponse.json({ error: 'Błąd po otrzymaniu rezerwacji' }, { status: 500 });
   }
 
   const bookedMap = new Map<string, Set<string>>(); // key = `${date}|${time}` => Set(roomId)

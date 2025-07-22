@@ -26,6 +26,6 @@ export async function POST() {
     }
     return NextResponse.json(data);
   } catch (e) {
-    return NextResponse.json({ error: 'Ошибка при получении токена PayU', details: e }, { status: 500 });
+    return NextResponse.json({ error: 'Błąd podczas odbierania tokenu Payu', details: e }, { status: 500 });
   }
 } 

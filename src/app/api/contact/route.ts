@@ -22,16 +22,16 @@ export async function POST(request: Request) {
       from: process.env.EMAIL_FROM,
       to: process.env.EMAIL_TO,
       cc: process.env.EMAIL_CC,
-      subject: `Новая заявка: ${subject || 'Контактная форма'}`,
+      subject: `Nowa aplikacja: ${subject || 'Formularz kontaktowy'}`,
       html: `
-        <h2>Новая заявка с сайта</h2>
-        <p><strong>Имя:</strong> ${name}</p>
+        <h2>Nowa aplikacja ze strony</h2>
+        <p><strong>Nazwa:</strong> ${name}</p>
         <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Телефон:</strong> ${phone}</p>
-        ${service ? `<p><strong>Услуга:</strong> ${service}</p>` : ''}
-        ${people ? `<p><strong>Количество человек:</strong> ${people}</p>` : ''}
-        ${date ? `<p><strong>Дата:</strong> ${date}</p>` : ''}
-        ${message ? `<p><strong>Сообщение:</strong> ${message}</p>` : ''}
+        <p><strong>Telefon:</strong> ${phone}</p>
+        ${service ? `<p><strong>Praca:</strong> ${service}</p>` : ''}
+        ${people ? `<p><strong>Liczba ludzi:</strong> ${people}</p>` : ''}
+        ${date ? `<p><strong>Data:</strong> ${date}</p>` : ''}
+        ${message ? `<p><strong>Wiadomość:</strong> ${message}</p>` : ''}
       `,
     };
 
@@ -39,13 +39,13 @@ export async function POST(request: Request) {
     await transporter.sendMail(mailOptions);
 
     return NextResponse.json(
-      { message: 'Сообщение успешно отправлено' },
+      { message: 'Wiadomość jest pomyślnie wysyłana' },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Ошибка при отправке письма:', error);
+    console.error('Błąd podczas wysyłania listu:', error);
     return NextResponse.json(
-      { message: 'Произошла ошибка при отправке сообщения' },
+      { message: 'Wystąpił błąd podczas wysyłania wiadomości' },
       { status: 500 }
     );
   }

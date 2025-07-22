@@ -107,7 +107,7 @@ export async function POST(req: Request) {
 
   if (bookingError) {
     console.error('Error', bookingError);
-    return NextResponse.json({ error: `Помилка отримання бронювання на ${date}`, details: bookingError }, { status: 500});
+    return NextResponse.json({ error: `Błąd odbierający rezerwację ${date}`, details: bookingError }, { status: 500});
   };
 
   for (const time of slots) {

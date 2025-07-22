@@ -13,7 +13,7 @@ function timeToMinutes(timeStr:any) {
 export async function POST(req: Request) {
   const { code, total, time, date } = await req.json();
   if (!code) {
-    return NextResponse.json({ valid: false, message: 'Промокод не указан' }, { status: 400 });
+    return NextResponse.json({ valid: false, message: 'Kod promocyjny nie jest wskazany' }, { status: 400 });
   }
   const { data: promo, error } = await supabase
     .from('promo_codes')
@@ -21,27 +21,27 @@ export async function POST(req: Request) {
     .eq('code', code)
     .single();
   if (error || !promo) {
-    return NextResponse.json({ valid: false, message: 'Промокод не найден' }, { status: 404 });
+    return NextResponse.json({ valid: false, message: 'Kod promocyjny nie został znaleziony' }, { status: 404 });
   }
   // Проверка срока действия
   const dayOfWeek = dayjs(date).get('day');
   const isWeekend = (dayOfWeek === 6) || (dayOfWeek  === 0);
   if(isWeekend) {
-    return NextResponse.json({ valid: false, message: 'Промокод неактивен в выходные' }, { status: 400 });
+    return NextResponse.json({ valid: false, message: 'Kod promocyjny jest nieaktywny w weekend' }, { status: 400 });
   }
   
   if (date && (promo.valid_from && date < promo.valid_from) || (promo.valid_to && date > promo.valid_to)) {
-    return NextResponse.json({ valid: false, message: 'Промокод неактивен' }, { status: 400 });
+    return NextResponse.json({ valid: false, message: 'Kod promocyjny jest nieaktywny' }, { status: 400 });
   }
   // Проверка лимита
   if (promo.usage_limit && promo.used_count >= promo.usage_limit) {
-    return NextResponse.json({ valid: false, message: 'Промокод уже использован максимальное число раз' }, { status: 400 });
+    return NextResponse.json({ valid: false, message: 'Kod promocyjny użył już maksymalnej liczby razy' }, { status: 400 });
   }
   // --- Проверка времени действия промокода ---
   if (promo.time_from && promo.time_to && time) {
     // time, time_from, time_to — строки вида '14:00'
     if (timeToMinutes(time) < timeToMinutes(promo.time_from) || timeToMinutes(time) > timeToMinutes(promo.time_to)) {
-      return NextResponse.json({ valid: false, message: 'Промокод действует только в определённые часы' }, { status: 400 });
+      return NextResponse.json({ valid: false, message: 'Kod promocyjny działa tylko o określonych godzinach' }, { status: 400 });
     }
   }
   // Считаем скидку
@@ -61,6 +61,6 @@ export async function POST(req: Request) {
     discountAmount,
     discountPercent,
     newTotal,
-    message: 'Промокод применён'
+    message: 'Kod promocyjny jest stosowany'
   });
 } 

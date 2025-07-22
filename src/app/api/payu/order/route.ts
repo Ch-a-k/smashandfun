@@ -28,33 +28,33 @@ export async function POST(req: Request) {
 
   // Простая валидация
   if (!amount || isNaN(Number(amount))) {
-    console.error('PayU: Некорректная сумма', amount);
-    return NextResponse.json({ error: 'Некорректная сумма' }, { status: 400 });
+    console.error('PayU: Niepoprawna kwota', amount);
+    return NextResponse.json({ error: 'Niepoprawna kwota' }, { status: 400 });
   }
   if (!currency || typeof currency !== 'string') {
-    console.error('PayU: Не указана валюта', currency);
-    return NextResponse.json({ error: 'Не указана валюта' }, { status: 400 });
+    console.error('PayU: Waluta nie jest wskazana', currency);
+    return NextResponse.json({ error: 'Waluta nie jest wskazana' }, { status: 400 });
   }
   if (!description || typeof description !== 'string') {
-    console.error('PayU: Не указано описание', description);
-    return NextResponse.json({ error: 'Не указано описание' }, { status: 400 });
+    console.error('PayU: Opis nie jest określony', description);
+    return NextResponse.json({ error: 'Opis nie jest określony' }, { status: 400 });
   }
   if (!email || typeof email !== 'string') {
-    console.error('PayU: Не указан email', email);
-    return NextResponse.json({ error: 'Не указан email' }, { status: 400 });
+    console.error('PayU: E -mail nie jest wskazany', email);
+    return NextResponse.json({ error: 'E -mail nie jest wskazany' }, { status: 400 });
   }
   if (!Array.isArray(products) || products.length === 0) {
-    console.error('PayU: Не передан массив товаров', products);
-    return NextResponse.json({ error: 'Не передан массив товаров' }, { status: 400 });
+    console.error('PayU: Wachlarz towarów nie jest przenoszony', products);
+    return NextResponse.json({ error: 'Wachlarz towarów nie jest przenoszony' }, { status: 400 });
   }
   if (Number(amount) <= 0) {
-    console.log('PayU: Оплачений Ордер', amount, extOrderId);
+    console.log('PayU: Płatne nakaz', amount, extOrderId);
     return NextResponse.json({ redirectUri: continueUrl });
   }
   for (const p of products) {
     if (!p.name || !p.unitPrice || isNaN(Number(p.unitPrice)) || Number(p.unitPrice) <= 0 || !p.quantity || p.quantity <= 0) {
-      console.error('PayU: Некорректный товар', p);
-      return NextResponse.json({ error: 'Некорректный товар', details: p }, { status: 400 });
+      console.error('PayU: Nieprawidłowe towary', p);
+      return NextResponse.json({ error: 'Nieprawidłowe towary', details: p }, { status: 400 });
     }
   }
 
@@ -88,8 +88,8 @@ export async function POST(req: Request) {
   });
   const tokenData = await tokenRes.json();
   if (!tokenRes.ok) {
-    console.error('PayU: Ошибка получения токена', tokenData);
-    return NextResponse.json({ error: 'Ошибка получения токена PayU', details: tokenData }, { status: 500 });
+    console.error('PayU: Błąd tokenu', tokenData);
+    return NextResponse.json({ error: 'Błąd tokenu PayU', details: tokenData }, { status: 500 });
   }
   const accessToken = tokenData.access_token;
 
@@ -130,8 +130,8 @@ export async function POST(req: Request) {
     body: JSON.stringify(orderPayload),
   });
   if (!orderRes.ok) {
-    console.error('PayU: Ошибка создания заказа', orderRes);
-    return NextResponse.json({ error: 'Ошибка создания заказа PayU', details: orderRes }, { status: 500 });
+    console.error('PayU: Błąd tworzenia zamówienia', orderRes);
+    return NextResponse.json({ error: 'Błąd utworzenia zamówienia payu', details: orderRes }, { status: 500 });
   }
   const parsedUrl = new URL(orderRes.url);
   const orderId = parsedUrl.searchParams.get('orderId');

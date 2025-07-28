@@ -58,6 +58,14 @@ interface Payment {
   created_at: string;
 }
 
+interface BookingWithPackage {
+  id: string;
+  room_id: string;
+  date: string;
+  time: string;
+  package: { duration: number };
+};
+
 // Генерация времени с шагом 15 минут с 09:00 до 21:00
 function generateTimeSlots(start: string, end: string, stepMinutes: number) {
   const result: string[] = [];
@@ -113,7 +121,7 @@ type Package = {
 function getPolandDate(): Date {
   const now = new Date();
   // Получить строку локального времени в Польше
-  const polandString = now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
+  const polandString = now.toLocaleString('en-US');
   return new Date(polandString);
 }
 
@@ -121,14 +129,14 @@ function getPolandDate(): Date {
 function parsePolandDate(str: string): Date {
   const [year, month, day] = str.split('-').map(Number);
   // Создаём дату в польской зоне (локальное время)
-  const polandString = new Date(year, month - 1, day).toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
+  const polandString = new Date(year, month - 1, day).toLocaleString('en-US');
   return new Date(polandString);
 }
 
 // Возвращает YYYY-MM-DD для даты в зоне Europe/Warsaw
 function formatDatePoland(date: Date): string {
   // Получаем локальное время в Польше
-  const poland = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
+  const poland = new Date(date.toLocaleString('en-US'));
   const year = poland.getFullYear();
   const month = (poland.getMonth() + 1).toString().padStart(2, '0');
   const day = poland.getDate().toString().padStart(2, '0');
@@ -422,10 +430,48 @@ function BookingsPage() {
       const allowedRooms: string[] = selectedPackage.allowed_rooms || [];
       const roomPriority: string[] = selectedPackage.room_priority && selectedPackage.room_priority.length > 0 ? selectedPackage.room_priority : allowedRooms;
       // Перебираем комнаты по приоритету и ищем свободную
-      for (const roomIdCandidate of roomPriority) {
-        const { data: bookings } = await supabase.from('bookings').select('id').eq('room_id', roomIdCandidate).eq('date', editForm.date).eq('time', editForm.time);
-        if (!bookings || bookings.length === 0) {
-          roomId = roomIdCandidate;
+      const { data: pkg, error: pkgError } = await supabase
+          .from('packages')
+          .select('*')
+          .eq('id', selectedPackage.id)
+          .single();
+
+      const bufferMinutes = 15;
+      
+      const targetTime = dayjs(`${editForm.date} ${editForm.time}`);
+      const targetEndTime = dayjs(`${editForm.date} ${editForm.time}`).add(pkg.duration  + bufferMinutes, 'm');
+
+      const { data: getBookings, error: getBookingError } = await supabase
+        .from('bookings')
+        .select(`
+          id,
+          room_id,
+          date,
+          time,
+          package:package_id (duration)
+        `)
+        .in('room_id', roomPriority)
+        .eq('date', editForm.date)
+        .returns<BookingWithPackage[]>();
+
+      if (getBookingError) {
+        return;
+      }
+
+      for (const roomIdT of roomPriority) {
+        const bookingsForRoom = getBookings.filter(b => b.room_id === roomIdT);
+    
+        const conflict = bookingsForRoom.some((b: BookingWithPackage) => {
+          const startTime = dayjs(`${b.date} ${b.time}`);
+          const duration = b.package?.duration || 0;
+          const endTime = startTime.add(duration + bufferMinutes, 'm');
+
+          return targetTime.isSame(startTime) || (targetEndTime.isAfter(startTime) && targetEndTime.isBefore(endTime)) || 
+                (targetTime.isAfter(startTime) && targetTime.isBefore(endTime));
+        });
+    
+        if (!conflict) {
+          roomId = roomIdT;
           break;
         }
       }

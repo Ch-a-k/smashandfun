@@ -430,7 +430,7 @@ function BookingsPage() {
       const allowedRooms: string[] = selectedPackage.allowed_rooms || [];
       const roomPriority: string[] = selectedPackage.room_priority && selectedPackage.room_priority.length > 0 ? selectedPackage.room_priority : allowedRooms;
       // Перебираем комнаты по приоритету и ищем свободную
-      const { data: pkg, error: pkgError } = await supabase
+      const { data: pkg } = await supabase
           .from('packages')
           .select('*')
           .eq('id', selectedPackage.id)

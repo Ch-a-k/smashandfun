@@ -670,6 +670,25 @@ function BookingsPage() {
     setSaving(false);
   }
 
+  async function handleDeleteBooking() {
+    if (!editForm) return;
+    if (!window.confirm('Czy na pewno chcesz usunąć wszystkie płatności tej rezerwacji?')) return;
+    setSaving(true);
+    setError(null);
+    const { id } = editForm;
+    const { error } = await supabase.from('payments').delete().eq('booking_id', id);
+    if (error) {
+      setError('Błąd usuwania: ' + error.message);
+    } else {
+      closeModal();
+      // Odśwież listę rezerwacji na wybrany dzień
+      const dateStr = editForm.date;
+      const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
+      setBookings((bookingsData as Booking[]) || []);
+    }
+    setSaving(false);
+  }
+
   return (
     <div className="p-4" style={{ background: '#f7f7fa', minHeight: '100vh' }}>
       <div className="flex justify-between items-center mb-4">
@@ -981,6 +1000,16 @@ function BookingsPage() {
                   disabled={saving}
                   className="p-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
                   title="Usuń rezerwację"
+                  style={{ minWidth: 44, minHeight: 44 }}
+                >
+                  <FaTrash size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteBooking}
+                  disabled={saving}
+                  className="p-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
+                  title="Usuń wszystkie płatności tej rezerwacji"
                   style={{ minWidth: 44, minHeight: 44 }}
                 >
                   <FaTrash size={18} />

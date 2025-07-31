@@ -125,8 +125,8 @@ export const pl = {
       duration: {
         '30': 'do 30 min',
         '45': 'do 45 min',
-        '120': 'do 120 min',
-        '180': 'do 180 min'
+        '90': 'do 90 min',
+        '150': 'do 150 min'
       },
       equipment: {
         included: 'W zestawie:',

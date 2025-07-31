@@ -7,7 +7,7 @@ import React from 'react';
 import { withAdminAuth } from '../components/withAdminAuth';
 import { FaTrash } from 'react-icons/fa';
 import dayjs from "dayjs";
-import { pl } from 'date-fns/locale/pl';
+import { pl }  from 'date-fns/locale/pl';
 
 registerLocale('pl', pl);
 

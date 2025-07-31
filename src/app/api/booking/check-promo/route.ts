@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import dayjs from 'dayjs';
 
-function timeToMinutes(timeStr:any) {
-  const parts = timeStr.split(':');
+function timeToMinutes(timeStr: unknown) {
+  const parts = (timeStr as string).split(':');
   const hours = parseInt(parts[0], 10);
   const minutes = parseInt(parts[1], 10);
 

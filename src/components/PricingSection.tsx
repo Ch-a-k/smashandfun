@@ -213,7 +213,6 @@ function PricingCard({ pkg, index }: { pkg: Package, index: number }) {
           </div>
           {isBestseller && (
             <Badge 
-              variant="featured"
               className="flex items-center gap-1"
             >
               <Sparkles className="w-3 h-3" />
@@ -262,7 +261,7 @@ export function PricingSection() {
       items: t('home.pricing.packages.extreme.items', { returnObjects: true }) as string[],
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-6'),
-      duration: t('home.pricing.duration.150'),
+      duration: t('home.pricing.duration.180'),
       price: '999 PLN',
       difficulty: t('home.pricing.packages.extreme.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/5/count/1/',
@@ -273,7 +272,7 @@ export function PricingSection() {
       items: t('home.pricing.packages.hard.items', { returnObjects: true }) as string[],
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-4'),
-      duration: t('home.pricing.duration.90'),
+      duration: t('home.pricing.duration.120'),
       price: '499 PLN',
       difficulty: t('home.pricing.packages.hard.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/4/count/1/',

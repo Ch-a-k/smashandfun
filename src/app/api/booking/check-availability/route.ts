@@ -39,6 +39,34 @@ export async function POST(req: Request) {
     if (booking) ignoreBookingId = booking.id;
   }
 
+  const fiveMinutesAgo = dayjs().subtract(2, 'minute').toISOString();
+  const { data: bookingToDelete, error: bookingToDeleteError } = await supabase
+    .from('bookings')
+    .select('id')
+    .eq('status', 'pending')
+    .lt('created_at', fiveMinutesAgo);
+
+
+
+  if (bookingToDeleteError || !bookingToDelete) {
+    console.error('bookingToDeleteError', bookingToDeleteError);
+  }
+
+  if (bookingToDelete?.length) {
+    const { error: deleteError } = await supabase
+      .from('bookings')
+      .delete()
+      .in('id', bookingToDelete.map(b => b.id));
+
+    if (deleteError) {
+      console.error('Помилка при видаленні бронювань:', deleteError);
+    } else {
+      console.log(`Видалено ${bookingToDelete.length} прострочених бронювань`);
+    }
+  }
+
+
+
   // Получаем пакет и список допустимых комнат
   const { data: pkg, error: pkgError } = await supabase
     .from('packages')

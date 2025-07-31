@@ -1,12 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { supabase } from '@/lib/supabaseClient';
-import DatePicker from 'react-datepicker';
+import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import React from 'react';
 import { withAdminAuth } from '../components/withAdminAuth';
 import { FaTrash } from 'react-icons/fa';
 import dayjs from "dayjs";
+import { pl } from 'date-fns/locale/pl';
+
+registerLocale('pl', pl);
 
 // Интерфейсы для типизации
 interface Booking {
@@ -430,7 +433,7 @@ function BookingsPage() {
       const allowedRooms: string[] = selectedPackage.allowed_rooms || [];
       const roomPriority: string[] = selectedPackage.room_priority && selectedPackage.room_priority.length > 0 ? selectedPackage.room_priority : allowedRooms;
       // Перебираем комнаты по приоритету и ищем свободную
-      const { data: pkg } = await supabase
+      const { data: pkg, error: pkgError } = await supabase
           .from('packages')
           .select('*')
           .eq('id', selectedPackage.id)

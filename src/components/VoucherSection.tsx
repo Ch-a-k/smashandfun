@@ -16,7 +16,7 @@ export function VoucherSection({ hideCta = false }: { hideCta?: boolean }) {
     e.preventDefault();
     
     // Перенаправляем на страницу контактов
-    router.push('/kontakt#contact-form');
+    router.push('/vouchery');
     
     // Скрипт для фокуса будет выполнен после загрузки страницы
     // Используем setTimeout, чтобы дать время для рендеринга страницы
@@ -99,7 +99,7 @@ export function VoucherSection({ hideCta = false }: { hideCta?: boolean }) {
               {/* CTA Button */}
               {!hideCta && (
                 <motion.a
-                  href="/kontakt#contact-form"
+                  href="/vouchery"
                   onClick={goToContactForm}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}

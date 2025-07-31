@@ -2,10 +2,13 @@
 import { useEffect, useState } from 'react';
 import { useI18n } from '@/i18n/I18nContext';
 import { useParams } from 'next/navigation';
-import DatePicker from 'react-datepicker';
+import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Image from 'next/image';
 import InFomoFooterButton from '@/components/InFomoFooterButton';
+import { pl } from 'date-fns/locale/pl';
+
+registerLocale('pl', pl);
 
 interface Package {
   id: string;
@@ -327,6 +330,7 @@ export default function BookingPage() {
           onMonthChange={handleMonthChange}
           placeholderText={t('booking.date')}
           dateFormat="yyyy-MM-dd"
+          locale="pl"
           className="datepicker-input"
         />
       </label>

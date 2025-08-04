@@ -8,7 +8,7 @@ import { isMarketingAllowed } from '@/lib/analytics';
 import Script from 'next/script';
 
 // ID пикселя Facebook
-const FB_PIXEL_ID = '2341539319565981';
+const FB_PIXEL_ID = '3458226151146279';
 
 // Старый ID пикселя, который нужно обнаружить и удалить
 const OLD_PIXEL_ID = '3458226151146279';

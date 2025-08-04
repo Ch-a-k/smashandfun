@@ -11,7 +11,7 @@ import Script from 'next/script';
 const FB_PIXEL_ID = '3458226151146279';
 
 // Старый ID пикселя, который нужно обнаружить и удалить
-const OLD_PIXEL_ID = '3458226151146279';
+const OLD_PIXEL_ID = '1234567890';
 
 // Флаг инициализации
 const PIXEL_INIT_FLAG = 'FB_PIXEL_INIT_V3';

@@ -117,105 +117,10 @@ function cleanupPixelScripts() {
 
 export default function MetaPixel() {
   const pathname = usePathname();
-  const [initialized, setInitialized] = useState(false);
 
-  // Инициализация Meta Pixel
-  useEffect(() => {
-    if (!isClient()) return;
-    
-    // Очищаем старые скрипты и данные
-    cleanupPixelScripts();
-    
-    // Проверяем согласие на маркетинг
-    if (!isMarketingAllowed()) {
-      console.log('Marketing not allowed by user, Facebook Pixel not initialized');
-      return;
-    }
-    
-    // Если пиксель уже инициализирован в этой сессии, не продолжаем
-    if (initialized) return;
-    
-    // Функция инициализации пикселя
-    const initPixel = () => {
-      // На всякий случай еще раз очищаем
-      cleanupPixelScripts();
-      
-      // Создаем функцию fbq
-      window.fbq = function(command, eventOrId, params, eventParams) {
-        // @ts-ignore
-        if (window.fbq.callMethod) {
-          // @ts-ignore
-          window.fbq.callMethod(command, eventOrId, params, eventParams);
-        } else {
-          // @ts-ignore
-          window.fbq.queue.push([command, eventOrId, params, eventParams]);
-        }
-      };
-      
-      // Устанавливаем резервную копию fbq
-      if (!window._fbq) window._fbq = window.fbq;
-      
-      // @ts-ignore
-      window.fbq.push = window.fbq;
-      // @ts-ignore
-      window.fbq.loaded = true;
-      // @ts-ignore
-      window.fbq.version = '2.0';
-      // @ts-ignore
-      window.fbq.queue = [];
-      
-      // Создаем и добавляем скрипт fbevents.js
-      const script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://connect.facebook.net/en_US/fbevents.js';
-      
-      script.onload = () => {
-        // После загрузки скрипта инициализируем пиксель с новым ID
-        if (window.fbq) {
-          console.log(`Initializing Facebook Pixel with ID: ${FB_PIXEL_ID}`);
-          window.fbq('init', FB_PIXEL_ID);
-          window.fbq('track', 'PageView');
-          
-          // Устанавливаем флаг инициализации
-          window[PIXEL_INIT_FLAG] = true;
-          setInitialized(true);
-        }
-      };
-      
-      script.onerror = (e) => {
-        console.error('Failed to load Facebook Pixel script:', e);
-        setInitialized(false);
-      };
-      
-      // Вставляем скрипт в начало head
-      const firstScript = document.getElementsByTagName('script')[0];
-      if (firstScript && firstScript.parentNode) {
-        firstScript.parentNode.insertBefore(script, firstScript);
-      } else {
-        document.head.appendChild(script);
-      }
-    };
-    
-    // Запускаем инициализацию с небольшой задержкой, чтобы дать время другим скриптам загрузиться
-    setTimeout(() => {
-      try {
-        initPixel();
-      } catch (error) {
-        console.error('Error initializing Facebook Pixel:', error);
-        setInitialized(false);
-      }
-    }, 100);
-    
-    return () => {
-      // Очистка при размонтировании компонента
-      cleanupPixelScripts();
-    };
-  }, [initialized]);
-  
   // Отслеживаем изменение пути для отправки PageView
   useEffect(() => {
     if (!isClient() || !isMarketingAllowed() || !pathname) return;
-    
     // Отправляем PageView при изменении пути
     // @ts-ignore
     if (window.fbq) {
@@ -223,26 +128,39 @@ export default function MetaPixel() {
       window.fbq('track', 'PageView');
     }
   }, [pathname]);
-  
+
+  // Проверяем согласие на маркетинг
+  if (!isMarketingAllowed()) return null;
+
   return (
-    <Script
-      id="fb-pixel"
-      strategy="afterInteractive"
-      dangerouslySetInnerHTML={{
-        __html: `
-          !function(f,b,e,v,n,t,s)
-          {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-          n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-          if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-          n.queue=[];t=b.createElement(e);t.async=!0;
-          t.src=v;s=b.getElementsByTagName(e)[0];
-          s.parentNode.insertBefore(t,s)}(window, document,'script',
-          'https://connect.facebook.net/en_US/fbevents.js');
-          fbq('init', '${FB_PIXEL_ID}');
-          fbq('track', 'PageView');
-          window['${PIXEL_INIT_FLAG}'] = true;
-        `,
-      }}
-    />
+    <>
+      <Script
+        id="fb-pixel"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            !function(f,b,e,v,n,t,s)
+            {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+            n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+            if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+            n.queue=[];t=b.createElement(e);t.async=!0;
+            t.src=v;s=b.getElementsByTagName(e)[0];
+            s.parentNode.insertBefore(t,s)}(window, document,'script',
+            'https://connect.facebook.net/en_US/fbevents.js');
+            fbq('init', '${FB_PIXEL_ID}');
+            fbq('track', 'PageView');
+            window['${PIXEL_INIT_FLAG}'] = true;
+          `,
+        }}
+      />
+      <noscript>
+        <img
+          height="1"
+          width="1"
+          style={{ display: 'none' }}
+          src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
+        />
+      </noscript>
+    </>
   );
 }

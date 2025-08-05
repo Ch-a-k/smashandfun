@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     if (booking) ignoreBookingId = booking.id;
   }
 
-  const fiveMinutesAgo = dayjs().subtract(2, 'minute').toISOString();
+  const fiveMinutesAgo = dayjs().subtract(5, 'minute').toISOString();
   const { data: bookingToDelete, error: bookingToDeleteError } = await supabase
     .from('bookings')
     .select('id')

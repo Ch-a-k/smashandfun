@@ -122,7 +122,9 @@ export async function POST(req: Request) {
     if (deleteError) {
       console.error('Помилка при видаленні бронювань:', deleteError);
     } else {
-      console.log(`Видалено ${bookingToDelete.length} прострочених бронювань`);
+      console.log(`Знайшло: ${bookingToDelete}`);
+      console.log(`Видалено: ${filtered}`);
+      console.log(`Видалено ${filtered.length} прострочених бронювань`);
     }
   }
 

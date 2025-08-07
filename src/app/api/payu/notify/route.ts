@@ -46,20 +46,6 @@ export async function POST(req: Request) {
       }
       const accessToken = tokenData.access_token;
 
-      // const retriveUrl = env === 'sandbox'
-      // ? `https://secure.snd.payu.com/api/v2_1/orders/${body.order.orderId}`
-      // : `https://secure.payu.com/api/v2_1/orders/${body.order.orderId}`;
-
-      // const retriveRes = await fetch(retriveUrl, {
-      //   method: 'GET',
-      //   headers: {
-      //     'Authorization': `Bearer ${accessToken}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-
-      // console.log('retriveRes', await retriveRes.json());
-
       const confirmUrl = env === 'sandbox'
         ? `https://secure.snd.payu.com/api/v2_1/orders/${body.order.orderId}/captures`
         : `https://secure.payu.com/api/v2_1/orders/${body.order.orderId}/captures`;

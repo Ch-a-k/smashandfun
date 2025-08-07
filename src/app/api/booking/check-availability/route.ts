@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { BookingWithPackage } from '../create/route';
 import dayjs from 'dayjs';
+import { unknown } from 'zod';
 
 function pad(num: number) {
   return num.toString().padStart(2, '0');
@@ -28,6 +29,7 @@ function getTimeSlots(start: string, end: string, interval: number, minStart: st
 
 export async function POST(req: Request) {
   const { packageId, date, token, time } = await req.json();
+  const env = process.env.PAYU_ENV || 'sandbox';
   let ignoreBookingId: string | null = null;
   if (token) {
     // Получаем bookingId по токену
@@ -39,13 +41,46 @@ export async function POST(req: Request) {
     if (booking) ignoreBookingId = booking.id;
   }
 
-  const fiveMinutesAgo = dayjs().subtract(15, 'minute').toISOString();
+  const fiveMinutesAgo = dayjs().subtract(18, 'minute').toISOString();
   const { data: bookingToDelete, error: bookingToDeleteError } = await supabase
     .from('bookings')
-    .select('id')
+    .select('id, payu_id')
     .eq('status', 'pending')
     .lt('created_at', fiveMinutesAgo);
 
+     if (!process.env.PAYU_CLIENT_ID || !process.env.PAYU_CLIENT_SECRET) {
+        return NextResponse.json({ error: 'PAYU_CLIENT_ID and PAYU_CLIENT_SECRET must be defined' }, { status: 400 });
+      }
+
+      if (!process.env.PAYU_SANDBOX_CLIENT_ID || !process.env.PAYU_SANDBOX_CLIENT_SECRET) {
+        return NextResponse.json({ error: 'PAYU_SANDBOX_CLIENT_ID and PAYU_SANDBOX_CLIENT_SECRET must be defined' }, { status: 400 });
+      }
+      // Получаем access token
+      const tokenUrl = env === 'sandbox'
+        ? 'https://secure.snd.payu.com/pl/standard/user/oauth/authorize'
+        : 'https://secure.payu.com/pl/standard/user/oauth/authorize';
+      const clientId: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID : process.env.PAYU_CLIENT_ID;
+      const clientSecret: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET : process.env.PAYU_CLIENT_SECRET;
+
+      const params = new URLSearchParams();
+      params.append('grant_type', 'client_credentials');
+      params.append('client_id', clientId);
+      params.append('client_secret', clientSecret);
+
+      const tokenRes = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+        },
+        body: params.toString(),
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenRes.ok) {
+        console.error('PayU: Błąd tokenu', tokenData);
+        return NextResponse.json({ error: 'Błąd tokenu Payu', details: tokenData }, { status: 500 });
+      }
+      const accessToken = tokenData.access_token;
 
 
   if (bookingToDeleteError || !bookingToDelete) {
@@ -53,10 +88,36 @@ export async function POST(req: Request) {
   }
 
   if (bookingToDelete?.length) {
+    const arrayOfFetch = [];
+    for(let el of bookingToDelete) {
+      const retriveUrl = env === 'sandbox'
+      ? `https://secure.snd.payu.com/api/v2_1/orders/${el.payu_id}`
+      : `https://secure.payu.com/api/v2_1/orders/${el.payu_id}`;
+
+      arrayOfFetch.push(
+        fetch(retriveUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        })
+      );
+    }
+
+    const fetchResponses = await Promise.all(arrayOfFetch);
+    const jsonResults = await Promise.all(fetchResponses.map(res => res.json()));
+    const dataResults = jsonResults.map(el => el.orders.map((res:any) => ({status: res.status, orderId: res.extOrderId})));
+    const flatRetriveRes = dataResults.flat();
+
+    const filtered = bookingToDelete.filter(booking => {
+      return flatRetriveRes.some(order => order.status === 'NEW' && order.orderId === booking.id);
+    });
+
     const { error: deleteError } = await supabase
       .from('bookings')
       .delete()
-      .in('id', bookingToDelete.map(b => b.id));
+      .in('id', filtered.map(b => b.id));
 
     if (deleteError) {
       console.error('Помилка при видаленні бронювань:', deleteError);

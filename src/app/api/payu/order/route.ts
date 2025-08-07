@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabaseClient';
 import { NextResponse } from 'next/server';
 
 interface Product {
@@ -115,6 +116,7 @@ export async function POST(req: Request) {
       quantity: p.quantity,
     })),
     ...(extOrderId ? { extOrderId } : {}),
+    validityTime: 900, // 15 min
   };
 
   // Логируем payload для PayU
@@ -135,6 +137,15 @@ export async function POST(req: Request) {
   }
   const parsedUrl = new URL(orderRes.url);
   const orderId = parsedUrl.searchParams.get('orderId');
+
+  const { error: updateBookingError } = await supabase
+    .from('bookings')
+    .update({ payu_id: orderId })
+    .eq('id', extOrderId);
+
+  if (updateBookingError) {
+    console.error('Błąd aktualizacji rezerwacji:', updateBookingError);
+  } 
   // Возвращаем ссылку для оплаты
   return NextResponse.json({ redirectUri: orderRes.url, orderId });
 } 

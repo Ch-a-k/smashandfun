@@ -2,7 +2,15 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { BookingWithPackage } from '../create/route';
 import dayjs from 'dayjs';
-import { unknown } from 'zod';
+
+interface Order {
+  status: string;
+  extOrderId: string;
+}
+
+interface JsonResult {
+  orders: Order[];
+}
 
 function pad(num: number) {
   return num.toString().padStart(2, '0');
@@ -89,7 +97,7 @@ export async function POST(req: Request) {
 
   if (bookingToDelete?.length) {
     const arrayOfFetch = [];
-    for(let el of bookingToDelete) {
+    for(const el of bookingToDelete) {
       const retriveUrl = env === 'sandbox'
       ? `https://secure.snd.payu.com/api/v2_1/orders/${el.payu_id}`
       : `https://secure.payu.com/api/v2_1/orders/${el.payu_id}`;
@@ -107,7 +115,7 @@ export async function POST(req: Request) {
 
     const fetchResponses = await Promise.all(arrayOfFetch);
     const jsonResults = await Promise.all(fetchResponses.map(res => res.json()));
-    const dataResults = jsonResults.map(el => el.orders.map((res:any) => ({status: res.status, orderId: res.extOrderId})));
+    const dataResults = jsonResults.map((el: JsonResult) => el.orders.map((res: Order) => ({status: res.status, orderId: res.extOrderId})));
     const flatRetriveRes = dataResults.flat();
 
     const filtered = bookingToDelete.filter(booking => {

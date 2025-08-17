@@ -115,7 +115,7 @@ export async function POST(req: Request) {
 
     const fetchResponses = await Promise.all(arrayOfFetch);
     const jsonResults = await Promise.all(fetchResponses.map(res => res.json()));
-    const dataResults = (jsonResults || []).map((el: JsonResult) => el.orders.map((res: Order) => ({status: res.status, orderId: res.extOrderId})));
+    const dataResults = (jsonResults || []).map((el: JsonResult) => (el.orders || []).map((res: Order) => ({status: res.status, orderId: res.extOrderId})));
     const flatRetriveRes = dataResults.flat();
 
     const filtered = bookingToDelete.filter(booking => {

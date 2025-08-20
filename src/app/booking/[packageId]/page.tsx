@@ -164,7 +164,7 @@ export default function BookingPage() {
       setLoadingIconIdx(idx => (idx + 1) % loadingIcons.length);
     }, 200);
     return () => clearInterval(interval);
-  }, [loading]);
+  }, [loading, loadingIcons.length]);
 
   // Селектор языка (PL/EN)
   const LangSelector = (
@@ -239,7 +239,7 @@ export default function BookingPage() {
       loadDates(start, end);
       setLoadedMonths(prev => new Set(prev).add(monthKey));
     }
-  }, [packageId]);
+  }, [packageId, loadDates, loadedMonths]);
 
   useEffect(() => {
     if (!form.date) return;
@@ -646,7 +646,18 @@ export default function BookingPage() {
             let currentBookingId = bookingId;
             if (!currentBookingId) {
               // 1. Создать бронирование, если ещё не создана
-              let utm: any = null;
+              type UtmParams = {
+                utm_source?: string | null;
+                utm_medium?: string | null;
+                utm_campaign?: string | null;
+                utm_term?: string | null;
+                utm_content?: string | null;
+                gclid?: string | null;
+                fbclid?: string | null;
+                referrer?: string | null;
+                landing_page?: string | null;
+              } | null;
+              let utm: UtmParams = null;
               try {
                 const raw = localStorage.getItem('utmParams');
                 utm = raw ? JSON.parse(raw) : null;

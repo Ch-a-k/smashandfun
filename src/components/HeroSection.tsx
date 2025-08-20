@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { useI18n } from '@/i18n/I18nContext'
 import Link from 'next/link'
 
@@ -88,7 +89,7 @@ function VideoBackground() {
         {VIDEO_SOURCES.map(({ src, type }) => (
           <source key={src} src={src} type={type} />
         ))}
-        <img src="/images/hero-fallback.png" alt="Fallback" className="w-full h-full object-cover" />
+        <Image src="/images/hero-fallback.png" alt="Fallback" fill className="object-cover" />
         Your browser does not support the video tag.
       </video>
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />

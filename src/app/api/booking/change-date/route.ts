@@ -58,12 +58,10 @@ export async function POST(req: Request) {
     });
     if (!emailRes.ok) {
       const errText = await emailRes.text();
-      // eslint-disable-next-line no-console
       console.error('Błąd wysyłania listu:', errText);
       return NextResponse.json({ error: 'Błąd wysyłki emaila' }, { status: 500 });
     }
   } catch (e) {
-    // eslint-disable-next-line no-console
     console.error('Błąd podczas wysyłania listu:', e);
     return NextResponse.json({ error: 'Błąd wysyłki emaila' }, { status: 500 });
   }

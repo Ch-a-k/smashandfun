@@ -4,6 +4,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { isMarketingAllowed } from '@/lib/analytics';
 import Script from 'next/script';
 
@@ -73,9 +74,9 @@ export default function MetaPixel() {
         }}
       />
       <noscript>
-        <img
-          height="1"
-          width="1"
+        <Image
+          height={1}
+          width={1}
           style={{ display: 'none' }}
           src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
           alt=""

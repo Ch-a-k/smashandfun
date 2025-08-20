@@ -45,7 +45,7 @@ function FlyingObjects() {
     '/images/glass-shard-4.png',
     '/images/glass-shard-5.png',
     '/images/glass-shard-6.png',
-  ];
+  ] as const;
   const [objects, setObjects] = useState<FlyingObjectProps[]>([]);
   useEffect(() => {
     const arr = Array.from({ length: 22 }).map((_, i) => {

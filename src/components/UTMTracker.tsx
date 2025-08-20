@@ -49,7 +49,7 @@ export default function UTMTracker() {
       };
 
       localStorage.setItem('utmParams', JSON.stringify(merged));
-    } catch (e) {
+    } catch {
       // no-op
     }
   }, []);

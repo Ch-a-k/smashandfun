@@ -759,14 +759,14 @@ function BookingsPage() {
                 <td className="border border-gray-300 px-2 py-1 text-center font-semibold text-gray-700 bg-gray-100">{hour}</td>
                 {rooms.map((room) => {
                   // Проверяем, есть ли бронирование, начинающееся в этот слот
-                  const bks = getBooking(room.id, hour, date.toISOString().slice(0, 10));
+                  const bks = getBooking(room.id, hour, formatDatePoland(date));
                   // Проверяем, не перекрывает ли этот слот уже занятая ячейка
                   let isCovered = false;
                   let isCleanup = false;
                   // Найдём, есть ли бронирование, которое закончилось ровно перед этим слотом
                   for (let prev = 0; prev < rowIdx; prev++) {
                     const prevHour = GODZINY[prev];
-                    const prevBks = getBooking(room.id, prevHour, date.toISOString().slice(0, 10));
+                    const prevBks = getBooking(room.id, prevHour, formatDatePoland(date));
                     if (prevBks.length > 0) {
                       const pkgId = prevBks[0].package_id;
                       const duration = Number(packageDurations[pkgId]) || 60;

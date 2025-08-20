@@ -49,6 +49,17 @@ create table if not exists bookings (
     updated_at timestamp with time zone default now()
 );
 
+-- Доп. аналитические поля (UTM/клики/реферер)
+alter table if exists bookings add column if not exists utm_source text;
+alter table if exists bookings add column if not exists utm_medium text;
+alter table if exists bookings add column if not exists utm_campaign text;
+alter table if exists bookings add column if not exists utm_term text;
+alter table if exists bookings add column if not exists utm_content text;
+alter table if exists bookings add column if not exists gclid text;
+alter table if exists bookings add column if not exists fbclid text;
+alter table if exists bookings add column if not exists referrer text;
+alter table if exists bookings add column if not exists landing_page text;
+
 -- Пользователи (клиенты)
 create table if not exists users (
     id uuid primary key default gen_random_uuid(),

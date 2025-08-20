@@ -1,9 +1,22 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Fragment } from "react";
 import { supabase } from '@/lib/supabaseClient';
 import { withAdminAuth } from './components/withAdminAuth';
 // Графики
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+
+type BookingRow = {
+  id: string;
+  date: string;
+  created_at: string;
+  total_price: number;
+  package_id: string;
+  user_email: string;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  gclid?: string | null;
+  fbclid?: string | null;
+};
 
 function TooltipInfo({ text }: { text: string }) {
   const [show, setShow] = useState(false);
@@ -55,9 +68,19 @@ function AdminDashboard() {
   const [stats, setStats] = useState<{ total: number, today: number, revenue: number } | null>(null);
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const [filterBy, setFilterBy] = useState<'date' | 'created_at'>('date');
+  const [minSum, setMinSum] = useState<string>('');
+  const [maxSum, setMaxSum] = useState<string>('');
   const [packageStats, setPackageStats] = useState<Array<{name: string, count: number, sum: number}>>([]);
   const [clientStats, setClientStats] = useState<Array<{email: string, count: number, sum: number}>>([]);
   const [reportLoading, setReportLoading] = useState(false);
+  // Heatmap & busy/idle days
+  const [heatmapDays, setHeatmapDays] = useState<string[]>([]);
+  const [heatmapHours, setHeatmapHours] = useState<string[]>([]);
+  const [heatmapCounts, setHeatmapCounts] = useState<Record<string, number>>({}); // key: `${day}_${hour}` -> count
+  const [heatmapMax, setHeatmapMax] = useState(0);
+  const [topBusyDays, setTopBusyDays] = useState<Array<{date: string, count: number}>>([]);
+  const [topIdleDays, setTopIdleDays] = useState<Array<{date: string, count: number}>>([]);
 
   useEffect(() => {
     async function fetchAdmin() {
@@ -79,12 +102,20 @@ function AdminDashboard() {
       setLoading(true);
       const { data: allBookings } = await supabase
         .from('bookings')
-        .select('id, total_price, date');
+        .select('id, total_price, date, created_at');
       let total = 0, today = 0, revenue = 0;
       if (allBookings && Array.isArray(allBookings)) {
         total = allBookings.length;
         const todayStr = new Date().toISOString().slice(0, 10);
-        today = allBookings.filter(b => b.date === todayStr).length;
+        // Считаем «сегодня» по дате создания (created_at), чтобы видеть заявки, пришедшие сегодня, даже если событие в будущем
+        today = allBookings.filter(b => {
+          try {
+            const created = new Date(b.created_at).toISOString().slice(0, 10);
+            return created === todayStr;
+          } catch {
+            return false;
+          }
+        }).length;
         revenue = allBookings.reduce((sum, b) => sum + (Number(b.total_price) || 0), 0);
       }
       setStats({ total, today, revenue });
@@ -93,17 +124,31 @@ function AdminDashboard() {
     fetchStats();
   }, []);
 
-  async function fetchReport() {
+  const fetchReport = useCallback(async () => {
     setReportLoading(true);
-    let query = supabase.from('bookings').select('id, date, total_price, package_id, user_email');
-    if (dateFrom) query = query.gte('date', dateFrom);
-    if (dateTo) query = query.lte('date', dateTo);
+    // Используем '*' чтобы не падать, если UTM-колонки ещё не добавлены в БД
+    let query = supabase.from('bookings').select('*');
+    // Диапазон по выбранному полю (дата бронирования или дата создания)
+    if (filterBy === 'date') {
+      if (dateFrom) query = query.gte('date', dateFrom);
+      if (dateTo) query = query.lte('date', dateTo);
+    } else {
+      // Для created_at учитываем время суток
+      const fromTs = dateFrom ? `${dateFrom}T00:00:00.000Z` : undefined;
+      const toTs = dateTo ? `${dateTo}T23:59:59.999Z` : undefined;
+      if (fromTs) query = query.gte('created_at', fromTs);
+      if (toTs) query = query.lte('created_at', toTs);
+    }
+    // Фильтр по сумме
+    if (minSum) query = query.gte('total_price', Number(minSum));
+    if (maxSum) query = query.lte('total_price', Number(maxSum));
     const { data: bookings } = await query;
     const { data: packages } = await supabase.from('packages').select('id, name');
     const packageMap = Object.fromEntries((packages||[]).map((p:{id:string, name:string})=>[p.id,p.name]));
     const byPackage: Record<string, {name:string, count:number, sum:number}> = {};
     const byClient: Record<string, {email:string, count:number, sum:number}> = {};
-    for (const b of bookings||[]) {
+    const rows: BookingRow[] = (bookings || []) as BookingRow[];
+    for (const b of rows) {
       if (!byPackage[b.package_id]) byPackage[b.package_id] = {name: packageMap[b.package_id]||b.package_id, count:0, sum:0};
       byPackage[b.package_id].count++;
       byPackage[b.package_id].sum += Number(b.total_price)||0;
@@ -114,9 +159,90 @@ function AdminDashboard() {
     setPackageStats(Object.values(byPackage).sort((a,b)=>b.count-a.count));
     setClientStats(Object.values(byClient).sort((a,b)=>b.sum-a.sum));
     setReportLoading(false);
+  }, [dateFrom, dateTo, filterBy, minSum, maxSum]);
+
+  useEffect(()=>{ fetchReport(); }, [fetchReport]);
+
+  // Helpers for date strings (YYYY-MM-DD)
+  function toYmd(d: Date) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 
-  useEffect(()=>{ fetchReport(); }, [dateFrom, dateTo]);
+  function addDays(d: Date, n: number) {
+    const dt = new Date(d);
+    dt.setDate(dt.getDate() + n);
+    return dt;
+  }
+
+  // Heatmap data fetch (always by booking date/time)
+  const fetchHeatmap = useCallback(async () => {
+    // Determine range
+    let startStr = dateFrom;
+    let endStr = dateTo;
+    if (!startStr || !endStr) {
+      const end = new Date();
+      const start = addDays(end, -29);
+      startStr = toYmd(start);
+      endStr = toYmd(end);
+    }
+    // Query bookings by date range
+    const { data: bookings } = await supabase
+      .from('bookings')
+      .select('date, time')
+      .gte('date', startStr)
+      .lte('date', endStr);
+
+    // Build day list (full calendar range)
+    const days: string[] = [];
+    let cur = new Date(startStr + 'T00:00:00Z');
+    const end = new Date(endStr + 'T00:00:00Z');
+    while (cur <= end) {
+      days.push(toYmd(cur));
+      cur = addDays(cur, 1);
+    }
+
+    // Build hours from data (HH) or fallback 08-22
+    const hourSet = new Set<string>();
+    for (const b of bookings || []) {
+      if (b.time && typeof b.time === 'string') {
+        hourSet.add(b.time.slice(0, 2));
+      }
+    }
+    if (hourSet.size === 0) {
+      for (let h = 8; h <= 22; h++) hourSet.add(String(h).padStart(2, '0'));
+    }
+    const hours = Array.from(hourSet).sort();
+
+    // Counts
+    const counts: Record<string, number> = {};
+    let max = 0;
+    const dayTotals: Record<string, number> = Object.fromEntries(days.map(d => [d, 0]));
+    for (const b of bookings || []) {
+      const d = b.date as string;
+      const h = (b.time as string).slice(0, 2);
+      const key = `${d}_${h}`;
+      counts[key] = (counts[key] || 0) + 1;
+      dayTotals[d] = (dayTotals[d] || 0) + 1;
+      if (counts[key] > max) max = counts[key];
+    }
+
+    // Top busy/idle days
+    const dayPairs = Object.entries(dayTotals).map(([d, c]) => ({ date: d, count: c }));
+    const busy = [...dayPairs].sort((a, b) => b.count - a.count).slice(0, 5);
+    const idle = [...dayPairs].sort((a, b) => a.count - b.count).slice(0, 5);
+
+    setHeatmapDays(days);
+    setHeatmapHours(hours);
+    setHeatmapCounts(counts);
+    setHeatmapMax(max);
+    setTopBusyDays(busy);
+    setTopIdleDays(idle);
+  }, [dateFrom, dateTo]);
+
+  useEffect(() => { fetchHeatmap(); }, [fetchHeatmap]);
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
@@ -139,7 +265,7 @@ function AdminDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `statystyki_${dateFrom||'od'}_${dateTo||'do'}.csv`;
+    a.download = `statystyki_${filterBy}_${dateFrom||'od'}_${dateTo||'do'}_${minSum||'min'}-${maxSum||'max'}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -195,20 +321,61 @@ function AdminDashboard() {
           <span style={{fontSize:13, color:'#ff9f58', fontWeight:600, marginBottom:2}}>Przychód (PLN) <TooltipInfo text="Suma przychodu brutto z wszystkich rezerwacji." /></span>
           <span style={{fontSize:26, color:'#f36e21', fontWeight:900}}>{stats?.revenue ?? '-'}</span>
         </div>
-        {/* Фильтр по dacie + таблица по пакетам */}
+        {/* Фильтр по датам/сумме + таблица по пакетам */}
         <div style={{background:'#23222a', borderRadius:10, padding:10, width:'100%', minWidth:260, gridColumn: '1 / -1', boxShadow:'0 1px 8px #0003', marginBottom:0}}>
           <div style={{fontWeight:700, fontSize:16, color:'#f36e21', marginBottom:6, display:'flex', alignItems:'center', gap:6}}>
-            Raport za okres <TooltipInfo text="Wybierz zakres dat, aby zobaczyć statystyki rezerwacji i przychodu dla każdego pakietu." />
+            Raport za okres <TooltipInfo text="Wybierz zakres oraz typ daty (data rezerwacji lub data utworzenia) i filtry po kwocie, aby zobaczyć statystyki rezerwacji i przychodu." />
           </div>
           <div style={{display:'flex', gap:8, marginBottom:10, flexWrap:'wrap'}}>
+            {/* Presety дат */}
+            <div style={{display:'flex', gap:6, flexWrap:'wrap', alignItems:'flex-end'}}>
+              <button onClick={() => {
+                const today = toYmd(new Date());
+                setDateFrom(today); setDateTo(today);
+              }} style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontWeight:700,fontSize:13,cursor:'pointer',marginTop:18}}>Dzisiaj</button>
+              <button onClick={() => {
+                const end = new Date(); const start = addDays(end, -6);
+                setDateFrom(toYmd(start)); setDateTo(toYmd(end));
+              }} style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontWeight:700,fontSize:13,cursor:'pointer',marginTop:18}}>Ostatnie 7 dni</button>
+              <button onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), 1);
+                const end = new Date(now.getFullYear(), now.getMonth()+1, 0);
+                setDateFrom(toYmd(start)); setDateTo(toYmd(end));
+              }} style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontWeight:700,fontSize:13,cursor:'pointer',marginTop:18}}>Ten miesiąc</button>
+              <button onClick={() => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth()-1, 1);
+                const end = new Date(now.getFullYear(), now.getMonth(), 0);
+                setDateFrom(toYmd(start)); setDateTo(toYmd(end));
+              }} style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontWeight:700,fontSize:13,cursor:'pointer',marginTop:18}}>Poprzedni miesiąc</button>
+            </div>
+            <div>
+              <label>Filtruj po:<br/>
+                <select value={filterBy} onChange={e=>setFilterBy(e.target.value as 'date'|'created_at')} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontSize:13,fontWeight:700,outline:'none',minWidth:180,height:36,marginTop:18}}>
+                  <option value="date">Dacie rezerwacji</option>
+                  <option value="created_at">Dacie utworzenia</option>
+                </select>
+              </label>
+            </div>
             <div>
               <label>Data od:<br/>
-                <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'4px 8px',fontSize:14,fontWeight:500,outline:'none',minWidth:120}} />
+                <input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontSize:13,fontWeight:700,outline:'none',minWidth:100,height:36,marginTop:18}} />
               </label>
             </div>
             <div>
               <label>Data do:<br/>
-                <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'4px 8px',fontSize:14,fontWeight:500,outline:'none',minWidth:120}} />
+                <input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontSize:13,fontWeight:700,outline:'none',minWidth:100,height:36,marginTop:18}} />
+              </label>
+            </div>
+            <div>
+              <label>Min suma (PLN):<br/>
+                <input type="number" inputMode="decimal" placeholder="np. 100" value={minSum} onChange={e=>setMinSum(e.target.value)} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontSize:13,fontWeight:700,outline:'none',minWidth:180,height:36,marginTop:18}} />
+              </label>
+            </div>
+            <div>
+              <label>Max suma (PLN):<br/>
+                <input type="number" inputMode="decimal" placeholder="np. 1000" value={maxSum} onChange={e=>setMaxSum(e.target.value)} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'6px 10px',fontSize:13,fontWeight:700,outline:'none',minWidth:180,height:36,marginTop:18}} />
               </label>
             </div>
             <button onClick={fetchReport} disabled={reportLoading} style={{background:'#f36e21',color:'#fff',border:'none',borderRadius:8,padding:'6px 16px',fontWeight:700,fontSize:14,cursor:reportLoading?'not-allowed':'pointer',marginTop:18}}>Odśwież</button>
@@ -298,6 +465,74 @@ function AdminDashboard() {
                 />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+        {/* Heatmap: obciążenie slotów */}
+        <div style={{width:'100%', minWidth:260, gridColumn: '1 / -1', display:'grid', gap:18, marginTop:0}}>
+          <div style={{background:'#18171c', borderRadius:10, padding:10}}>
+            <div style={{fontWeight:600, fontSize:14, marginBottom:8, color:'#ff9f58'}}>Obciążenie slotów (heatmapa)</div>
+            {/* Header hours */}
+            <div style={{display:'grid', gridTemplateColumns:`120px repeat(${heatmapHours.length}, minmax(28px, 1fr))`, gap:4, alignItems:'stretch'}}>
+              <div style={{padding:'6px 8px', color:'#aaa', fontSize:12}}>Data</div>
+              {heatmapHours.map(h => (
+                <div key={h} style={{padding:'6px 4px', textAlign:'center', color:'#aaa', fontSize:12}}>{h}:00</div>
+              ))}
+              {heatmapDays.map(d => (
+                <Fragment key={d}>
+                  <div style={{padding:'6px 8px', fontSize:12, color:'#fff'}}>{d}</div>
+                  {heatmapHours.map(h => {
+                    const key = `${d}_${h}`;
+                    const c = heatmapCounts[key] || 0;
+                    const intensity = heatmapMax > 0 ? c / heatmapMax : 0;
+                    const bg = intensity === 0 ? '#23222a' : `rgba(243, 110, 33, ${0.2 + 0.8*intensity})`;
+                    return (
+                      <div key={key} title={`${d} ${h}:00 → ${c}`} style={{height: 24, borderRadius:6, background:bg, border:'1px solid #2a2a2f'}} />
+                    );
+                  })}
+                </Fragment>
+              ))}
+            </div>
+            <div style={{marginTop:8, color:'#aaa', fontSize:12}}>Jaśniejszy цвет — больше бронирований в слоте. Диапазон по текущим фильтрам даты.</div>
+          </div>
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:18}}>
+            <div style={{background:'#18171c', borderRadius:10, padding:10}}>
+              <div style={{fontWeight:600, fontSize:14, marginBottom:8, color:'#ff9f58'}}>TOP dni (najbardziej obciążone)</div>
+              <table style={{width:'100%', borderCollapse:'collapse', color:'#fff', fontSize:14}}>
+                <thead>
+                  <tr style={{background:'#23222a', color:'#ff9f58'}}>
+                    <th style={{padding:'6px 8px', textAlign:'left'}}>Data</th>
+                    <th style={{padding:'6px 8px', textAlign:'left'}}>Rezerwacje</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topBusyDays.map((d)=> (
+                    <tr key={d.date} style={{borderBottom:'1px solid #333'}}>
+                      <td style={{padding:'6px 8px'}}>{d.date}</td>
+                      <td style={{padding:'6px 8px'}}>{d.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div style={{background:'#18171c', borderRadius:10, padding:10}}>
+              <div style={{fontWeight:600, fontSize:14, marginBottom:8, color:'#ff9f58'}}>Najmniej obciążone dni</div>
+              <table style={{width:'100%', borderCollapse:'collapse', color:'#fff', fontSize:14}}>
+                <thead>
+                  <tr style={{background:'#23222a', color:'#ff9f58'}}>
+                    <th style={{padding:'6px 8px', textAlign:'left'}}>Data</th>
+                    <th style={{padding:'6px 8px', textAlign:'left'}}>Rezerwacje</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topIdleDays.map((d)=> (
+                    <tr key={d.date} style={{borderBottom:'1px solid #333'}}>
+                      <td style={{padding:'6px 8px'}}>{d.date}</td>
+                      <td style={{padding:'6px 8px'}}>{d.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
         {/* Статистика по пакетам */}

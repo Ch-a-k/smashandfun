@@ -646,6 +646,11 @@ export default function BookingPage() {
             let currentBookingId = bookingId;
             if (!currentBookingId) {
               // 1. Создать бронирование, если ещё не создана
+              let utm: any = null;
+              try {
+                const raw = localStorage.getItem('utmParams');
+                utm = raw ? JSON.parse(raw) : null;
+              } catch {}
               const res = await fetch('/api/booking/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -658,7 +663,16 @@ export default function BookingPage() {
                   promoCode: form.promoCode,
                   paymentType: form.paymentType,
                   name: form.name,
-                  phone: form.phone
+                  phone: form.phone,
+                  utm_source: utm?.utm_source || null,
+                  utm_medium: utm?.utm_medium || null,
+                  utm_campaign: utm?.utm_campaign || null,
+                  utm_term: utm?.utm_term || null,
+                  utm_content: utm?.utm_content || null,
+                  gclid: utm?.gclid || null,
+                  fbclid: utm?.fbclid || null,
+                  referrer: utm?.referrer || (typeof document !== 'undefined' ? document.referrer : null),
+                  landing_page: utm?.landing_page || (typeof window !== 'undefined' ? window.location.href : null),
                 })
               });
               const data = await res.json();

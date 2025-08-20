@@ -14,7 +14,8 @@ export type BookingWithPackage = {
 
 
 export async function POST(req: Request) {
-  const { email, packageId, date, time, extraItems, promoCode, name, phone } = await req.json();
+  const { email, packageId, date, time, extraItems, promoCode, name, phone,
+    utm_source, utm_medium, utm_campaign, utm_term, utm_content, gclid, fbclid, referrer, landing_page } = await req.json();
 
   // Получаем пакет и список допустимых комнат
   const { data: pkg, error: pkgError } = await supabase
@@ -165,7 +166,16 @@ export async function POST(req: Request) {
         promo_code: promoCode || null,
         name: name || null,
         phone: phone || null,
-        change_token: changeToken
+        change_token: changeToken,
+        utm_source: utm_source || null,
+        utm_medium: utm_medium || null,
+        utm_campaign: utm_campaign || null,
+        utm_term: utm_term || null,
+        utm_content: utm_content || null,
+        gclid: gclid || null,
+        fbclid: fbclid || null,
+        referrer: referrer || null,
+        landing_page: landing_page || null,
       }
     ])
     .select()

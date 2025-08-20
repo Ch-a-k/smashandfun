@@ -3,7 +3,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { isMarketingAllowed } from '@/lib/analytics';
 import Script from 'next/script';
 
@@ -33,6 +33,11 @@ declare global {
 
 export default function MetaPixel() {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Отслеживаем изменение пути для отправки PageView
   useEffect(() => {
@@ -43,8 +48,8 @@ export default function MetaPixel() {
     }
   }, [pathname]);
 
-  // Проверяем согласие на маркетинг
-  if (!isMarketingAllowed()) return null;
+  // Проверяем согласие на маркетинг и монтирование (чтобы избежать SSR/CSR расхождений)
+  if (!mounted || !isMarketingAllowed()) return null;
 
   return (
     <>

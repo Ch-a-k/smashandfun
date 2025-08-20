@@ -492,7 +492,7 @@ function AdminDashboard() {
                 </Fragment>
               ))}
             </div>
-            <div style={{marginTop:8, color:'#aaa', fontSize:12}}>Jaśniejszy цвет — больше бронирований в слоте. Диапазон по текущим фильтрам даты.</div>
+            <div style={{marginTop:8, color:'#aaa', fontSize:12}}>Im jaśniejszy kolor, tym więcej rezerwacji w slocie. Komórka bez koloru – brak rezerwacji. Filtry zakresu według bieżącej daty.</div>
           </div>
           <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:18}}>
             <div style={{background:'#18171c', borderRadius:10, padding:10}}>

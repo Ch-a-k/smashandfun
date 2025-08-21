@@ -646,22 +646,7 @@ export default function BookingPage() {
             let currentBookingId = bookingId;
             if (!currentBookingId) {
               // 1. Создать бронирование, если ещё не создана
-              type UtmParams = {
-                utm_source?: string | null;
-                utm_medium?: string | null;
-                utm_campaign?: string | null;
-                utm_term?: string | null;
-                utm_content?: string | null;
-                gclid?: string | null;
-                fbclid?: string | null;
-                referrer?: string | null;
-                landing_page?: string | null;
-              } | null;
-              let utm: UtmParams = null;
-              try {
-                const raw = localStorage.getItem('utmParams');
-                utm = raw ? JSON.parse(raw) : null;
-              } catch {}
+              
               const res = await fetch('/api/booking/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -675,15 +660,6 @@ export default function BookingPage() {
                   paymentType: form.paymentType,
                   name: form.name,
                   phone: form.phone,
-                  utm_source: utm?.utm_source || null,
-                  utm_medium: utm?.utm_medium || null,
-                  utm_campaign: utm?.utm_campaign || null,
-                  utm_term: utm?.utm_term || null,
-                  utm_content: utm?.utm_content || null,
-                  gclid: utm?.gclid || null,
-                  fbclid: utm?.fbclid || null,
-                  referrer: utm?.referrer || (typeof document !== 'undefined' ? document.referrer : null),
-                  landing_page: utm?.landing_page || (typeof window !== 'undefined' ? window.location.href : null),
                 })
               });
               const data = await res.json();

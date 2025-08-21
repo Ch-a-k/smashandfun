@@ -6,7 +6,6 @@ import { I18nProvider } from '@/i18n/I18nContext'
 import { Inter } from 'next/font/google'
 import MetaPixel from '@/components/MetaPixel'
 import GoogleTagManager from '@/components/GoogleTagManager'
-import UTMTracker from '@/components/UTMTracker'
 
 // Load custom fonts
 const impact = localFont({
@@ -114,8 +113,6 @@ export default function RootLayout({
         <I18nProvider>
           {children}
           <CookieConsent />
-          {/* Перенос аналитики в конец body, после контента */}
-          <UTMTracker />
           <GoogleTagManager />
           <MetaPixel />
         </I18nProvider>

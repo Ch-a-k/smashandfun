@@ -12,10 +12,7 @@ type BookingRow = {
   total_price: number;
   package_id: string;
   user_email: string;
-  utm_source?: string | null;
-  utm_medium?: string | null;
-  gclid?: string | null;
-  fbclid?: string | null;
+  // UTM поля удалены
 };
 
 function TooltipInfo({ text }: { text: string }) {

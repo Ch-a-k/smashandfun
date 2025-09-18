@@ -10,17 +10,10 @@ interface GTagEvent {
 // Типы для window.gtag
 type GTagArg = string | GTagEvent | Record<string, unknown>;
 
-// Типы для Facebook Pixel
-type FbqCommand = 'init' | 'track' | 'trackCustom' | 'trackSingle' | 'consent';
-type FbqEvent = 'PageView' | 'ViewContent' | 'CompleteRegistration' | 'Lead' | 'Purchase' | string;
-type FbqParams = Record<string, string | number | boolean | null | undefined>;
-
 declare global {
   interface Window {
     gtag?: (command: string, ...args: GTagArg[]) => void;
     dataLayer?: unknown[];
-    fbq?: (command: FbqCommand, eventOrId: FbqEvent | string, params?: FbqParams | FbqEvent, eventParams?: FbqParams) => void;
-    _fbPixelInit?: boolean; // Флаг для отслеживания инициализации пикселя
   }
 }
 

@@ -4,8 +4,8 @@ import localFont from 'next/font/local'
 import CookieConsent from '@/components/CookieConsent'
 import { I18nProvider } from '@/i18n/I18nContext'
 import { Inter } from 'next/font/google'
-import MetaPixel from '@/components/MetaPixel'
 import GoogleTagManager from '@/components/GoogleTagManager'
+import { Analytics } from '@vercel/analytics/react'
 
 // Load custom fonts
 const impact = localFont({
@@ -113,8 +113,8 @@ export default function RootLayout({
         <I18nProvider>
           {children}
           <CookieConsent />
-          <MetaPixel />
           <GoogleTagManager />
+          <Analytics />
         </I18nProvider>
       </body>
     </html>

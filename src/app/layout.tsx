@@ -113,8 +113,8 @@ export default function RootLayout({
         <I18nProvider>
           {children}
           <CookieConsent />
-          <GoogleTagManager />
           <MetaPixel />
+          <GoogleTagManager />
         </I18nProvider>
       </body>
     </html>

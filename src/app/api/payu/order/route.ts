@@ -50,6 +50,50 @@ export async function POST(req: Request) {
   }
   if (Number(amount) <= 0) {
     console.log('PayU: Płatne nakaz', amount, extOrderId);
+    if(extOrderId) {
+      const { data: booking, error: bookingError  } = await supabase
+        .from('bookings')
+        .select()
+        .eq('id', extOrderId)
+        .single();
+
+      if (bookingError || !booking) {
+        console.error('Booking not found:', bookingError);
+      }
+
+      let packageName = '';
+      if (booking && booking.package_id) {
+        const { data: pkg } = await supabase
+          .from('packages')
+          .select('name')
+          .eq('id', booking.package_id)
+          .single();
+        packageName = pkg?.name || '';
+      }
+
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun-admin.vercel.app'; // 'https://smashandfun.pl';
+      const changeLink = `${baseUrl}/booking/change?token=${booking.change_token}`;
+      const cancelLink = `${baseUrl}/booking/cancel?token=${booking.change_token}`;
+
+      // 7. Отправляем письмо
+      await fetch(baseUrl + '/api/sendBookingEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: booking.user_email,
+          booking: {
+            date: booking.date,
+            time: booking.time,
+            package: packageName,
+            name: booking.name,
+            change_link: changeLink,
+            cancel_link: cancelLink
+          },
+          type: 'new'
+        })
+      });
+    }
+     
     return NextResponse.json({ redirectUri: continueUrl });
   }
   for (const p of products) {

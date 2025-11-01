@@ -91,9 +91,9 @@ export const en = {
         extreme: {
           name: 'HARD',
           items: [
-            '35 glass items',
-            '4 pieces of furniture',
-            '7 electronic devices'
+            '50 glass items',
+            '5 pieces of furniture',
+            '10 electronic devices'
           ],
           difficulty: 'EXTREME'
         }

@@ -262,7 +262,7 @@ export function PricingSection() {
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-6'),
       duration: t('home.pricing.duration.150'),
-      price: '999 PLN',
+      price: '1099 PLN',
       difficulty: t('home.pricing.packages.extreme.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/5/count/1/',
       id: '21eb6278-0593-442c-ae9e-49cb8b853aee'
@@ -273,7 +273,7 @@ export function PricingSection() {
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-4'),
       duration: t('home.pricing.duration.90'),
-      price: '499 PLN',
+      price: '549 PLN',
       difficulty: t('home.pricing.packages.hard.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/4/count/1/',
       isBestseller: true,
@@ -285,7 +285,7 @@ export function PricingSection() {
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-2'),
       duration: t('home.pricing.duration.45'),
-      price: '299 PLN',
+      price: '349 PLN',
       difficulty: t('home.pricing.packages.medium.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/3/count/1/',
       id: '346a3361-a0a8-4171-9513-fe02098923e5'
@@ -296,7 +296,7 @@ export function PricingSection() {
       tools: ['ubranie', 'kask', 'rękawice'],
       people: t('home.pricing.people.1-2'),
       duration: t('home.pricing.duration.30'),
-      price: '199 PLN',
+      price: '299 PLN',
       difficulty: t('home.pricing.packages.easy.difficulty'),
       bookingUrl: 'https://smashandfun.simplybook.it/v2/#book/service/2/count/1/',
       id: '439e5e5b-db4a-4f66-9c83-beeef9c44eac'

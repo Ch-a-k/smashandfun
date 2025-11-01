@@ -83,8 +83,8 @@ export const pl = {
           name: 'BUŁKA Z MASŁEM',
           items: [
             '25 szklanych przedmiotów',
-            '0 mebel',
-            '0 urządzenia elektroniczne'
+            '0 mebli',
+            '0 urządzeń elektronicznych'
           ],
           difficulty: 'ŁATWY'
         },
@@ -109,9 +109,9 @@ export const pl = {
         extreme: {
           name: 'TRUDNY',
           items: [
-            '35 szklanych przedmiotów',
-            '4 meble',
-            '7 urządzeń elektronicznych'
+            '50 szklanych przedmiotów',
+            '5 mebli',
+            '10 urządzeń elektronicznych'
           ],
           difficulty: 'EKSTREMALNY'
         }

@@ -69,7 +69,7 @@ export default function VoucheryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f12] flex flex-col">
+    <div className="min-h-screen bg-[#0f0f12] flex flex-col overflow-x-hidden">
       <Header />
       <main className="flex-1">
         {/* Секция ваучера */}

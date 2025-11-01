@@ -136,7 +136,7 @@ export default function VoucheryPage() {
                   className="w-full rounded-lg px-4 py-2 bg-white/10 text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-[#f36e21]"
                 >
                   {PACKAGE_KEYS.map((key) => (
-                    <option key={key} value={key}>{t(`home.pricing.packages.${key}.name`)}</option>
+                    <option key={key} value={key} style={{ backgroundColor: 'rgb(35, 31, 32)' }}>{t(`home.pricing.packages.${key}.name`)}</option>
                   ))}
                 </select>
               </div>

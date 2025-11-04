@@ -12,22 +12,21 @@ export const pl = {
     settings: 'Ustawienia'
   },
   happyHours: {
-    title: 'HAPPY HOURS',
-    subtitle: 'Specjalna oferta dla rannych ptaszków!',
+    title: 'BLACK FRIDAY',
+    subtitle: 'Specjalna oferta na wszystkie pakiety',
     schedule: {
-      title: 'Harmonogram',
-      weekdays: 'Poniedziałek - Piątek',
-      time: '14:00 - 16:00',
-      discountname: 'Kod promocyjny: "HAPPYHOURS"',
-      discount: '-20%'
+      title: 'Promocja',
+      weekdays: 'Użyj kodu',
+      time: 'BLACK',
+      discountname: 'Zniżka na wszystkie pakiety',
+      discount: '-50 ZŁ'
     },
     benefits: [
-      'Niższe ceny',
-      'Mniej tłoczno',
+      'Wszystkie pakiety objęte promocją',
       'To samo świetne doświadczenie',
       'Pełne wyposażenie w cenie'
     ],
-    cta: 'ZAREZERWUJ HAPPY HOURS'
+    cta: 'ZAREZERWUJ TERAZ'
   },
   nav: {
     home: 'Główna',

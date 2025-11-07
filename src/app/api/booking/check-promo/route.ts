@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import dayjs from 'dayjs';
 
 function timeToMinutes(timeStr: unknown) {
   const parts = (timeStr as string).split(':');
@@ -24,12 +23,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ valid: false, message: 'Kod promocyjny nie został znaleziony' }, { status: 404 });
   }
   // Проверка срока действия
-  const dayOfWeek = dayjs(date).get('day');
-  const isWeekend = (dayOfWeek === 6) || (dayOfWeek  === 0);
-  if(isWeekend) {
-    return NextResponse.json({ valid: false, message: 'Kod promocyjny jest nieaktywny w weekend' }, { status: 400 });
-  }
-  
   if (date && (promo.valid_from && date < promo.valid_from) || (promo.valid_to && date > promo.valid_to)) {
     return NextResponse.json({ valid: false, message: 'Kod promocyjny jest nieaktywny' }, { status: 400 });
   }

@@ -730,21 +730,22 @@ export const en = {
     }
   },
   happyHours: {
-    title: 'BLACK FRIDAY',
-    subtitle: 'Special offer on all packages',
+    title: 'HAPPY HOURS',
+    subtitle: 'Special offer for early birds!',
     schedule: {
-      title: 'Promotion',
-      weekdays: 'Use code',
-      time: 'BLACK',
-      discountname: 'Discount on all packages',
-      discount: '-50 PLN'
+      title: 'Schedule',
+      weekdays: 'Monday - Friday',
+      time: '14:00 - 16:00',
+      discountname: 'Discount by code "HAPPYHOURS"',
+      discount: '-20%'
     },
     benefits: [
-      'All packages included',
+      'Lower prices',
+      'Less crowded',
       'Same great experience',
       'Full equipment included'
     ],
-    cta: 'BOOK NOW'
+    cta: 'BOOK HAPPY HOURS'
   },
   b2b: {
     hero: {

@@ -29,6 +29,22 @@ export const pl = {
     ],
     cta: 'ZAREZERWUJ HAPPY HOURS'
   },
+  holidayPromo: {
+    aria: {
+      title: 'Świąteczna promocja'
+    },
+    badge: 'Oferta sezonowa',
+    discountBadge: '−50 zł',
+    title: 'Świąteczna oferta',
+    subtitle: 'Użyj kodu promocyjnego i zgarnij 50 zł zniżki na rezerwację.',
+    codeLabel: 'Kod promocyjny',
+    codeHint: 'przy płatności',
+    copy: 'Kopiuj',
+    copied: 'Skopiowano',
+    terms: 'Zniżka obowiązuje raz na rezerwację. Nie łączy się z innymi promocjami.',
+    cta: 'ZAREZERWUJ',
+    secondaryCta: 'Nie teraz'
+  },
   nav: {
     home: 'Główna',
     booking: 'Rezerwacja',

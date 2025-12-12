@@ -747,6 +747,22 @@ export const en = {
     ],
     cta: 'BOOK HAPPY HOURS'
   },
+  holidayPromo: {
+    aria: {
+      title: 'Holiday promotion'
+    },
+    badge: 'Limited time',
+    discountBadge: '−50 zł',
+    title: 'Holiday special',
+    subtitle: 'Use promo code to get 50 zł off your booking.',
+    codeLabel: 'Promo code',
+    codeHint: 'at checkout',
+    copy: 'Copy',
+    copied: 'Copied',
+    terms: 'Discount applies once per booking. Cannot be combined with other promotions.',
+    cta: 'BOOK NOW',
+    secondaryCta: 'Not now'
+  },
   b2b: {
     hero: {
       title: 'CORPORATE EVENTS AND TEAM BUILDING',

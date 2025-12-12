@@ -31,7 +31,8 @@ export async function POST(req: Request) {
     .from('packages')
     .select('allowed_rooms, duration')
     .eq('id', packageId)
-    .single();
+    .single()
+    .returns<{ allowed_rooms: string[]; duration: number }>();
 
   if (pkgError || !pkg) {
     return NextResponse.json({ error: 'Pakiet nie został znaleziony' }, { status: 404 });
@@ -54,7 +55,8 @@ export async function POST(req: Request) {
     .select('room_id, date, time')
     .in('room_id', allowedRooms)
     .gte('date', start.toISOString().slice(0, 10))
-    .lte('date', end.toISOString().slice(0, 10));
+    .lte('date', end.toISOString().slice(0, 10))
+    .returns<Array<{ room_id: string; date: string; time: string }>>();
 
   if (bookingsError) {
     return NextResponse.json({ error: 'Błąd po otrzymaniu rezerwacji' }, { status: 500 });
@@ -77,12 +79,13 @@ export async function POST(req: Request) {
     .from('holidays')
     .select('date')
     .gte('date', dayjs(start).format('YYYY-MM-DD'))
-    .lte('date', dayjs(end).format('YYYY-MM-DD'));
+    .lte('date', dayjs(end).format('YYYY-MM-DD'))
+    .returns<Array<{ date: string }>>();
 
   if (holidaysError) {
     return NextResponse.json({ error: holidaysError }, { status: 500 });
   } else {
-    holidayDates = holidays.map(h => h.date);
+    holidayDates = (holidays || []).map(h => h.date);
   }
 
   const filteredDatelist = dateList.filter(el => !holidayDates.includes(el));

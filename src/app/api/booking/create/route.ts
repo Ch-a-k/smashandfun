@@ -20,16 +20,22 @@ export async function POST(req: Request) {
   // Получаем пакет и список допустимых комнат
   const { data: pkg, error: pkgError } = await supabase
     .from('packages')
-    .select('*')
+    .select('name, allowed_rooms, duration, price')
     .eq('id', packageId)
-    .single();
+    .single()
+    .returns<{
+      name: string | null;
+      allowed_rooms: string[] | null;
+      duration: number;
+      price: number | string | null;
+    }>();
 
   if (pkgError || !pkg) {
     return NextResponse.json({ error: 'Pakiet nie został znaleziony' }, { status: 404 });
   }
 
   // Получаем название пакета
-  const packageName = (pkg.name || '').toLowerCase();
+  const packageName = (pkg.name ?? '').toLowerCase();
   let roomOrder: string[] = [];
   if (packageName.includes('extreme') || packageName.includes('ekstremalny') || packageName.includes('trudny')) {
     // Extreme (или если вдруг по-польски)
@@ -47,7 +53,7 @@ export async function POST(req: Request) {
     ];
   }
   // Оставляем только те комнаты, которые разрешены для этого пакета
-  const allowedRooms: string[] = (pkg.allowed_rooms || []).filter((id: string) => roomOrder.includes(id));
+  const allowedRooms: string[] = (pkg.allowed_rooms ?? []).filter((id: string) => roomOrder.includes(id));
   // Сортируем по приоритету
   const sortedRooms = roomOrder.filter(id => allowedRooms.includes(id));
   let selectedRoomId: string | null = null;
@@ -71,7 +77,8 @@ export async function POST(req: Request) {
   const bufferMinutes = 15;
 
   const targetTime = dayjs(`${date} ${time}`);
-  const targetEndTime = dayjs(`${date} ${time}`).add(pkg.duration  + bufferMinutes, 'm');
+  const durationMinutes = Number(pkg.duration) || 60;
+  const targetEndTime = dayjs(`${date} ${time}`).add(durationMinutes + bufferMinutes, 'm');
 
   for (const roomId of sortedRooms) {
     const bookingsForRoom = getBookings.filter((b: BookingWithPackage) => b.room_id === roomId);
@@ -96,15 +103,15 @@ export async function POST(req: Request) {
   }
 
   // Считаем сумму: базовая цена + доп. предметы
-  let totalPrice = Number(pkg.price);
+  let totalPrice = Number(pkg.price) || 0;
   if (Array.isArray(extraItems) && extraItems.length > 0) {
     type ExtraSel = { id: string; count?: number };
-    type ExtraItem = { id: string; price: number };
     const extraItemIds = (extraItems as ExtraSel[]).map(item => item.id);
     const { data: items, error: itemsError } = await supabase
       .from('extra_items')
-      .select('id, price');
-    const filteredItems: ExtraItem[] = (items || []).filter((i: ExtraItem) => extraItemIds.includes(i.id));
+      .select('id, price')
+      .returns<Array<{ id: string; price: number }>>();
+    const filteredItems = (items || []).filter((i) => extraItemIds.includes(i.id));
     if (itemsError) {
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
@@ -121,7 +128,12 @@ export async function POST(req: Request) {
       .from('promo_codes')
       .select('*')
       .eq('code', promoCode)
-      .single();
+      .single()
+      .returns<{
+        discount_amount: number | null;
+        discount_percent: number | null;
+        used_count: number | null;
+      }>();
 
     if (promoError) {
       console.error(promoError);
@@ -131,7 +143,7 @@ export async function POST(req: Request) {
       if (promo.discount_amount) {
         totalPrice = Math.max(0, totalPrice - Number(promo.discount_amount));
       } else if (promo.discount_percent) {
-        totalPrice = totalPrice * (1 - promo.discount_percent / 100);
+        totalPrice = totalPrice * (1 - Number(promo.discount_percent) / 100);
       }
     }
 

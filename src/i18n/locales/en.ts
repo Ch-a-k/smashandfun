@@ -483,7 +483,8 @@ export const en = {
     companyInfo: {
       name: "Smashandfun",
       address: "ul. Postępu 19/4",
-      city: "02-676 Warsaw"
+      city: "02-676 Warsaw",
+      validFrom: "Valid from:"
     },
     footer: "© 2025 Smashandfun. All rights reserved.",
     sections: {
@@ -912,5 +913,11 @@ export const en = {
     promoDiscount: 'Discount',
     promoPercent: 'percent',
     paymentType: 'Payment type'
+  }
+  ,
+  thankYou: {
+    title: "Thank you for your booking!",
+    subtitle: "Your booking has been received. We have sent a confirmation to your email.",
+    homeBtn: "Back to homepage"
   }
 };

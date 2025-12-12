@@ -237,10 +237,14 @@ export default function RezerwacjaPage() {
   useEffect(() => {
     async function fetchPackages() {
       setLoading(true);
-      const { data } = await supabase.from('packages').select('*').order('position', { ascending: true });
+      const { data } = await supabase
+        .from('packages')
+        .select('*')
+        .order('position', { ascending: true })
+        .returns<PackageDB[]>();
       console.log('Supabase data:', data);
       if (data) {
-        const mapped = (data as PackageDB[]).map((p) => ({
+        const mapped = data.map((p) => ({
           id: p.id,
           name: p.name,
           items: p.items || [],
@@ -253,6 +257,8 @@ export default function RezerwacjaPage() {
         }));
         console.log('Mapped packages:', mapped);
         setPackages(mapped);
+      } else {
+        setPackages([]);
       }
       setLoading(false);
     }

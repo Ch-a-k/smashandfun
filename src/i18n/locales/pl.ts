@@ -517,7 +517,8 @@ export const pl = {
     companyInfo: {
       name: "Smashandfun",
       address: "ul. Postępu 19/4",
-      city: "02-676 Warszawa"
+      city: "02-676 Warszawa",
+      validFrom: "Obowiązuje od:"
     },
     footer: "© 2025 Smashandfun. Wszelkie prawa zastrzeżone.",
     sections: {
@@ -912,5 +913,10 @@ export const pl = {
     promoDiscount: 'Rabat',
     promoPercent: 'procent',
     paymentType: 'Typ płatności'
+  },
+  thankYou: {
+    title: 'Dziękujemy za rezerwację!',
+    subtitle: 'Twoja rezerwacja została przyjęta. Potwierdzenie wysłaliśmy na Twój e-mail.',
+    homeBtn: 'Powrót na stronę główną'
   }
 };

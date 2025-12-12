@@ -33,7 +33,8 @@ function ExtraItemsPage() {
     const { data, error } = await supabase
       .from('extra_items')
       .select('*')
-      .order('price', { ascending: true });
+      .order('price', { ascending: true })
+      .returns<ExtraItem[]>();
     if (error) {
       setError("Błąd ładowania dodatków");
       setLoading(false);

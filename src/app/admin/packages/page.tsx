@@ -57,7 +57,8 @@ export default function PackagesAdmin() {
         .select("role")
         .eq("email", email)
         .single();
-      if (!data || data.role !== "superadmin") {
+      const role = (data as { role?: string } | null)?.role;
+      if (!role || role !== "superadmin") {
         router.replace("/admin/bookings");
       }
     }
@@ -70,7 +71,8 @@ export default function PackagesAdmin() {
     const { data, error } = await supabase
       .from('packages')
       .select('*')
-      .order('position', { ascending: true });
+      .order('position', { ascending: true })
+      .returns<Package[]>();
     if (error) {
       setError("Błąd ładowania pakietów");
       setLoading(false);
@@ -83,9 +85,14 @@ export default function PackagesAdmin() {
   useEffect(() => {
     fetchPackages();
     // Загружаем список комнат
-    supabase.from('rooms').select('id, name').order('priority').then(({data}) => {
-      setRooms(data||[]);
-      setRoomMap(Object.fromEntries((data||[]).map((r:{id:string, name:string})=>[r.id, r.name])));
+    supabase
+      .from('rooms')
+      .select('id, name')
+      .order('priority')
+      .returns<{ id: string; name: string }[]>()
+      .then(({ data }) => {
+        setRooms(data || []);
+        setRoomMap(Object.fromEntries((data || []).map((r) => [r.id, r.name])));
     });
   }, []);
 

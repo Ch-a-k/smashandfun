@@ -238,15 +238,21 @@ function BookingsPage() {
   // Загружаем даты с резервациями и extra items
   useEffect(() => {
     async function fetchBookedDates() {
-      const { data } = await supabase.from('bookings').select('date');
+      const { data } = await supabase
+        .from('bookings')
+        .select('date')
+        .returns<{ date: string }[]>();
       if (data) {
-        const uniqueDates = Array.from(new Set(data.map((b: {date: string}) => b.date)));
+        const uniqueDates = Array.from(new Set(data.map((b) => b.date)));
         setBookedDates(uniqueDates.map(d => new Date(d)));
       }
       // Загружаем extra items
-    const { data: extraItems } = await supabase.from('extra_items').select('id, name');
+      const { data: extraItems } = await supabase
+        .from('extra_items')
+        .select('id, name')
+        .returns<{ id: string; name: string }[]>();
       if (extraItems) {
-        setExtraItemMap(Object.fromEntries(extraItems.map((ei: {id: string, name: string}) => [ei.id, ei.name])));
+        setExtraItemMap(Object.fromEntries(extraItems.map((ei) => [ei.id, ei.name])));
       }
     }
     fetchBookedDates();
@@ -277,8 +283,9 @@ function BookingsPage() {
             created_at
           )
         `)
-        .eq('date', dateStr);
-      setBookings((bookingsData as Booking[]) || []);
+        .eq('date', dateStr)
+        .returns<Booking[]>();
+      setBookings(bookingsData || []);
       setLoading(false);
     }
     fetchData();
@@ -337,8 +344,13 @@ function BookingsPage() {
 
   // Получение пакета с allowed_rooms и room_priority
   async function fetchPackageDetails(packageId: string) {
-    const { data } = await supabase.from('packages').select('*').eq('id', packageId).single();
-    setSelectedPackage(data);
+    const { data } = await supabase
+      .from('packages')
+      .select('*')
+      .eq('id', packageId)
+      .single()
+      .returns<Package>();
+    setSelectedPackage(data ?? null);
   }
 
   // Получение доступных дат
@@ -437,12 +449,20 @@ function BookingsPage() {
           .from('packages')
           .select('*')
           .eq('id', selectedPackage.id)
-          .single();
+          .single()
+          .returns<Package>();
+
+      if (!pkg) {
+        setError('Nie udało się pobrać danych pakietu');
+        setSaving(false);
+        return;
+      }
 
       const bufferMinutes = 15;
       
       const targetTime = dayjs(`${editForm.date} ${editForm.time}`);
-      const targetEndTime = dayjs(`${editForm.date} ${editForm.time}`).add(pkg.duration  + bufferMinutes, 'm');
+      const durationMinutes = Number(pkg.duration) || 60;
+      const targetEndTime = dayjs(`${editForm.date} ${editForm.time}`).add(durationMinutes + bufferMinutes, 'm');
 
       const { data: getBookings, error: getBookingError } = await supabase
         .from('bookings')
@@ -493,8 +513,12 @@ function BookingsPage() {
         closeModal();
         setIsNew(false);
         const dateStr = (editForm.date || new Date().toISOString().slice(0,10));
-        const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
-        setBookings((bookingsData as Booking[]) || []);
+        const { data: bookingsData } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('date', dateStr)
+          .returns<Booking[]>();
+        setBookings(bookingsData || []);
       }
     } else {
       const { id, payments, ...fields } = editForm;
@@ -505,8 +529,12 @@ function BookingsPage() {
       } else {
         closeModal();
         const dateStr = editForm.date;
-        const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
-        setBookings((bookingsData as Booking[]) || []);
+        const { data: bookingsData } = await supabase
+          .from('bookings')
+          .select('*')
+          .eq('date', dateStr)
+          .returns<Booking[]>();
+        setBookings(bookingsData || []);
       }
     }
     setSaving(false);
@@ -543,14 +571,23 @@ function BookingsPage() {
   useEffect(() => {
     async function fetchAll() {
       // promo_codes
-      const { data: promoData } = await supabase.from('promo_codes').select('*');
+      const { data: promoData } = await supabase
+        .from('promo_codes')
+        .select('*')
+        .returns<PromoCode[]>();
       if (promoData) setPromoCodes(promoData);
       // package prices
-      const { data: pkgData } = await supabase.from('packages').select('id, price');
-      if (pkgData) setPackagePrices(Object.fromEntries((pkgData as {id: string, price: number}[]).map((p) => [p.id, Number(p.price)])));
+      const { data: pkgData } = await supabase
+        .from('packages')
+        .select('id, price')
+        .returns<{ id: string; price: number }[]>();
+      if (pkgData) setPackagePrices(Object.fromEntries(pkgData.map((p) => [p.id, Number(p.price)])));
       // extra item prices
-      const { data: extraData } = await supabase.from('extra_items').select('id, price');
-      if (extraData) setExtraItemPrices(Object.fromEntries((extraData as {id: string, price: number}[]).map((ei) => [ei.id, Number(ei.price)])));
+      const { data: extraData } = await supabase
+        .from('extra_items')
+        .select('id, price')
+        .returns<{ id: string; price: number }[]>();
+      if (extraData) setExtraItemPrices(Object.fromEntries(extraData.map((ei) => [ei.id, Number(ei.price)])));
     }
     fetchAll();
   }, []);
@@ -667,8 +704,12 @@ function BookingsPage() {
       closeModal();
       // Odśwież listę rezerwacji na wybrany dzień
       const dateStr = editForm.date;
-      const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
-      setBookings((bookingsData as Booking[]) || []);
+      const { data: bookingsData } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('date', dateStr)
+        .returns<Booking[]>();
+      setBookings(bookingsData || []);
     }
     setSaving(false);
   }
@@ -686,8 +727,12 @@ function BookingsPage() {
       closeModal();
       // Odśwież listę rezerwacji na wybrany dzień
       const dateStr = editForm.date;
-      const { data: bookingsData } = await supabase.from('bookings').select('*').eq('date', dateStr);
-      setBookings((bookingsData as Booking[]) || []);
+      const { data: bookingsData } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('date', dateStr)
+        .returns<Booking[]>();
+      setBookings(bookingsData || []);
     }
     setSaving(false);
   }

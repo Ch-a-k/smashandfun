@@ -126,8 +126,9 @@ export async function POST(req: Request) {
           .from('packages')
           .select('name')
           .eq('id', booking.package_id)
-          .single();
-        packageName = pkg?.name || '';
+          .single()
+          .returns<{ name: string }>();
+        packageName = pkg?.name ?? '';
       }
       
       // 5. Додаємо дані про оплату в нашу БД

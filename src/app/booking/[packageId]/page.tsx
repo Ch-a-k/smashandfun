@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useI18n } from '@/i18n/I18nContext';
 import { useParams } from 'next/navigation';
 import DatePicker, { registerLocale } from 'react-datepicker';
@@ -212,7 +212,7 @@ export default function BookingPage() {
   }, [packageId]);
 
   // Функция для загрузки дат по диапазону
-  const loadDates = async (start: Date, end: Date) => {
+  const loadDates = useCallback(async (start: Date, end: Date) => {
     setLoadingDates(true);
     const startDate = formatDatePoland(start);
     const endDate = formatDatePoland(end);
@@ -226,7 +226,7 @@ export default function BookingPage() {
       setAvailableDates(prev => Array.from(new Set([...prev, ...data.dates])));
     }
     setLoadingDates(false);
-  };
+  }, [packageId]);
 
   // Загружаем даты для текущего месяца при инициализации
   useEffect(() => {

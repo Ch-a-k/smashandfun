@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
-import { X, Copy, Sparkles, Snowflake, ArrowRight } from 'lucide-react';
+import { X, Copy, Sparkles, Snowflake, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { useI18n } from '@/i18n/I18nContext';
 
 interface HappyHoursModalProps {
@@ -84,7 +84,23 @@ export default function HappyHoursModal({ isOpen, onClose }: HappyHoursModalProp
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(promoCode);
+      // Clipboard API может быть недоступен/заблокирован — делаем fallback
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(promoCode);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = promoCode;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        textarea.style.top = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (!ok) throw new Error('execCommand copy failed');
+      }
+
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1200);
     } catch (error) {
@@ -159,6 +175,19 @@ export default function HappyHoursModal({ isOpen, onClose }: HappyHoursModalProp
           </button>
 
           <div className="relative p-6 sm:p-7">
+            {/* Copy toast */}
+            <div
+              className={`pointer-events-none absolute left-1/2 top-3 -translate-x-1/2 z-20 transition-all duration-200 ${
+                copied ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
+              }`}
+              aria-hidden={!copied}
+            >
+              <div className="inline-flex items-center gap-2 rounded-full bg-black/55 backdrop-blur border border-white/10 px-3 py-2 text-sm font-semibold text-white shadow-lg">
+                <CheckCircle2 className="w-4 h-4 text-emerald-300" />
+                <span>Skopiowano</span>
+              </div>
+            </div>
+
             {/* Header */}
             <div className="flex items-start gap-4">
               <div className="shrink-0 rounded-2xl bg-white/5 border border-white/10 p-3">
@@ -189,8 +218,9 @@ export default function HappyHoursModal({ isOpen, onClose }: HappyHoursModalProp
 
             {/* Code box */}
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 relative overflow-hidden">
-              <div className="absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_10%_10%,rgba(243,110,33,0.10),transparent_40%),radial-gradient(circle_at_90%_60%,rgba(56,189,248,0.08),transparent_45%)]" />
-              <div className="flex items-center justify-between gap-3">
+              {/* Декор-слой НЕ должен перехватывать клики */}
+              <div className="pointer-events-none absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_10%_10%,rgba(243,110,33,0.10),transparent_40%),radial-gradient(circle_at_90%_60%,rgba(56,189,248,0.08),transparent_45%)]" />
+              <div className="relative z-[1] flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-white/60">
                     {t('holidayPromo.codeLabel') || 'Promo code'}

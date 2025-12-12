@@ -59,6 +59,7 @@ export async function POST(req: Request) {
 
       if (bookingError || !booking) {
         console.error('Booking not found:', bookingError);
+        return NextResponse.json({ redirectUri: continueUrl });
       }
 
       let packageName = '';
@@ -67,8 +68,9 @@ export async function POST(req: Request) {
           .from('packages')
           .select('name')
           .eq('id', booking.package_id)
-          .single();
-        packageName = pkg?.name || '';
+          .single()
+          .returns<{ name: string }>();
+        packageName = pkg?.name ?? '';
       }
 
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun-admin.vercel.app'; // 'https://smashandfun.pl';
@@ -182,14 +184,16 @@ export async function POST(req: Request) {
   const parsedUrl = new URL(orderRes.url);
   const orderId = parsedUrl.searchParams.get('orderId');
 
-  const { error: updateBookingError } = await supabase
-    .from('bookings')
-    .update({ payu_id: orderId })
-    .eq('id', extOrderId);
+  if (extOrderId && orderId) {
+    const { error: updateBookingError } = await supabase
+      .from('bookings')
+      .update({ payu_id: orderId })
+      .eq('id', extOrderId);
 
-  if (updateBookingError) {
-    console.error('Błąd aktualizacji rezerwacji:', updateBookingError);
-  } 
+    if (updateBookingError) {
+      console.error('Błąd aktualizacji rezerwacji:', updateBookingError);
+    }
+  }
   // Возвращаем ссылку для оплаты
   return NextResponse.json({ redirectUri: orderRes.url, orderId });
 } 

@@ -45,7 +45,8 @@ export async function POST(req: Request) {
       .from('bookings')
       .select('id')
       .eq('change_token', token)
-      .single();
+      .single()
+      .returns<{ id: string }>();
     if (booking) ignoreBookingId = booking.id;
   }
 
@@ -143,7 +144,8 @@ export async function POST(req: Request) {
     .from('packages')
     .select('allowed_rooms, duration')
     .eq('id', packageId)
-    .single();
+    .single()
+    .returns<{ allowed_rooms: string[]; duration: number }>();
 
   if (pkgError || !pkg) {
     return NextResponse.json({ error: 'Пакет не найден' }, { status: 404 });

@@ -27,7 +27,11 @@ function AdminsPage() {
   async function fetchAdmins() {
     setLoading(true);
     setError("");
-    const { data, error } = await supabase.from('admins').select('*').order('role', { ascending: false });
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .order('role', { ascending: false })
+      .returns<Admin[]>();
     if (error) {
       setError("Błąd ładowania listy administratorów");
       setLoading(false);
@@ -43,7 +47,12 @@ function AdminsPage() {
     const email = typeof window !== 'undefined' ? localStorage.getItem('admin_email') : null;
     setMeEmail(email);
     if (!email) return;
-    supabase.from('admins').select('role').eq('email', email).single().then(({ data }) => setCurrentRole(data?.role || null));
+    supabase
+      .from('admins')
+      .select('role')
+      .eq('email', email)
+      .single()
+      .then(({ data }) => setCurrentRole((data as { role?: string } | null)?.role ?? null));
   }, []);
 
   async function handleAdd(e: React.FormEvent) {

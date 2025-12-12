@@ -14,20 +14,32 @@ export async function POST(req: Request) {
   if (!code) {
     return NextResponse.json({ valid: false, message: 'Kod promocyjny nie jest wskazany' }, { status: 400 });
   }
+  type PromoRow = {
+    valid_from: string | null;
+    valid_to: string | null;
+    usage_limit: number | null;
+    used_count: number | null;
+    time_from: string | null;
+    time_to: string | null;
+    discount_amount: number | null;
+    discount_percent: number | null;
+  };
+
   const { data: promo, error } = await supabase
     .from('promo_codes')
     .select('*')
     .eq('code', code)
-    .single();
+    .single()
+    .returns<PromoRow>();
   if (error || !promo) {
     return NextResponse.json({ valid: false, message: 'Kod promocyjny nie został znaleziony' }, { status: 404 });
   }
   // Проверка срока действия
-  if (date && (promo.valid_from && date < promo.valid_from) || (promo.valid_to && date > promo.valid_to)) {
+  if (date && ((promo.valid_from && date < promo.valid_from) || (promo.valid_to && date > promo.valid_to))) {
     return NextResponse.json({ valid: false, message: 'Kod promocyjny jest nieaktywny' }, { status: 400 });
   }
   // Проверка лимита
-  if (promo.usage_limit && promo.used_count >= promo.usage_limit) {
+  if (promo.usage_limit && (promo.used_count ?? 0) >= promo.usage_limit) {
     return NextResponse.json({ valid: false, message: 'Kod promocyjny użył już maksymalnej liczby razy' }, { status: 400 });
   }
   // --- Проверка времени действия промокода ---

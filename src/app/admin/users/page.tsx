@@ -27,23 +27,29 @@ function UsersPage() {
       setLoading(true);
       setError("");
       // Получаем всех пользователей
-      const { data: usersData, error: usersError } = await supabase.from('users').select('*');
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .returns<User[]>();
       if (usersError) {
         setError("Błąd ładowania użytkowników");
         setLoading(false);
         return;
       }
       // Получаем все бронирования
-      type Booking = { user_email: string; total_price: number };
-      const { data: bookingsData, error: bookingsError } = await supabase.from('bookings').select('user_email, total_price');
+      type BookingRow = { user_email: string; total_price: number | string | null };
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from('bookings')
+        .select('user_email, total_price')
+        .returns<BookingRow[]>();
       if (bookingsError) {
         setError("Błąd ładowania rezerwacji");
         setLoading(false);
         return;
       }
       // Считаем количество и сумму бронирований для каждого пользователя
-      const stats: UserStats[] = (usersData || []).map((u: User) => {
-        const userBookings = (bookingsData as Booking[] || []).filter((b) => b.user_email === u.email);
+      const stats: UserStats[] = (usersData || []).map((u) => {
+        const userBookings = (bookingsData || []).filter((b) => b.user_email === u.email);
         return {
           ...u,
           bookingsCount: userBookings.length,

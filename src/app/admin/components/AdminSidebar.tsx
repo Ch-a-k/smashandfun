@@ -25,7 +25,12 @@ export default function AdminSidebar() {
     }
     setIsAuth(true);
     import('@/lib/supabaseClient').then(({ supabase }) => {
-      supabase.from('admins').select('role').eq('email', email).single().then(({ data }) => setRole(data?.role || null));
+      supabase
+        .from('admins')
+        .select('role')
+        .eq('email', email)
+        .single()
+        .then(({ data }) => setRole((data as { role?: string } | null)?.role ?? null));
     });
   }, []);
   if (!isAuth) return null;

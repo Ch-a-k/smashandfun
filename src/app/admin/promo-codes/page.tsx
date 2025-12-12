@@ -68,7 +68,8 @@ function PromoCodesPage() {
         .select("role")
         .eq("email", email)
         .single();
-      if (!data || data.role !== "superadmin") {
+      const role = (data as { role?: string } | null)?.role;
+      if (!role || role !== "superadmin") {
         router.replace("/admin/bookings");
       }
     }
@@ -81,7 +82,8 @@ function PromoCodesPage() {
     const { data, error } = await supabase
       .from('promo_codes')
       .select('*')
-      .order('valid_from', { ascending: false });
+      .order('valid_from', { ascending: false })
+      .returns<PromoCode[]>();
     if (error) {
       setError("Błąd ładowania promokodów");
       setLoading(false);

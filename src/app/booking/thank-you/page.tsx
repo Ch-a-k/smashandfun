@@ -6,6 +6,15 @@ import { useI18n } from '@/i18n/I18nContext';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
+const THANK_YOU_FLYING_IMAGES = [
+  '/images/glass-shard-1.png',
+  '/images/glass-shard-2.png',
+  '/images/glass-shard-3.png',
+  '/images/glass-shard-4.png',
+  '/images/glass-shard-5.png',
+  '/images/glass-shard-6.png',
+] as const;
+
 const THANK_YOU_TEXTS = {
   pl: {
     title: 'Dziękujemy za rezerwację!',
@@ -38,18 +47,10 @@ type FlyingObjectProps = {
 
 // Компонент летающих осколков
 function FlyingObjects() {
-  const images = [
-    '/images/glass-shard-1.png',
-    '/images/glass-shard-2.png',
-    '/images/glass-shard-3.png',
-    '/images/glass-shard-4.png',
-    '/images/glass-shard-5.png',
-    '/images/glass-shard-6.png',
-  ] as const;
   const [objects, setObjects] = useState<FlyingObjectProps[]>([]);
   useEffect(() => {
     const arr = Array.from({ length: 22 }).map((_, i) => {
-      const img = images[i % images.length];
+      const img = THANK_YOU_FLYING_IMAGES[i % THANK_YOU_FLYING_IMAGES.length];
       const size = 38 + Math.round(Math.random() * 90);
       const top = Math.round(Math.random() * 80);
       const left = Math.round(Math.random() * 95);

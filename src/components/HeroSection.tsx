@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { useI18n } from '@/i18n/I18nContext'
 import Link from 'next/link'
@@ -62,36 +62,70 @@ const scrollDotAnimation = {
 
 function VideoBackground() {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [videoFailed, setVideoFailed] = useState(false)
 
   useEffect(() => {
     const video = videoRef.current
-    if (!video) return
+    if (!video || videoFailed) return
 
-    const handleError = (e: Event) => {
-      console.error('Video error:', e.type)
+    // Некоторые браузеры/устройства блокируют autoplay — это не критично.
+    // Вместо console.error (который в Next dev overlay превращается в "ошибку"),
+    // аккуратно переключаемся на fallback.
+    const playPromise = video.play()
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch((err) => {
+        setVideoFailed(true)
+        if (process.env.NODE_ENV === 'development') {
+          // eslint-disable-next-line no-console
+          console.warn('Video autoplay failed:', err)
+        }
+      })
     }
+  }, [videoFailed])
 
-    video.addEventListener('error', handleError)
-    return () => video.removeEventListener('error', handleError)
-  }, [])
+  const handleVideoError = (e: React.SyntheticEvent<HTMLVideoElement, Event>) => {
+    setVideoFailed(true)
+    if (process.env.NODE_ENV === 'development') {
+      const target = e.currentTarget
+      const mediaError = target.error
+      // eslint-disable-next-line no-console
+      console.warn('Video failed to load/play', {
+        code: mediaError?.code,
+        message: mediaError?.message,
+        networkState: target.networkState,
+        readyState: target.readyState,
+      })
+    }
+  }
 
   return (
     <>
-      <video
-        ref={videoRef}
-        className="absolute top-0 left-0 w-full h-full object-cover"
-        autoPlay
-        loop
-        muted
-        playsInline
-        onError={(e) => console.error('Video error:', e)}
-      >
-        {VIDEO_SOURCES.map(({ src, type }) => (
-          <source key={src} src={src} type={type} />
-        ))}
-        <Image src="/images/hero-fallback.png" alt="Fallback" fill className="object-cover" />
-        Your browser does not support the video tag.
-      </video>
+      {videoFailed ? (
+        <Image
+          src="/images/hero-fallback.png"
+          alt="Smash&Fun hero background"
+          fill
+          priority
+          className="absolute top-0 left-0 w-full h-full object-cover"
+        />
+      ) : (
+        <video
+          ref={videoRef}
+          className="absolute top-0 left-0 w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          poster="/images/hero-fallback.png"
+          onError={handleVideoError}
+        >
+          {VIDEO_SOURCES.map(({ src, type }) => (
+            <source key={src} src={src} type={type} />
+          ))}
+          Your browser does not support the video tag.
+        </video>
+      )}
       <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
     </>
   )

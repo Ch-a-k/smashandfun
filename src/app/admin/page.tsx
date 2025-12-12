@@ -85,10 +85,11 @@ function AdminDashboard() {
       if (!email) return;
       const { data: adminData } = await supabase
         .from('admins')
-        .select('*')
+        .select('role')
         .eq('email', email)
-        .single();
-      if (adminData) setAdmin({ email, role: adminData.role });
+        .single()
+        .returns<{ role: string }>();
+      if (adminData?.role) setAdmin({ email, role: adminData.role });
     }
     fetchAdmin();
   }, []);
@@ -99,7 +100,15 @@ function AdminDashboard() {
       setLoading(true);
       const { data: allBookings } = await supabase
         .from('bookings')
-        .select('id, total_price, date, created_at');
+        .select('id, total_price, date, created_at')
+        .returns<
+          Array<{
+            id: string;
+            total_price: number | string | null;
+            date: string;
+            created_at: string;
+          }>
+        >();
       let total = 0, today = 0, revenue = 0;
       if (allBookings && Array.isArray(allBookings)) {
         total = allBookings.length;
@@ -140,8 +149,11 @@ function AdminDashboard() {
     if (minSum) query = query.gte('total_price', Number(minSum));
     if (maxSum) query = query.lte('total_price', Number(maxSum));
     const { data: bookings } = await query;
-    const { data: packages } = await supabase.from('packages').select('id, name');
-    const packageMap = Object.fromEntries((packages||[]).map((p:{id:string, name:string})=>[p.id,p.name]));
+    const { data: packages } = await supabase
+      .from('packages')
+      .select('id, name')
+      .returns<Array<{ id: string; name: string }>>();
+    const packageMap = Object.fromEntries((packages || []).map((p) => [p.id, p.name]));
     const byPackage: Record<string, {name:string, count:number, sum:number}> = {};
     const byClient: Record<string, {email:string, count:number, sum:number}> = {};
     const rows: BookingRow[] = (bookings || []) as BookingRow[];

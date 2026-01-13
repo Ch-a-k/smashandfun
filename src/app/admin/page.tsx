@@ -79,6 +79,8 @@ function AdminDashboard() {
   const [topBusyDays, setTopBusyDays] = useState<Array<{date: string, count: number}>>([]);
   const [topIdleDays, setTopIdleDays] = useState<Array<{date: string, count: number}>>([]);
 
+  const PAGE_SIZE = 1000; // PostgREST/Supabase default limit is often 1000 rows
+
   useEffect(() => {
     async function fetchAdmin() {
       const email = typeof window !== 'undefined' ? localStorage.getItem('admin_email') : null;
@@ -98,76 +100,113 @@ function AdminDashboard() {
   useEffect(() => {
     async function fetchStats() {
       setLoading(true);
-      const { data: allBookings } = await supabase
-        .from('bookings')
-        .select('id, total_price, date, created_at')
-        .returns<
-          Array<{
-            id: string;
-            total_price: number | string | null;
-            date: string;
-            created_at: string;
-          }>
-        >();
-      let total = 0, today = 0, revenue = 0;
-      if (allBookings && Array.isArray(allBookings)) {
-        total = allBookings.length;
+      try {
+        // 1) Total count (no row fetch -> no 1000 row cap)
+        const { count: totalCount, error: totalErr } = await supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true });
+        if (totalErr) throw totalErr;
+
+        // 2) Today count (by created_at, as before)
         const todayStr = new Date().toISOString().slice(0, 10);
-        // Считаем «сегодня» по дате создания (created_at), чтобы видеть заявки, пришедшие сегодня, даже если событие в будущем
-        today = allBookings.filter(b => {
-          try {
-            const created = new Date(b.created_at).toISOString().slice(0, 10);
-            return created === todayStr;
-          } catch {
-            return false;
-          }
-        }).length;
-        revenue = allBookings.reduce((sum, b) => sum + (Number(b.total_price) || 0), 0);
+        const fromTs = `${todayStr}T00:00:00.000Z`;
+        const toTs = `${todayStr}T23:59:59.999Z`;
+        const { count: todayCount, error: todayErr } = await supabase
+          .from('bookings')
+          .select('id', { count: 'exact', head: true })
+          .gte('created_at', fromTs)
+          .lte('created_at', toTs);
+        if (todayErr) throw todayErr;
+
+        // 3) Revenue sum (paginate to avoid 1000-row cap)
+        let revenue = 0;
+        for (let from = 0; ; from += PAGE_SIZE) {
+          const { data: page, error: pageErr } = await supabase
+            .from('bookings')
+            .select('total_price')
+            .range(from, from + PAGE_SIZE - 1)
+            .returns<Array<{ total_price: number | string | null }>>();
+          if (pageErr) throw pageErr;
+          if (!page || page.length === 0) break;
+          revenue += page.reduce((sum, b) => sum + (Number(b.total_price) || 0), 0);
+          if (page.length < PAGE_SIZE) break;
+        }
+
+        setStats({ total: totalCount ?? 0, today: todayCount ?? 0, revenue });
+      } catch (e) {
+        console.error('AdminDashboard fetchStats error:', e);
+        setStats({ total: 0, today: 0, revenue: 0 });
+      } finally {
+        setLoading(false);
       }
-      setStats({ total, today, revenue });
-      setLoading(false);
     }
     fetchStats();
   }, []);
 
   const fetchReport = useCallback(async () => {
     setReportLoading(true);
-    // Используем '*' чтобы не падать, если UTM-колонки ещё не добавлены в БД
-    let query = supabase.from('bookings').select('*');
-    // Диапазон по выбранному полю (дата бронирования или дата создания)
-    if (filterBy === 'date') {
-      if (dateFrom) query = query.gte('date', dateFrom);
-      if (dateTo) query = query.lte('date', dateTo);
-    } else {
-      // Для created_at учитываем время суток
-      const fromTs = dateFrom ? `${dateFrom}T00:00:00.000Z` : undefined;
-      const toTs = dateTo ? `${dateTo}T23:59:59.999Z` : undefined;
-      if (fromTs) query = query.gte('created_at', fromTs);
-      if (toTs) query = query.lte('created_at', toTs);
+    try {
+      const buildQuery = () => {
+        // Берём только нужные поля (быстрее и безопаснее, чем '*')
+        let query = supabase.from('bookings').select('package_id, user_email, total_price');
+        // Диапазон по выбранному полю (дата бронирования или дата создания)
+        if (filterBy === 'date') {
+          if (dateFrom) query = query.gte('date', dateFrom);
+          if (dateTo) query = query.lte('date', dateTo);
+        } else {
+          // Для created_at учитываем время суток
+          const fromTs = dateFrom ? `${dateFrom}T00:00:00.000Z` : undefined;
+          const toTs = dateTo ? `${dateTo}T23:59:59.999Z` : undefined;
+          if (fromTs) query = query.gte('created_at', fromTs);
+          if (toTs) query = query.lte('created_at', toTs);
+        }
+        // Фильтр по сумме
+        if (minSum) query = query.gte('total_price', Number(minSum));
+        if (maxSum) query = query.lte('total_price', Number(maxSum));
+        // Стабильный порядок для корректной пагинации
+        return query.order('created_at', { ascending: true });
+      };
+
+      const { data: packages } = await supabase
+        .from('packages')
+        .select('id, name')
+        .returns<Array<{ id: string; name: string }>>();
+      const packageMap = Object.fromEntries((packages || []).map((p) => [p.id, p.name]));
+
+      const byPackage: Record<string, {name:string, count:number, sum:number}> = {};
+      const byClient: Record<string, {email:string, count:number, sum:number}> = {};
+
+      for (let from = 0; ; from += PAGE_SIZE) {
+        const { data: page, error: pageErr } = await buildQuery()
+          .range(from, from + PAGE_SIZE - 1)
+          .returns<Array<{ package_id: string; user_email: string; total_price: number | string | null }>>();
+        if (pageErr) throw pageErr;
+        if (!page || page.length === 0) break;
+
+        for (const b of page) {
+          if (!byPackage[b.package_id]) {
+            byPackage[b.package_id] = { name: packageMap[b.package_id] || b.package_id, count: 0, sum: 0 };
+          }
+          byPackage[b.package_id].count++;
+          byPackage[b.package_id].sum += Number(b.total_price) || 0;
+
+          if (!byClient[b.user_email]) byClient[b.user_email] = { email: b.user_email, count: 0, sum: 0 };
+          byClient[b.user_email].count++;
+          byClient[b.user_email].sum += Number(b.total_price) || 0;
+        }
+
+        if (page.length < PAGE_SIZE) break;
+      }
+
+      setPackageStats(Object.values(byPackage).sort((a,b)=>b.count-a.count));
+      setClientStats(Object.values(byClient).sort((a,b)=>b.sum-a.sum));
+    } catch (e) {
+      console.error('AdminDashboard fetchReport error:', e);
+      setPackageStats([]);
+      setClientStats([]);
+    } finally {
+      setReportLoading(false);
     }
-    // Фильтр по сумме
-    if (minSum) query = query.gte('total_price', Number(minSum));
-    if (maxSum) query = query.lte('total_price', Number(maxSum));
-    const { data: bookings } = await query;
-    const { data: packages } = await supabase
-      .from('packages')
-      .select('id, name')
-      .returns<Array<{ id: string; name: string }>>();
-    const packageMap = Object.fromEntries((packages || []).map((p) => [p.id, p.name]));
-    const byPackage: Record<string, {name:string, count:number, sum:number}> = {};
-    const byClient: Record<string, {email:string, count:number, sum:number}> = {};
-    const rows: BookingRow[] = (bookings || []) as BookingRow[];
-    for (const b of rows) {
-      if (!byPackage[b.package_id]) byPackage[b.package_id] = {name: packageMap[b.package_id]||b.package_id, count:0, sum:0};
-      byPackage[b.package_id].count++;
-      byPackage[b.package_id].sum += Number(b.total_price)||0;
-      if (!byClient[b.user_email]) byClient[b.user_email] = {email: b.user_email, count:0, sum:0};
-      byClient[b.user_email].count++;
-      byClient[b.user_email].sum += Number(b.total_price)||0;
-    }
-    setPackageStats(Object.values(byPackage).sort((a,b)=>b.count-a.count));
-    setClientStats(Object.values(byClient).sort((a,b)=>b.sum-a.sum));
-    setReportLoading(false);
   }, [dateFrom, dateTo, filterBy, minSum, maxSum]);
 
   useEffect(()=>{ fetchReport(); }, [fetchReport]);
@@ -197,12 +236,26 @@ function AdminDashboard() {
       startStr = toYmd(start);
       endStr = toYmd(end);
     }
-    // Query bookings by date range
-    const { data: bookings } = await supabase
-      .from('bookings')
-      .select('date, time')
-      .gte('date', startStr)
-      .lte('date', endStr);
+    // Query bookings by date range (paginate to avoid 1000 row cap)
+    const bookings: Array<{ date: string; time: string | null }> = [];
+    for (let from = 0; ; from += PAGE_SIZE) {
+      const { data: page, error: pageErr } = await supabase
+        .from('bookings')
+        .select('date, time')
+        .gte('date', startStr)
+        .lte('date', endStr)
+        .order('date', { ascending: true })
+        .order('time', { ascending: true })
+        .range(from, from + PAGE_SIZE - 1)
+        .returns<Array<{ date: string; time: string | null }>>();
+      if (pageErr) {
+        console.error('AdminDashboard fetchHeatmap error:', pageErr);
+        break;
+      }
+      if (!page || page.length === 0) break;
+      bookings.push(...page);
+      if (page.length < PAGE_SIZE) break;
+    }
 
     // Build day list (full calendar range)
     const days: string[] = [];
@@ -231,6 +284,7 @@ function AdminDashboard() {
     const dayTotals: Record<string, number> = Object.fromEntries(days.map(d => [d, 0]));
     for (const b of bookings || []) {
       const d = b.date as string;
+      if (!b.time) continue;
       const h = (b.time as string).slice(0, 2);
       const key = `${d}_${h}`;
       counts[key] = (counts[key] || 0) + 1;
@@ -328,7 +382,7 @@ function AdminDashboard() {
         </div>
         <div style={{background:'#23222a', borderRadius:10, padding:'12px 10px', color:'#fff', fontWeight:700, fontSize:18, boxShadow:'0 1px 8px #0003', minWidth:180, minHeight:80, display:'flex', flexDirection:'column', gap:2}}>
           <span style={{fontSize:13, color:'#ff9f58', fontWeight:600, marginBottom:2}}>Przychód (PLN) <TooltipInfo text="Suma przychodu brutto z wszystkich rezerwacji." /></span>
-          <span style={{fontSize:26, color:'#f36e21', fontWeight:900}}>{stats?.revenue ?? '-'}</span>
+          <span style={{fontSize:26, color:'#f36e21', fontWeight:900}}>{stats?.revenue !== undefined ? stats.revenue.toFixed(2) : '-'}</span>
         </div>
         {/* Фильтр по датам/сумме + таблица по пакетам */}
         <div style={{background:'#23222a', borderRadius:10, padding:10, width:'100%', minWidth:260, gridColumn: '1 / -1', boxShadow:'0 1px 8px #0003', marginBottom:0}}>

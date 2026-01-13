@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation';
 import { useI18n } from '@/i18n/I18nContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { Clock, ChevronDown, Phone } from 'lucide-react';
-import HappyHoursModal from './HappyHoursModal';
+import HappyHoursModalLegacy from './HappyHoursModalLegacy';
 
 // Функция для установки куки
 const setCookie = (name: string, value: string, days: number) => {
@@ -402,7 +402,7 @@ export default function Header() {
       </AnimatePresence>
 
       {/* Happy Hours Modal */}
-      <HappyHoursModal
+      <HappyHoursModalLegacy
         isOpen={isHappyHoursOpen}
         onClose={closeHappyHours}
       />

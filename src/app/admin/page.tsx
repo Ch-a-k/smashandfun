@@ -81,6 +81,20 @@ function AdminDashboard() {
 
   const PAGE_SIZE = 1000; // PostgREST/Supabase default limit is often 1000 rows
 
+  function getWarsawYmd(d: Date) {
+    // YYYY-MM-DD in Europe/Warsaw (avoid UTC midnight issues)
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Warsaw',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(d);
+    const y = parts.find((p) => p.type === 'year')?.value ?? '1970';
+    const m = parts.find((p) => p.type === 'month')?.value ?? '01';
+    const day = parts.find((p) => p.type === 'day')?.value ?? '01';
+    return `${y}-${m}-${day}`;
+  }
+
   useEffect(() => {
     async function fetchAdmin() {
       const email = typeof window !== 'undefined' ? localStorage.getItem('admin_email') : null;
@@ -107,15 +121,13 @@ function AdminDashboard() {
           .select('id', { count: 'exact', head: true });
         if (totalErr) throw totalErr;
 
-        // 2) Today count (by created_at, as before)
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const fromTs = `${todayStr}T00:00:00.000Z`;
-        const toTs = `${todayStr}T23:59:59.999Z`;
+        // 2) Today count (by booking date in Europe/Warsaw)
+        const todayStr = getWarsawYmd(new Date());
         const { count: todayCount, error: todayErr } = await supabase
           .from('bookings')
           .select('id', { count: 'exact', head: true })
-          .gte('created_at', fromTs)
-          .lte('created_at', toTs);
+          .eq('date', todayStr)
+          .neq('status', 'cancelled');
         if (todayErr) throw todayErr;
 
         // 3) Revenue sum (paginate to avoid 1000-row cap)
@@ -377,7 +389,7 @@ function AdminDashboard() {
           <span style={{fontSize:26, color:'#f36e21', fontWeight:900}}>{stats?.total ?? '-'}</span>
         </div>
         <div style={{background:'#23222a', borderRadius:10, padding:'12px 10px', color:'#fff', fontWeight:700, fontSize:18, boxShadow:'0 1px 8px #0003', minWidth:180, minHeight:80, display:'flex', flexDirection:'column', gap:2}}>
-          <span style={{fontSize:13, color:'#ff9f58', fontWeight:600, marginBottom:2}}>Rezerwacje dzisiaj <TooltipInfo text="Liczba rezerwacji utworzonych dzisiaj (wg daty)." /></span>
+          <span style={{fontSize:13, color:'#ff9f58', fontWeight:600, marginBottom:2}}>Rezerwacje dzisiaj <TooltipInfo text="Liczba rezerwacji na dzisiaj (wg daty rezerwacji, Europe/Warsaw), bez anulowanych." /></span>
           <span style={{fontSize:26, color:'#f36e21', fontWeight:900}}>{stats?.today ?? '-'}</span>
         </div>
         <div style={{background:'#23222a', borderRadius:10, padding:'12px 10px', color:'#fff', fontWeight:700, fontSize:18, boxShadow:'0 1px 8px #0003', minWidth:180, minHeight:80, display:'flex', flexDirection:'column', gap:2}}>

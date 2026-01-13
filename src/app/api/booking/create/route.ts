@@ -9,8 +9,46 @@ export type BookingWithPackage = {
   room_id: string;
   date: string;
   time: string;
-  package: { duration: number };
+  package: { duration: number; cleanup_time?: number | null };
 };
+
+function getRoomPriority(args: {
+  packageName: string;
+  allowedRooms: string[];
+  roomPriority?: string[] | null;
+}) {
+  const { packageName, allowedRooms, roomPriority } = args;
+  const fromDb = (roomPriority || []).filter(Boolean);
+  if (fromDb.length > 0) {
+    // Ensure it's a subset of allowed rooms, preserve order
+    return fromDb.filter((id) => allowedRooms.includes(id));
+  }
+
+  // Backwards-compatible fallback: infer priority by package name
+  let roomOrder: string[] = [];
+  if (packageName.includes('extreme') || packageName.includes('ekstremalny') || packageName.includes('trudny')) {
+    roomOrder = [
+      'e1c128dd-8b88-47fb-bcfe-ada02a5ba079', // Pokój 4
+      '9ed4926f-2bb9-45c6-ac7c-1c5af8afa6cb'  // Pokój 3
+    ];
+  } else {
+    roomOrder = [
+      '6cdbbe09-73ae-471e-a3da-13bfa83a52c1', // Pokój 1
+      '5757f6b4-c95b-4050-88de-ac00a2bb1269', // Pokój 2
+      '9ed4926f-2bb9-45c6-ac7c-1c5af8afa6cb', // Pokój 3
+      'e1c128dd-8b88-47fb-bcfe-ada02a5ba079'  // Pokój 4
+    ];
+  }
+
+  const filtered = allowedRooms.filter((id: string) => roomOrder.includes(id));
+  const sorted = roomOrder.filter((id) => filtered.includes(id));
+  return sorted.length > 0 ? sorted : allowedRooms;
+}
+
+function overlaps(aStart: dayjs.Dayjs, aEnd: dayjs.Dayjs, bStart: dayjs.Dayjs, bEnd: dayjs.Dayjs) {
+  // End is exclusive: if one ends exactly when other starts -> no overlap.
+  return aStart.isBefore(bEnd) && bStart.isBefore(aEnd);
+}
 
 
 export async function POST(req: Request) {
@@ -20,13 +58,15 @@ export async function POST(req: Request) {
   // Получаем пакет и список допустимых комнат
   const { data: pkg, error: pkgError } = await supabase
     .from('packages')
-    .select('name, allowed_rooms, duration, price')
+    .select('name, allowed_rooms, room_priority, duration, cleanup_time, price')
     .eq('id', packageId)
     .single()
     .returns<{
       name: string | null;
       allowed_rooms: string[] | null;
+      room_priority: string[] | null;
       duration: number;
+      cleanup_time: number | null;
       price: number | string | null;
     }>();
 
@@ -34,28 +74,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Pakiet nie został znaleziony' }, { status: 404 });
   }
 
-  // Получаем название пакета
   const packageName = (pkg.name ?? '').toLowerCase();
-  let roomOrder: string[] = [];
-  if (packageName.includes('extreme') || packageName.includes('ekstremalny') || packageName.includes('trudny')) {
-    // Extreme (или если вдруг по-польски)
-    roomOrder = [
-      'e1c128dd-8b88-47fb-bcfe-ada02a5ba079', // Pokój 4
-      '9ed4926f-2bb9-45c6-ac7c-1c5af8afa6cb'  // Pokój 3
-    ];
-  } else {
-    // Easy, Medium, Hard
-    roomOrder = [
-      '6cdbbe09-73ae-471e-a3da-13bfa83a52c1', // Pokój 1
-      '5757f6b4-c95b-4050-88de-ac00a2bb1269', // Pokój 2
-      '9ed4926f-2bb9-45c6-ac7c-1c5af8afa6cb', // Pokój 3
-      'e1c128dd-8b88-47fb-bcfe-ada02a5ba079'  // Pokój 4
-    ];
-  }
-  // Оставляем только те комнаты, которые разрешены для этого пакета
-  const allowedRooms: string[] = (pkg.allowed_rooms ?? []).filter((id: string) => roomOrder.includes(id));
-  // Сортируем по приоритету
-  const sortedRooms = roomOrder.filter(id => allowedRooms.includes(id));
+  const allowedRooms: string[] = (pkg.allowed_rooms ?? []).filter(Boolean);
+  const sortedRooms = getRoomPriority({ packageName, allowedRooms, roomPriority: pkg.room_priority });
   let selectedRoomId: string | null = null;
 
   const { data: getBookings, error: getBookingError } = await supabase
@@ -65,31 +86,31 @@ export async function POST(req: Request) {
       room_id,
       date,
       time,
-      package:package_id (duration)
+      status,
+      package:package_id (duration, cleanup_time)
     `)
     .in('room_id', sortedRooms)
     .eq('date', date)
+    .neq('status', 'cancelled')
     .returns<BookingWithPackage[]>();
 
   if (getBookingError) {
     return NextResponse.json({ error: getBookingError.message }, { status: 500 });
   }
-  const bufferMinutes = 15;
-
-  const targetTime = dayjs(`${date} ${time}`);
   const durationMinutes = Number(pkg.duration) || 60;
-  const targetEndTime = dayjs(`${date} ${time}`).add(durationMinutes + bufferMinutes, 'm');
+  const cleanupMinutes = Number(pkg.cleanup_time) || 15;
+  const targetStart = dayjs(`${date} ${time}`);
+  const targetEnd = targetStart.add(durationMinutes + cleanupMinutes, 'm');
 
   for (const roomId of sortedRooms) {
     const bookingsForRoom = getBookings.filter((b: BookingWithPackage) => b.room_id === roomId);
 
     const conflict = bookingsForRoom.some((b: BookingWithPackage) => {
-      const startTime = dayjs(`${b.date} ${b.time}`);
-      const duration = b.package?.duration || 0;
-      const endTime = startTime.add(duration + bufferMinutes, 'm');
-
-      return targetTime.isSame(startTime) || (targetEndTime.isAfter(startTime) && targetEndTime.isBefore(endTime)) || 
-            (targetTime.isAfter(startTime) && targetTime.isBefore(endTime));
+      const bStart = dayjs(`${b.date} ${b.time}`);
+      const bDuration = b.package?.duration ? Number(b.package.duration) : durationMinutes;
+      const bCleanup = b.package?.cleanup_time ? Number(b.package.cleanup_time) : cleanupMinutes;
+      const bEnd = bStart.add(bDuration + bCleanup, 'm');
+      return overlaps(targetStart, targetEnd, bStart, bEnd);
     });
 
     if (!conflict) {

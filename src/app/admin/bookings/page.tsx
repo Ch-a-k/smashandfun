@@ -66,8 +66,13 @@ interface BookingWithPackage {
   room_id: string;
   date: string;
   time: string;
-  package: { duration: number };
+  package: { duration: number; cleanup_time?: number | null };
 };
+
+function overlaps(aStart: dayjs.Dayjs, aEnd: dayjs.Dayjs, bStart: dayjs.Dayjs, bEnd: dayjs.Dayjs) {
+  // End is exclusive: if one ends exactly when other starts -> no overlap.
+  return aStart.isBefore(bEnd) && bStart.isBefore(aEnd);
+}
 
 // Генерация времени с шагом 15 минут с 09:00 до 21:00
 function generateTimeSlots(start: string, end: string, stepMinutes: number) {
@@ -439,71 +444,94 @@ function BookingsPage() {
     if (!editForm) return;
     setSaving(true);
     setError(null);
-    let roomId = '';
-    if (isNew && selectedPackage) {
-      // Получаем room_priority и allowed_rooms
-      const allowedRooms: string[] = selectedPackage.allowed_rooms || [];
-      const roomPriority: string[] = selectedPackage.room_priority && selectedPackage.room_priority.length > 0 ? selectedPackage.room_priority : allowedRooms;
-      // Перебираем комнаты по приоритету и ищем свободную
-      const { data: pkg } = await supabase
-          .from('packages')
-          .select('*')
-          .eq('id', selectedPackage.id)
-          .single()
-          .returns<Package>();
+    let roomId = editForm.room_id || '';
 
-      if (!pkg) {
+    // При изменении/создании брони пересчитываем room_id и проверяем конфликты,
+    // иначе бронь может "пропасть" из проверки доступности и будет двойная запись.
+    if (selectedPackage && editForm.package_id && editForm.date && editForm.time) {
+      const allowedRooms: string[] = selectedPackage.allowed_rooms || [];
+      const basePriority: string[] =
+        selectedPackage.room_priority && selectedPackage.room_priority.length > 0
+          ? selectedPackage.room_priority
+          : allowedRooms;
+      const roomPriority: string[] = basePriority.filter((id) => allowedRooms.includes(id));
+      const orderedRooms =
+        !isNew && editForm.room_id && roomPriority.includes(editForm.room_id)
+          ? [editForm.room_id, ...roomPriority.filter((id) => id !== editForm.room_id)]
+          : roomPriority;
+
+      // Подтягиваем duration/cleanup_time пакета (на случай, если данные в selectedPackage устарели)
+      const { data: pkg, error: pkgErr } = await supabase
+        .from('packages')
+        .select('duration, cleanup_time')
+        .eq('id', selectedPackage.id)
+        .single()
+        .returns<{ duration: number; cleanup_time: number | null }>();
+
+      if (pkgErr || !pkg) {
         setError('Nie udało się pobrać danych pakietu');
         setSaving(false);
         return;
       }
 
-      const bufferMinutes = 15;
-      
-      const targetTime = dayjs(`${editForm.date} ${editForm.time}`);
       const durationMinutes = Number(pkg.duration) || 60;
-      const targetEndTime = dayjs(`${editForm.date} ${editForm.time}`).add(durationMinutes + bufferMinutes, 'm');
+      const cleanupMinutes = Number(pkg.cleanup_time) || 15;
 
-      const { data: getBookings, error: getBookingError } = await supabase
+      const targetStart = dayjs(`${editForm.date} ${editForm.time}`);
+      const targetEnd = targetStart.add(durationMinutes + cleanupMinutes, 'm');
+
+      let bookingQuery = supabase
         .from('bookings')
         .select(`
           id,
           room_id,
           date,
           time,
-          package:package_id (duration)
+          status,
+          package:package_id (duration, cleanup_time)
         `)
-        .in('room_id', roomPriority)
+        .in('room_id', orderedRooms)
         .eq('date', editForm.date)
-        .returns<BookingWithPackage[]>();
+        .neq('status', 'cancelled');
 
+      // При редактировании исключаем текущую бронь из проверок
+      if (!isNew && editForm.id) {
+        bookingQuery = bookingQuery.neq('id', editForm.id);
+      }
+
+      const { data: getBookings, error: getBookingError } = await bookingQuery.returns<BookingWithPackage[]>();
       if (getBookingError) {
+        setError('Błąd sprawdzania dostępności (rezerwacje)');
+        setSaving(false);
         return;
       }
 
-      for (const roomIdT of roomPriority) {
-        const bookingsForRoom = getBookings.filter(b => b.room_id === roomIdT);
-    
+      let selectedRoomId = '';
+      for (const roomIdT of orderedRooms) {
+        const bookingsForRoom = (getBookings || []).filter((b) => b.room_id === roomIdT);
         const conflict = bookingsForRoom.some((b: BookingWithPackage) => {
-          const startTime = dayjs(`${b.date} ${b.time}`);
-          const duration = b.package?.duration || 0;
-          const endTime = startTime.add(duration + bufferMinutes, 'm');
-
-          return targetTime.isSame(startTime) || (targetEndTime.isAfter(startTime) && targetEndTime.isBefore(endTime)) || 
-                (targetTime.isAfter(startTime) && targetTime.isBefore(endTime));
+          const bStart = dayjs(`${b.date} ${b.time}`);
+          const bDuration = b.package?.duration ? Number(b.package.duration) : durationMinutes;
+          const bCleanup = b.package?.cleanup_time ? Number(b.package.cleanup_time) : cleanupMinutes;
+          const bEnd = bStart.add(bDuration + bCleanup, 'm');
+          return overlaps(targetStart, targetEnd, bStart, bEnd);
         });
-    
+
         if (!conflict) {
-          roomId = roomIdT;
+          selectedRoomId = roomIdT;
           break;
         }
       }
-      if (!roomId) {
+
+      if (!selectedRoomId) {
         setError('Brak dostępnych pokoi na wybraną datę i godzinę');
         setSaving(false);
-      return;
+        return;
       }
+
+      roomId = selectedRoomId;
     }
+
     if (isNew) {
       const { user_email, name, package_id, date, time, status, phone, total_price, payment_id, promo_code, extra_items, comment } = editForm;
       const { error } = await supabase.from('bookings').insert([{ user_email, name, package_id, room_id: roomId, date, time, status, phone, total_price: Number(total_price), payment_id, promo_code, extra_items, comment }]);
@@ -523,7 +551,7 @@ function BookingsPage() {
     } else {
       const { id, payments, ...fields } = editForm;
       console.log('payments', payments);
-      const { error } = await supabase.from('bookings').update(fields).eq('id', id);
+      const { error } = await supabase.from('bookings').update({ ...fields, room_id: roomId }).eq('id', id);
       if (error) {
         setError('Błąd zapisu: ' + error.message);
       } else {

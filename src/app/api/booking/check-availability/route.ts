@@ -24,6 +24,10 @@ function addMinutes(time: string, minutes: number) {
   return pad(date.getHours()) + ':' + pad(date.getMinutes());
 }
 
+function normalizeTime(t: string) {
+  return (t || '').slice(0, 5); // HH:mm
+}
+
 function getTimeSlots(start: string, end: string, interval: number, minStart: string) {
   // interval — шаг в минутах (например, 15)
   const slots: string[] = [];
@@ -142,10 +146,10 @@ export async function POST(req: Request) {
   // Получаем пакет и список допустимых комнат
   const { data: pkg, error: pkgError } = await supabase
     .from('packages')
-    .select('allowed_rooms, duration')
+    .select('allowed_rooms, duration, cleanup_time')
     .eq('id', packageId)
     .single()
-    .returns<{ allowed_rooms: string[]; duration: number }>();
+    .returns<{ allowed_rooms: string[]; duration: number; cleanup_time: number | null }>();
 
   if (pkgError || !pkg) {
     return NextResponse.json({ error: 'Пакет не найден' }, { status: 404 });
@@ -153,7 +157,7 @@ export async function POST(req: Request) {
 
   const allowedRooms: string[] = pkg.allowed_rooms;
   const duration = Number(pkg.duration) || 60; // минуты
-  const cleanup = 15; // уборка
+  const cleanup = Number(pkg.cleanup_time) || 15; // уборка
   const interval = 30; // шаг слота 30 минут
 
   // Время работы
@@ -200,10 +204,12 @@ export async function POST(req: Request) {
       package_id,
       id,
       room_id,
-      package:package_id (duration)
+      status,
+      package:package_id (duration, cleanup_time)
     `)
     .in('room_id', allowedRooms)
     .eq('date', date)
+    .neq('status', 'cancelled')
     .returns<BookingWithPackage[]>();
 
   if (bookingError) {
@@ -213,7 +219,7 @@ export async function POST(req: Request) {
 
   for (const time of slots) {
      // Для каждого слота проверяем, что в каждой комнате нет пересечений с другими бронированиями на весь период (услуга + уборка)
-    const slotStart = time;
+    const slotStart = normalizeTime(time);
     const slotEnd = addMinutes(slotStart, duration + cleanup);
     let found = false;
     for (const roomId of allowedRooms) {
@@ -222,9 +228,10 @@ export async function POST(req: Request) {
       let overlap = false;
       for (const b of roomBookings) {
         if (ignoreBookingId && b.id === ignoreBookingId) continue;
-        const bStart = b.time;
+        const bStart = normalizeTime(b.time);
         const bDuration = b.package && b.package.duration ? Number(b.package.duration) : duration;
-        const bEnd = addMinutes(bStart, bDuration + cleanup);
+        const bCleanup = b.package && b.package.cleanup_time ? Number(b.package.cleanup_time) : cleanup;
+        const bEnd = addMinutes(bStart, bDuration + bCleanup);
         // Проверяем пересечение интервалов
         if (!(slotEnd <= bStart || slotStart >= bEnd)) {
           overlap = true;

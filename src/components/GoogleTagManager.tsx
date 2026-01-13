@@ -29,6 +29,11 @@ export default function GoogleTagManager() {
     return null;
   }
 
+  // Не грузим аналитику в админке (и не получаем CORS/iframe шум в консоли)
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   // Не загружаем скрипт, если пользователь не дал согласие на аналитику
   if (!analyticsAllowed) {
     return null;

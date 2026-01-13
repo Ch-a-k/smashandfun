@@ -43,6 +43,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Rezerwacja została anulowana' }, { status: 409 });
   }
 
+  // Ссылка на изменение должна сработать только один раз,
+  // но token мы сохраняем, чтобы ссылка на отмену продолжала работать.
+  const { data: alreadyChanged, error: historyErr } = await supabase
+    .from('booking_history')
+    .select('id')
+    .eq('booking_id', booking.id)
+    .eq('action', 'user_changed_datetime')
+    .limit(1);
+  if (historyErr) {
+    console.error('change-date: booking_history error', historyErr);
+    return NextResponse.json({ error: 'Błąd weryfikacji historii' }, { status: 500 });
+  }
+  if (alreadyChanged && alreadyChanged.length > 0) {
+    return NextResponse.json({ error: 'Link do zmiany terminu został już wykorzystany' }, { status: 404 });
+  }
+
   // Получаем пакет (комнаты/длительность/уборка), чтобы валидировать перенос и выбрать свободную комнату
   const { data: pkg, error: pkgError } = await supabase
     .from('packages')
@@ -132,13 +148,26 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Brak dostępnych pokoi na wybrany termin' }, { status: 409 });
   }
 
-  // Обновляем дату/время/комнату, делаем ссылку одноразовой
+  // Обновляем дату/время/комнату (token НЕ удаляем, чтобы cancel_link работал)
   const { error: updateError } = await supabase
     .from('bookings')
-    .update({ date: newDate, time: newTime, room_id: selectedRoomId, change_token: null, updated_at: dayjs().toISOString() })
+    .update({ date: newDate, time: newTime, room_id: selectedRoomId, updated_at: dayjs().toISOString() })
     .eq('id', booking.id);
   if (updateError) {
     return NextResponse.json({ error: 'Błąd zmiany rezerwacji' }, { status: 500 });
+  }
+
+  // Фиксируем, что изменение по ссылке было выполнено (одноразовость)
+  const { error: insertHistErr } = await supabase.from('booking_history').insert([
+    {
+      booking_id: booking.id,
+      action: 'user_changed_datetime',
+      comment: `Changed to ${newDate} ${newTime}, room ${selectedRoomId}`,
+    },
+  ]);
+  if (insertHistErr) {
+    // Не блокируем успешную смену, но логируем
+    console.error('change-date: insert booking_history error', insertHistErr);
   }
 
   // Отправляем письмо с подтверждением изменения

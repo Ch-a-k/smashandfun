@@ -33,7 +33,8 @@ export default function AdminLogin() {
       .from('admins')
       .select('*')
       .eq('email', email)
-      .single();
+      .single()
+      .returns<{ role: 'admin' | 'superadmin' }>();
     if (adminError || !adminData) {
       setError("Brak dostępu: nie jesteś administratorem");
       setLoading(false);
@@ -43,6 +44,10 @@ export default function AdminLogin() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('admin_email', email);
       localStorage.setItem('admin_token', data.session.access_token);
+      // Cookie для middleware (не источник прав, только UX-навигация)
+      const role = adminData.role;
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `admin_role=${encodeURIComponent(role)}; Path=/; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}${secure}`;
     }
     setLoading(false);
     if (adminData.role === 'superadmin') {

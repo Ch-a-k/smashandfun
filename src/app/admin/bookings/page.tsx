@@ -665,8 +665,12 @@ function BookingsPage() {
 
   useEffect(() => {
     async function fetch() {
-      const { data: holidaysData } = await supabase.from('holidays').select('date').eq('date', dayjs(date).format('YYYY-MM-DD')).single();
-
+      // .single() returns 406 when no rows -> use maybeSingle() to avoid console noise
+      const { data: holidaysData } = await supabase
+        .from('holidays')
+        .select('date')
+        .eq('date', dayjs(date).format('YYYY-MM-DD'))
+        .maybeSingle();
       setHoliday(!!holidaysData?.date);
     }
     fetch();

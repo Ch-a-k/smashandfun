@@ -40,6 +40,10 @@ function getTimeSlots(start: string, end: string, interval: number, minStart: st
 }
 
 export async function POST(req: Request) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' }, { status: 500 });
+  }
+
   const { packageId, date, token, time } = await req.json();
   const env = process.env.PAYU_ENV || 'sandbox';
   let ignoreBookingId: string | null = null;

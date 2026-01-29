@@ -25,6 +25,10 @@ function getTimeSlots(start: string, end: string, step: number) {
 }
 
 export async function POST(req: Request) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' }, { status: 500 });
+  }
+
   const { packageId, startDate, endDate } = await req.json();
 
   const { data: pkg, error: pkgError } = await supabaseAdmin

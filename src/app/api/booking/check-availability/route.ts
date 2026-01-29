@@ -51,6 +51,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
   }
   const { packageId, date, token, time } = payload;
+  if (!packageId || !date) {
+    return NextResponse.json({ error: 'packageId and date are required' }, { status: 400 });
+  }
   const env = process.env.PAYU_ENV || 'sandbox';
   let ignoreBookingId: string | null = null;
   if (token) {

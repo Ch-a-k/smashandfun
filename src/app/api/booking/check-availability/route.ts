@@ -44,7 +44,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY is not configured' }, { status: 500 });
   }
 
-  const { packageId, date, token, time } = await req.json();
+  let payload: { packageId?: string; date?: string; token?: string; time?: string };
+  try {
+    payload = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+  }
+  const { packageId, date, token, time } = payload;
   const env = process.env.PAYU_ENV || 'sandbox';
   let ignoreBookingId: string | null = null;
   if (token) {
@@ -101,9 +107,15 @@ export async function POST(req: Request) {
       },
       body: params.toString(),
     });
-    const tokenData = await tokenRes.json();
-    if (!tokenRes.ok) {
-      console.error('PayU: Błąd tokenu', tokenData);
+    const tokenText = await tokenRes.text();
+    let tokenData: { access_token?: string } | null = null;
+    try {
+      tokenData = tokenText ? JSON.parse(tokenText) : null;
+    } catch {
+      tokenData = null;
+    }
+    if (!tokenRes.ok || !tokenData?.access_token) {
+      console.error('PayU: Błąd tokenu', tokenText);
     } else {
       const accessToken = tokenData.access_token;
       const arrayOfFetch = [];

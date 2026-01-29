@@ -77,8 +77,12 @@ export async function POST(req: Request) {
     const tokenUrl = env === 'sandbox'
       ? 'https://secure.snd.payu.com/pl/standard/user/oauth/authorize'
       : 'https://secure.payu.com/pl/standard/user/oauth/authorize';
-    const clientId: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID : process.env.PAYU_CLIENT_ID;
-    const clientSecret: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET : process.env.PAYU_CLIENT_SECRET;
+    const clientId = env === 'sandbox'
+      ? process.env.PAYU_SANDBOX_CLIENT_ID!
+      : process.env.PAYU_CLIENT_ID!;
+    const clientSecret = env === 'sandbox'
+      ? process.env.PAYU_SANDBOX_CLIENT_SECRET!
+      : process.env.PAYU_CLIENT_SECRET!;
 
     const params = new URLSearchParams();
     params.append('grant_type', 'client_credentials');

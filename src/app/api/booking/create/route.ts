@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import crypto from 'crypto';
 
 import dayjs from 'dayjs';
@@ -170,7 +171,7 @@ export async function POST(req: Request) {
 
     const currentCount = promo.used_count || 0;
     // 2. Оновити з інкрементом +1
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('promo_codes')
       .update({ used_count: currentCount + 1 })
       .eq('code', promoCode);
@@ -184,7 +185,7 @@ export async function POST(req: Request) {
   const changeToken = crypto.randomBytes(24).toString('hex');
 
   // Создаём бронирование
-  const { data: booking, error: bookingError } = await supabase
+  const { data: booking, error: bookingError } = await supabaseAdmin
     .from('bookings')
     .insert([
       {
@@ -210,7 +211,7 @@ export async function POST(req: Request) {
   }
 
   // Upsert пользователя в таблицу users (с именем и телефоном, если есть)
-  await supabase.from('users').upsert({ email, name, phone }, { onConflict: 'email' });
+  await supabaseAdmin.from('users').upsert({ email, name, phone }, { onConflict: 'email' });
 
   return NextResponse.json({ booking });
 } 

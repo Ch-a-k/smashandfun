@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import dayjs from 'dayjs';
 
 function pad(num: number) {
@@ -27,7 +27,7 @@ function getTimeSlots(start: string, end: string, step: number) {
 export async function POST(req: Request) {
   const { packageId, startDate, endDate } = await req.json();
 
-  const { data: pkg, error: pkgError } = await supabase
+  const { data: pkg, error: pkgError } = await supabaseAdmin
     .from('packages')
     .select('allowed_rooms, duration')
     .eq('id', packageId)
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     dateList.push(d.toISOString().slice(0, 10));
   }
 
-  const { data: bookings, error: bookingsError } = await supabase
+  const { data: bookings, error: bookingsError } = await supabaseAdmin
     .from('bookings')
     .select('room_id, date, time')
     .in('room_id', allowedRooms)
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
   const availableDates: string[] = [];
 
   let holidayDates = [];
-  const { data: holidays, error: holidaysError } = await supabase
+  const { data: holidays, error: holidaysError } = await supabaseAdmin
     .from('holidays')
     .select('date')
     .gte('date', dayjs(start).format('YYYY-MM-DD'))

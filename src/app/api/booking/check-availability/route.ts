@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { BookingWithPackage } from '../create/route';
 import dayjs from 'dayjs';
 
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   let ignoreBookingId: string | null = null;
   if (token) {
     // Получаем bookingId по токену
-    const { data: booking } = await supabase
+    const { data: booking } = await supabaseAdmin
       .from('bookings')
       .select('id')
       .eq('change_token', token)
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
   }
 
   const fiveMinutesAgo = dayjs().subtract(18, 'minute').toISOString();
-  const { data: bookingToDelete, error: bookingToDeleteError } = await supabase
+  const { data: bookingToDelete, error: bookingToDeleteError } = await supabaseAdmin
     .from('bookings')
     .select('id, payu_id')
     .eq('status', 'pending')
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
       return flatRetriveRes.some(order => order.status === 'NEW' && order.orderId === booking.id);
     });
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await supabaseAdmin
       .from('bookings')
       .delete()
       .in('id', filtered.map(b => b.id));
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
 
 
   // Получаем пакет и список допустимых комнат
-  const { data: pkg, error: pkgError } = await supabase
+  const { data: pkg, error: pkgError } = await supabaseAdmin
     .from('packages')
     .select('allowed_rooms, duration, cleanup_time')
     .eq('id', packageId)
@@ -197,7 +197,7 @@ export async function POST(req: Request) {
   const availableTimes: string[] = [];
 
   // Получаем все бронирования на этот день
-  const { data: bookings, error: bookingError } = await supabase
+  const { data: bookings, error: bookingError } = await supabaseAdmin
     .from('bookings')
     .select(`
       time,

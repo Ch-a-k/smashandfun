@@ -61,83 +61,81 @@ export async function POST(req: Request) {
     .eq('status', 'pending')
     .lt('created_at', fiveMinutesAgo);
 
-     if (!process.env.PAYU_CLIENT_ID || !process.env.PAYU_CLIENT_SECRET) {
-        return NextResponse.json({ error: 'PAYU_CLIENT_ID and PAYU_CLIENT_SECRET must be defined' }, { status: 400 });
-      }
-
-      if (!process.env.PAYU_SANDBOX_CLIENT_ID || !process.env.PAYU_SANDBOX_CLIENT_SECRET) {
-        return NextResponse.json({ error: 'PAYU_SANDBOX_CLIENT_ID and PAYU_SANDBOX_CLIENT_SECRET must be defined' }, { status: 400 });
-      }
-      // Получаем access token
-      const tokenUrl = env === 'sandbox'
-        ? 'https://secure.snd.payu.com/pl/standard/user/oauth/authorize'
-        : 'https://secure.payu.com/pl/standard/user/oauth/authorize';
-      const clientId: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID : process.env.PAYU_CLIENT_ID;
-      const clientSecret: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET : process.env.PAYU_CLIENT_SECRET;
-
-      const params = new URLSearchParams();
-      params.append('grant_type', 'client_credentials');
-      params.append('client_id', clientId);
-      params.append('client_secret', clientSecret);
-
-      const tokenRes = await fetch(tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json',
-        },
-        body: params.toString(),
-      });
-      const tokenData = await tokenRes.json();
-      if (!tokenRes.ok) {
-        console.error('PayU: Błąd tokenu', tokenData);
-        return NextResponse.json({ error: 'Błąd tokenu Payu', details: tokenData }, { status: 500 });
-      }
-      const accessToken = tokenData.access_token;
-
-
   if (bookingToDeleteError || !bookingToDelete) {
     console.error('bookingToDeleteError', bookingToDeleteError);
   }
 
-  if (bookingToDelete?.length) {
-    const arrayOfFetch = [];
-    for(const el of bookingToDelete) {
-      const retriveUrl = env === 'sandbox'
-      ? `https://secure.snd.payu.com/api/v2_1/orders/${el.payu_id}`
-      : `https://secure.payu.com/api/v2_1/orders/${el.payu_id}`;
+  const payuReady = Boolean(
+    process.env.PAYU_CLIENT_ID &&
+    process.env.PAYU_CLIENT_SECRET &&
+    process.env.PAYU_SANDBOX_CLIENT_ID &&
+    process.env.PAYU_SANDBOX_CLIENT_SECRET
+  );
 
-      arrayOfFetch.push(
-        fetch(retriveUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        })
-      );
-    }
+  if (bookingToDelete?.length && payuReady) {
+    // Получаем access token
+    const tokenUrl = env === 'sandbox'
+      ? 'https://secure.snd.payu.com/pl/standard/user/oauth/authorize'
+      : 'https://secure.payu.com/pl/standard/user/oauth/authorize';
+    const clientId: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID : process.env.PAYU_CLIENT_ID;
+    const clientSecret: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET : process.env.PAYU_CLIENT_SECRET;
 
-    const fetchResponses = await Promise.all(arrayOfFetch);
-    const jsonResults = await Promise.all(fetchResponses.map(res => res.json()));
-    const dataResults = (jsonResults || []).map((el: JsonResult) => (el.orders || []).map((res: Order) => ({status: res.status, orderId: res.extOrderId})));
-    const flatRetriveRes = dataResults.flat();
+    const params = new URLSearchParams();
+    params.append('grant_type', 'client_credentials');
+    params.append('client_id', clientId);
+    params.append('client_secret', clientSecret);
 
-    const filtered = bookingToDelete.filter(booking => {
-      return flatRetriveRes.some(order => order.status === 'NEW' && order.orderId === booking.id);
+    const tokenRes = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json',
+      },
+      body: params.toString(),
     });
-
-    const { error: deleteError } = await supabaseAdmin
-      .from('bookings')
-      .delete()
-      .in('id', filtered.map(b => b.id));
-
-    if (deleteError) {
-      console.error('Помилка при видаленні бронювань:', deleteError);
+    const tokenData = await tokenRes.json();
+    if (!tokenRes.ok) {
+      console.error('PayU: Błąd tokenu', tokenData);
     } else {
-      console.log(`Знайшло: ${bookingToDelete}`);
-      console.log(`Видалено: ${filtered}`);
-      console.log(`Видалено ${filtered.length} прострочених бронювань`);
+      const accessToken = tokenData.access_token;
+      const arrayOfFetch = [];
+      for (const el of bookingToDelete) {
+        const retriveUrl = env === 'sandbox'
+          ? `https://secure.snd.payu.com/api/v2_1/orders/${el.payu_id}`
+          : `https://secure.payu.com/api/v2_1/orders/${el.payu_id}`;
+
+        arrayOfFetch.push(
+          fetch(retriveUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+          })
+        );
+      }
+
+      const fetchResponses = await Promise.all(arrayOfFetch);
+      const jsonResults = await Promise.all(fetchResponses.map(res => res.json()));
+      const dataResults = (jsonResults || []).map((el: JsonResult) => (el.orders || []).map((res: Order) => ({status: res.status, orderId: res.extOrderId})));
+      const flatRetriveRes = dataResults.flat();
+
+      const filtered = bookingToDelete.filter(booking => {
+        return flatRetriveRes.some(order => order.status === 'NEW' && order.orderId === booking.id);
+      });
+
+      const { error: deleteError } = await supabaseAdmin
+        .from('bookings')
+        .delete()
+        .in('id', filtered.map(b => b.id));
+
+      if (deleteError) {
+        console.error('Помилка при видаленні бронювань:', deleteError);
+      } else {
+        console.log(`Знайшло: ${bookingToDelete}`);
+        console.log(`Видалено: ${filtered}`);
+        console.log(`Видалено ${filtered.length} прострочених бронювань`);
+      }
     }
   }
 

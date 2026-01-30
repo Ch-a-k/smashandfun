@@ -50,36 +50,44 @@ async function getAccessToken(env: string) {
   return tokenData.access_token as string;
 }
 
+async function fetchOrderByExtOrderId(accessToken: string, env: string, extOrderId: string) {
+  const orderUrl = env === 'sandbox'
+    ? `https://secure.snd.payu.com/api/v2_1/orders?extOrderId=${encodeURIComponent(extOrderId)}`
+    : `https://secure.payu.com/api/v2_1/orders?extOrderId=${encodeURIComponent(extOrderId)}`;
+
+  const orderRes = await fetch(orderUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const orderText = await orderRes.text();
+  const orderData = orderText ? JSON.parse(orderText) : null;
+
+  if (!orderRes.ok || !orderData?.orders?.length) {
+    return null;
+  }
+
+  return orderData.orders[0] as PayuOrder;
+}
+
 export async function POST(req: Request) {
   try {
     const env = process.env.PAYU_ENV || 'sandbox';
     const { bookingId, extOrderId } = await req.json();
-    const lookupOrderId: string | undefined = extOrderId;
-
-    if (!bookingId && !lookupOrderId) {
+    if (!bookingId && !extOrderId) {
       return NextResponse.json({ error: 'bookingId or extOrderId is required' }, { status: 400 });
     }
 
     const accessToken = await getAccessToken(env);
-    const orderUrl = env === 'sandbox'
-      ? `https://secure.snd.payu.com/api/v2_1/orders/${lookupOrderId}`
-      : `https://secure.payu.com/api/v2_1/orders/${lookupOrderId}`;
+    const order = extOrderId
+      ? await fetchOrderByExtOrderId(accessToken, env, extOrderId)
+      : null;
 
-    const orderRes = await fetch(orderUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    const orderText = await orderRes.text();
-    const orderData = orderText ? JSON.parse(orderText) : null;
-
-    if (!orderRes.ok || !orderData?.orders?.length) {
-      return NextResponse.json({ error: 'PayU order not found', details: orderText }, { status: 404 });
+    if (!order) {
+      return NextResponse.json({ error: 'PayU order not found' }, { status: 404 });
     }
-
-    const order = orderData.orders[0] as PayuOrder;
     const resolvedBookingId = bookingId || order.extOrderId?.split(':')[0];
 
     if (!resolvedBookingId) {

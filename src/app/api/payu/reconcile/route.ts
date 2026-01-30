@@ -71,6 +71,26 @@ async function fetchOrder(accessToken: string, env: string, orderId: string) {
   return orderData.orders[0] as PayuOrder;
 }
 
+async function fetchOrderByExtOrderId(accessToken: string, env: string, extOrderId: string) {
+  const orderUrl = env === 'sandbox'
+    ? `https://secure.snd.payu.com/api/v2_1/orders?extOrderId=${encodeURIComponent(extOrderId)}`
+    : `https://secure.payu.com/api/v2_1/orders?extOrderId=${encodeURIComponent(extOrderId)}`;
+
+  const orderRes = await fetch(orderUrl, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  const orderText = await orderRes.text();
+  const orderData = orderText ? JSON.parse(orderText) : null;
+  if (!orderRes.ok || !orderData?.orders?.length) {
+    return null;
+  }
+  return orderData.orders[0] as PayuOrder;
+}
+
 async function handleReconcile(req: Request) {
   try {
     if (!requireCronAuth(req)) {
@@ -86,7 +106,7 @@ async function handleReconcile(req: Request) {
     const { data: bookings } = await supabaseAdmin
       .from('bookings')
       .select('id, status, total_price, payu_id, payment_id, package_id, user_email, name, date, time, change_token, created_at')
-      .in('status', ['pending', 'deposit'])
+      .in('status', ['pending', 'deposit', 'paid'])
       .gte('created_at', since)
       .or('payu_id.not.is.null,payment_id.not.is.null')
       .order('created_at', { ascending: false })
@@ -110,13 +130,30 @@ async function handleReconcile(req: Request) {
     const checked: string[] = [];
 
     for (const booking of bookings || []) {
-      const orderIdToCheck = booking.payu_id || booking.payment_id;
-      if (!orderIdToCheck) continue;
-
-      const order = await fetchOrder(accessToken, env, orderIdToCheck);
+      let order: PayuOrder | null = null;
+      if (booking.payu_id) {
+        order = await fetchOrder(accessToken, env, booking.payu_id);
+      }
+      if (!order && booking.payment_id) {
+        if (booking.payment_id.includes(':')) {
+          order = await fetchOrderByExtOrderId(accessToken, env, booking.payment_id);
+        } else {
+          order = await fetchOrder(accessToken, env, booking.payment_id);
+          if (!order) {
+            order = await fetchOrderByExtOrderId(accessToken, env, booking.payment_id);
+          }
+        }
+      }
       if (!order) continue;
 
       checked.push(booking.id);
+
+      if (order.orderId && booking.payu_id !== order.orderId) {
+        await supabaseAdmin
+          .from('bookings')
+          .update({ payu_id: order.orderId })
+          .eq('id', booking.id);
+      }
 
       if (order.status === 'COMPLETED') {
         const { data: existingPayment } = await supabaseAdmin
@@ -125,24 +162,26 @@ async function handleReconcile(req: Request) {
           .eq('transaction_id', order.orderId)
           .single();
 
-        if (!existingPayment) {
-          const { data: existingPayments } = await supabaseAdmin
-            .from('payments')
-            .select('amount')
-            .eq('booking_id', booking.id);
+        const { data: existingPayments } = await supabaseAdmin
+          .from('payments')
+          .select('amount')
+          .eq('booking_id', booking.id);
 
-          const previousTotal = existingPayments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
-          const newPaymentAmount = Number(order.totalAmount) / 100;
-          const newTotal = previousTotal + newPaymentAmount;
-          const orderTotal = Number(booking.total_price);
-          const bookingStatus: 'paid' | 'deposit' = newTotal >= orderTotal ? 'paid' : 'deposit';
-          const paymentStatus: 'paid' | 'deposit' = bookingStatus;
+        const previousTotal = existingPayments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
+        const newPaymentAmount = existingPayment ? 0 : Number(order.totalAmount) / 100;
+        const newTotal = previousTotal + newPaymentAmount;
+        const orderTotal = Number(booking.total_price);
+        const bookingStatus: 'paid' | 'deposit' = newTotal >= orderTotal ? 'paid' : 'deposit';
+        const paymentStatus: 'paid' | 'deposit' = bookingStatus;
 
+        if (booking.status !== bookingStatus) {
           await supabaseAdmin
             .from('bookings')
-            .update({ status: bookingStatus, payu_id: order.orderId })
+            .update({ status: bookingStatus })
             .eq('id', booking.id);
+        }
 
+        if (!existingPayment) {
           await supabaseAdmin
             .from('payments')
             .insert([

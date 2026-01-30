@@ -1,6 +1,18 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+function normalizeBookingTotal(rawTotal: number, payuAmountPln: number) {
+  if (!Number.isFinite(rawTotal)) return 0;
+  if (payuAmountPln > 0) {
+    const asPln = rawTotal;
+    const asPlnFromCents = rawTotal / 100;
+    if (Math.abs(asPlnFromCents - payuAmountPln) <= 1 && asPln > payuAmountPln * 20) {
+      return asPlnFromCents;
+    }
+  }
+  return rawTotal;
+}
+
 function getBaseUrl(req: Request) {
   const envBase = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
   if (envBase) return envBase;
@@ -123,8 +135,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Nie znaleziono rezerwacji', details: bookingError }, { status: 404 });
       }
 
-      const orderTotal = Number(booking.total_price);
-      const newPaymentAmount = Number(body.order.totalAmount) / 100;
+      const payuAmountPln = Number(body.order.totalAmount) / 100;
+      const orderTotal = normalizeBookingTotal(Number(booking.total_price), payuAmountPln);
+      const newPaymentAmount = payuAmountPln;
 
       // 2. Отримуємо інфу про оплати по даному ордеру
       const { data: getExistingPayments, error: getPaymentsError } = await supabaseAdmin
@@ -230,7 +243,7 @@ export async function POST(req: Request) {
       return new Response('', { status: 200 });
     }
 
-    if (body.order && (body.order.status === 'CANCELED' || body.order.status === 'REJECTED') && resolvedBookingId) {
+    if (body.order && (body.order.status === 'CANCELED' || body.order.status === 'REJECTED' || body.order.status === 'REFUNDED' || body.order.status === 'REFUND') && resolvedBookingId) {
       await supabaseAdmin
         .from('bookings')
         .update({ status: 'cancelled' })

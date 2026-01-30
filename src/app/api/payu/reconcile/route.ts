@@ -8,6 +8,18 @@ type PayuOrder = {
   totalAmount: string;
 };
 
+function normalizeBookingTotal(rawTotal: number, payuAmountPln: number) {
+  if (!Number.isFinite(rawTotal)) return 0;
+  if (payuAmountPln > 0) {
+    const asPln = rawTotal;
+    const asPlnFromCents = rawTotal / 100;
+    if (Math.abs(asPlnFromCents - payuAmountPln) <= 1 && asPln > payuAmountPln * 20) {
+      return asPlnFromCents;
+    }
+  }
+  return rawTotal;
+}
+
 function requireCronAuth(req: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret) return true;
@@ -15,6 +27,27 @@ function requireCronAuth(req: Request) {
   const bearer = req.headers.get('authorization') || '';
   const token = bearer.startsWith('Bearer ') ? bearer.slice(7) : '';
   return header === secret || token === secret;
+}
+
+async function isAdminRequest(req: Request) {
+  const bearer = req.headers.get('authorization') || '';
+  const token = bearer.startsWith('Bearer ') ? bearer.slice(7) : '';
+  if (!token) return false;
+  const { data: userData, error } = await supabaseAdmin.auth.getUser(token);
+  const email = userData?.user?.email;
+  if (error || !email) return false;
+  const { data: admin } = await supabaseAdmin
+    .from('admins')
+    .select('email')
+    .eq('email', email)
+    .maybeSingle()
+    .returns<{ email: string } | null>();
+  return !!admin?.email;
+}
+
+async function isAuthorized(req: Request) {
+  if (requireCronAuth(req)) return true;
+  return isAdminRequest(req);
 }
 
 async function getAccessToken(env: string) {
@@ -93,43 +126,116 @@ async function fetchOrderByExtOrderId(accessToken: string, env: string, extOrder
 
 async function handleReconcile(req: Request) {
   try {
-    if (!requireCronAuth(req)) {
+    if (!await isAuthorized(req)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const env = process.env.PAYU_ENV || 'sandbox';
     const daysBack = Number(process.env.RECONCILE_DAYS || '2');
-    const limit = Number(process.env.RECONCILE_LIMIT || '50');
+    const limitRaw = process.env.RECONCILE_LIMIT;
+    const limit = limitRaw ? Number(limitRaw) : undefined;
+    const upcomingMinutes = Number(process.env.RECONCILE_UPCOMING_MINUTES || '10');
     const accessToken = await getAccessToken(env);
 
-    const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
-    const { data: bookings } = await supabaseAdmin
-      .from('bookings')
-      .select('id, status, total_price, payu_id, payment_id, package_id, user_email, name, date, time, change_token, created_at')
-      .in('status', ['pending', 'deposit', 'paid'])
-      .gte('created_at', since)
-      .or('payu_id.not.is.null,payment_id.not.is.null')
-      .order('created_at', { ascending: false })
-      .limit(limit)
-      .returns<Array<{
-        id: string;
-        status: string;
-        total_price: number | string;
-        payu_id: string | null;
-        payment_id: string | null;
-        package_id: string | null;
-        user_email: string;
-        name: string | null;
-        date: string;
-        time: string;
-        change_token: string | null;
-        created_at: string;
-      }>>();
+    const url = new URL(req.url);
+    let body: { fromDate?: string; toDate?: string } | null = null;
+    if (req.method === 'POST') {
+      try {
+        body = await req.json();
+      } catch {
+        body = null;
+      }
+    }
+    const fromDate = body?.fromDate || url.searchParams.get('from') || undefined;
+    const toDate = body?.toDate || url.searchParams.get('to') || undefined;
+
+    let recentBookings: Array<{
+      id: string;
+      status: string;
+      total_price: number | string;
+      payu_id: string | null;
+      payment_id: string | null;
+      package_id: string | null;
+      user_email: string;
+      name: string | null;
+      date: string;
+      time: string;
+      change_token: string | null;
+      created_at: string;
+    }> = [];
+
+    if (fromDate || toDate) {
+      let rangeQuery = supabaseAdmin
+        .from('bookings')
+        .select('id, status, total_price, payu_id, payment_id, package_id, user_email, name, date, time, change_token, created_at')
+        .in('status', ['pending', 'deposit', 'paid']);
+      if (fromDate) rangeQuery = rangeQuery.gte('date', fromDate);
+      if (toDate) rangeQuery = rangeQuery.lte('date', toDate);
+      if (limit && Number.isFinite(limit)) rangeQuery = rangeQuery.limit(limit);
+      const { data: ranged } = await rangeQuery
+        .order('date', { ascending: true })
+        .returns<typeof recentBookings>();
+      recentBookings = ranged || [];
+    } else {
+      const since = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
+      let recentQuery = supabaseAdmin
+        .from('bookings')
+        .select('id, status, total_price, payu_id, payment_id, package_id, user_email, name, date, time, change_token, created_at')
+        .in('status', ['pending', 'deposit', 'paid'])
+        .gte('created_at', since)
+        .or('payu_id.not.is.null,payment_id.not.is.null')
+        .order('created_at', { ascending: false });
+      if (limit && Number.isFinite(limit)) recentQuery = recentQuery.limit(limit);
+      const { data: recent } = await recentQuery.returns<typeof recentBookings>();
+      recentBookings = recent || [];
+    }
+
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+
+    let upcomingBookings: typeof recentBookings = [];
+    if (!fromDate && !toDate) {
+      let upcomingQuery = supabaseAdmin
+        .from('bookings')
+        .select('id, status, total_price, payu_id, payment_id, package_id, user_email, name, date, time, change_token, created_at')
+        .in('status', ['pending', 'deposit', 'paid'])
+        .in('date', [todayStr, tomorrowStr])
+        .or('payu_id.not.is.null,payment_id.not.is.null');
+      if (limit && Number.isFinite(limit)) upcomingQuery = upcomingQuery.limit(limit);
+      const { data: upcoming } = await upcomingQuery.returns<typeof recentBookings>();
+      upcomingBookings = upcoming || [];
+    }
+
+    const merged = new Map<string, {
+      id: string;
+      status: string;
+      total_price: number | string;
+      payu_id: string | null;
+      payment_id: string | null;
+      package_id: string | null;
+      user_email: string;
+      name: string | null;
+      date: string;
+      time: string;
+      change_token: string | null;
+      created_at: string;
+    }>();
+
+    for (const b of recentBookings || []) merged.set(b.id, b);
+    for (const b of upcomingBookings || []) {
+      const bookingDateTime = new Date(`${b.date}T${b.time}:00`);
+      const windowEnd = new Date(Date.now() + upcomingMinutes * 60 * 1000);
+      if (bookingDateTime <= windowEnd) {
+        merged.set(b.id, b);
+      }
+    }
 
     const updated: string[] = [];
     const checked: string[] = [];
 
-    for (const booking of bookings || []) {
+    for (const booking of merged.values()) {
       let order: PayuOrder | null = null;
       if (booking.payu_id) {
         order = await fetchOrder(accessToken, env, booking.payu_id);
@@ -144,6 +250,9 @@ async function handleReconcile(req: Request) {
           }
         }
       }
+      if (!order && (fromDate || toDate)) {
+        order = await fetchOrderByExtOrderId(accessToken, env, booking.id);
+      }
       if (!order) continue;
 
       checked.push(booking.id);
@@ -152,6 +261,12 @@ async function handleReconcile(req: Request) {
         await supabaseAdmin
           .from('bookings')
           .update({ payu_id: order.orderId })
+          .eq('id', booking.id);
+      }
+      if (order.extOrderId && !booking.payment_id) {
+        await supabaseAdmin
+          .from('bookings')
+          .update({ payment_id: order.extOrderId })
           .eq('id', booking.id);
       }
 
@@ -168,9 +283,10 @@ async function handleReconcile(req: Request) {
           .eq('booking_id', booking.id);
 
         const previousTotal = existingPayments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
-        const newPaymentAmount = existingPayment ? 0 : Number(order.totalAmount) / 100;
+        const payuAmountPln = Number(order.totalAmount) / 100;
+        const newPaymentAmount = existingPayment ? 0 : payuAmountPln;
         const newTotal = previousTotal + newPaymentAmount;
-        const orderTotal = Number(booking.total_price);
+        const orderTotal = normalizeBookingTotal(Number(booking.total_price), payuAmountPln);
         const bookingStatus: 'paid' | 'deposit' = newTotal >= orderTotal ? 'paid' : 'deposit';
         const paymentStatus: 'paid' | 'deposit' = bookingStatus;
 
@@ -194,7 +310,7 @@ async function handleReconcile(req: Request) {
             ]);
           updated.push(booking.id);
         }
-      } else if (order.status === 'CANCELED' || order.status === 'REJECTED') {
+      } else if (order.status === 'CANCELED' || order.status === 'REJECTED' || order.status === 'REFUNDED' || order.status === 'REFUND') {
         await supabaseAdmin
           .from('bookings')
           .update({ status: 'cancelled' })

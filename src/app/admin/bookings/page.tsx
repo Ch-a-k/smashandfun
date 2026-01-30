@@ -105,6 +105,18 @@ function getStatusColor(status?: string) {
   }
 }
 
+function normalizeBookingTotal(rawTotal: number, paymentsSum: number) {
+  if (!Number.isFinite(rawTotal)) return 0;
+  if (paymentsSum > 0) {
+    const asPln = rawTotal;
+    const asPlnFromCents = rawTotal / 100;
+    if (Math.abs(asPlnFromCents - paymentsSum) <= 1 && asPln > paymentsSum * 20) {
+      return asPlnFromCents;
+    }
+  }
+  return rawTotal;
+}
+
 // Варианты статусов оплаты
 const STATUS_OPTIONS = [
   { value: 'paid', label: 'paid' },
@@ -239,6 +251,10 @@ function BookingsPage() {
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [promoError, setPromoError] = useState(false);
   const [isHoliday, setHoliday] = useState(false);
+  const [reconcileFrom, setReconcileFrom] = useState<Date | null>(null);
+  const [reconcileTo, setReconcileTo] = useState<Date | null>(null);
+  const [reconcileLoading, setReconcileLoading] = useState(false);
+  const [reconcileStatus, setReconcileStatus] = useState<string | null>(null);
 
   // Загружаем даты с резервациями и extra items
   useEffect(() => {
@@ -769,18 +785,80 @@ function BookingsPage() {
     setSaving(false);
   }
 
+  async function handleManualReconcile() {
+    setReconcileStatus(null);
+    setReconcileLoading(true);
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+      const payload = {
+        fromDate: reconcileFrom ? formatDatePoland(reconcileFrom) : undefined,
+        toDate: reconcileTo ? formatDatePoland(reconcileTo) : undefined,
+      };
+      const res = await fetch('/api/payu/reconcile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setReconcileStatus(data?.error || 'Błąd sprawdzania płatności');
+      } else {
+        const checked = Array.isArray(data?.checked) ? data.checked.length : 0;
+        const updated = Array.isArray(data?.updated) ? data.updated.length : 0;
+        setReconcileStatus(`Sprawdzono: ${checked}, zaktualizowano: ${updated}`);
+      }
+    } catch {
+      setReconcileStatus('Błąd sprawdzania płatności');
+    } finally {
+      setReconcileLoading(false);
+    }
+  }
+
   return (
     <div className="p-4" style={{ background: '#f7f7fa', minHeight: '100vh' }}>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
         <h1 className="text-2xl font-bold text-gray-100">Kalendarz rezerwacji</h1>
-        <button
-          className="px-4 py-2 rounded bg-orange-600 text-white hover:bg-orange-700 font-semibold"
-          onClick={openNewModal}
-          type="button"
-        >
-          Dodaj rezerwację
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-gray-700">Sprawdź płatności:</span>
+          <DatePicker
+            selected={reconcileFrom}
+            onChange={d => setReconcileFrom(d)}
+            dateFormat="yyyy-MM-dd"
+            className="border rounded px-2 py-1 bg-white text-gray-900"
+            locale="pl"
+            placeholderText="Od"
+          />
+          <DatePicker
+            selected={reconcileTo}
+            onChange={d => setReconcileTo(d)}
+            dateFormat="yyyy-MM-dd"
+            className="border rounded px-2 py-1 bg-white text-gray-900"
+            locale="pl"
+            placeholderText="Do"
+          />
+          <button
+            className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50"
+            onClick={handleManualReconcile}
+            type="button"
+            disabled={reconcileLoading}
+          >
+            {reconcileLoading ? 'Sprawdzanie...' : 'Sprawdź płatności'}
+          </button>
+          <button
+            className="px-4 py-2 rounded bg-orange-600 text-white hover:bg-orange-700 font-semibold"
+            onClick={openNewModal}
+            type="button"
+          >
+            Dodaj rezerwację
+          </button>
+        </div>
       </div>
+      {reconcileStatus && (
+        <div className="mb-3 text-sm text-gray-700">{reconcileStatus}</div>
+      )}
       <div className="mb-4 flex items-center gap-4">
         <span className="text-gray-700 relative">Data
           {loading && (
@@ -877,9 +955,21 @@ function BookingsPage() {
                   const slots = Math.floor(duration / 15);
 
                   const paymentsSum = bks?.[0]?.payments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
-                  const price = Number(bks?.[0]?.total_price) || 0; 
-                  const diff = price-paymentsSum;
-                  const status = bks[0].status === 'paid' && diff > 0 ? 'deposit' : bks[0].status;
+                  const rawPrice = Number(bks?.[0]?.total_price);
+                  const price = normalizeBookingTotal(rawPrice, paymentsSum);
+                  const diff = price - paymentsSum;
+                  let status = bks[0].status || 'pending';
+                  if (status !== 'cancelled') {
+                    if (price === 0 && status === 'paid') {
+                      status = 'paid';
+                    } else if (diff <= 0 && price > 0) {
+                      status = 'paid';
+                    } else if (paymentsSum > 0) {
+                      status = 'deposit';
+                    } else {
+                      status = 'pending';
+                    }
+                  }
                   return (
                     <td
                       key={room.id}

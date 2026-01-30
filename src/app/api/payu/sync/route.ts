@@ -8,6 +8,18 @@ type PayuOrder = {
   totalAmount: string;
 };
 
+function normalizeBookingTotal(rawTotal: number, payuAmountPln: number) {
+  if (!Number.isFinite(rawTotal)) return 0;
+  if (payuAmountPln > 0) {
+    const asPln = rawTotal;
+    const asPlnFromCents = rawTotal / 100;
+    if (Math.abs(asPlnFromCents - payuAmountPln) <= 1 && asPln > payuAmountPln * 20) {
+      return asPlnFromCents;
+    }
+  }
+  return rawTotal;
+}
+
 function getBaseUrl(req: Request) {
   const envBase = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
   if (envBase) return envBase;
@@ -124,9 +136,10 @@ export async function POST(req: Request) {
           .eq('booking_id', resolvedBookingId);
 
         const previousTotal = existingPayments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
-        const newPaymentAmount = Number(order.totalAmount) / 100;
+        const payuAmountPln = Number(order.totalAmount) / 100;
+        const newPaymentAmount = payuAmountPln;
         const newTotal = previousTotal + newPaymentAmount;
-        const orderTotal = Number(booking.total_price);
+        const orderTotal = normalizeBookingTotal(Number(booking.total_price), payuAmountPln);
         const bookingStatus: 'paid' | 'deposit' = newTotal >= orderTotal ? 'paid' : 'deposit';
         const paymentStatus: 'paid' | 'deposit' = bookingStatus;
 
@@ -176,7 +189,7 @@ export async function POST(req: Request) {
           })
         });
       }
-    } else if (order.status === 'CANCELED' || order.status === 'REJECTED') {
+    } else if (order.status === 'CANCELED' || order.status === 'REJECTED' || order.status === 'REFUNDED' || order.status === 'REFUND') {
       await supabaseAdmin
         .from('bookings')
         .update({ status: 'cancelled' })

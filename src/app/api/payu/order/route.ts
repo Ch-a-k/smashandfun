@@ -32,7 +32,11 @@ function buildContinueUrl(baseUrl: string | undefined, params: Record<string, st
 export async function POST(req: Request) {
   const env = process.env.PAYU_ENV || 'sandbox';
   const posId = env === 'sandbox' ? process.env.PAYU_SANDBOX_POS_ID: process.env.PAYU_POS_ID;
-  const notifyUrl = process.env.PAYU_NOTIFY_URL || 'https://smashandfun.vercel.app/payu/notifications';
+  const defaultNotifyUrl = 'https://smashandfun.vercel.app/payu/notifications';
+  const envNotifyUrl = process.env.PAYU_NOTIFY_URL;
+  const notifyUrl = envNotifyUrl?.startsWith('https://smashandfun.vercel.app/')
+    ? envNotifyUrl
+    : defaultNotifyUrl;
   const continueUrl = process.env.PAYU_CONTINUE_URL;
 
   // Получаем параметры заказа из тела запроса

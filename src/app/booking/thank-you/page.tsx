@@ -108,6 +108,21 @@ export default function ThankYouPage() {
   const { t, locale } = useI18n();
   const lang = (locale === 'en' ? 'en' : 'pl');
   const texts = THANK_YOU_TEXTS[lang];
+  const [syncStarted, setSyncStarted] = useState(false);
+
+  useEffect(() => {
+    if (syncStarted) return;
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = params.get('bookingId') || undefined;
+    const extOrderId = params.get('extOrderId') || undefined;
+    if (!bookingId && !extOrderId) return;
+    setSyncStarted(true);
+    fetch('/api/payu/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId, extOrderId })
+    }).catch(() => {});
+  }, [syncStarted]);
 
   return (
     <div className="min-h-screen flex flex-col thankyou-bg-modern" style={{position: 'relative', background: '#18171c'}}>

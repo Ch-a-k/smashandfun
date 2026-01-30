@@ -1,0 +1,8 @@
+{
+  "cron": [
+    {
+      "path": "/api/payu/reconcile",
+      "schedule": "*/5 * * * *"
+    }
+  ]
+}

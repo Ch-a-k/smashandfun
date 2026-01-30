@@ -16,6 +16,19 @@ function getBaseUrl(req: Request) {
   return host ? `${proto}://${host}` : 'https://smashandfun.pl';
 }
 
+function buildContinueUrl(baseUrl: string | undefined, params: Record<string, string | undefined>) {
+  if (!baseUrl) return undefined;
+  try {
+    const url = new URL(baseUrl);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) url.searchParams.set(key, value);
+    });
+    return url.toString();
+  } catch {
+    return baseUrl;
+  }
+}
+
 export async function POST(req: Request) {
   const env = process.env.PAYU_ENV || 'sandbox';
   const posId = env === 'sandbox' ? process.env.PAYU_SANDBOX_POS_ID: process.env.PAYU_POS_ID;
@@ -165,10 +178,20 @@ export async function POST(req: Request) {
     : 'https://secure.payu.com/api/v2_1/orders';
 
   const payuExtOrderId = extOrderId ? `${extOrderId}:${crypto.randomUUID()}` : undefined;
+  if (extOrderId && payuExtOrderId) {
+    await supabaseAdmin
+      .from('bookings')
+      .update({ payment_id: payuExtOrderId })
+      .eq('id', extOrderId);
+  }
+  const continueUrlWithParams = buildContinueUrl(continueUrl, {
+    bookingId: extOrderId,
+    extOrderId: payuExtOrderId,
+  });
 
   const orderPayload = {
     notifyUrl,
-    continueUrl,
+    continueUrl: continueUrlWithParams || continueUrl,
     customerIp: req.headers.get('x-forwarded-for') || '127.0.0.1',
     merchantPosId: posId,
     description,

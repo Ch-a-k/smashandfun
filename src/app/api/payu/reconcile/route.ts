@@ -90,7 +90,21 @@ export async function POST(req: Request) {
       .gte('created_at', since)
       .or('payu_id.not.is.null,payment_id.not.is.null')
       .order('created_at', { ascending: false })
-      .limit(limit);
+      .limit(limit)
+      .returns<Array<{
+        id: string;
+        status: string;
+        total_price: number | string;
+        payu_id: string | null;
+        payment_id: string | null;
+        package_id: string | null;
+        user_email: string;
+        name: string | null;
+        date: string;
+        time: string;
+        change_token: string | null;
+        created_at: string;
+      }>>();
 
     const updated: string[] = [];
     const checked: string[] = [];

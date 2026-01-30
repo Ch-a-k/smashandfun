@@ -21,8 +21,35 @@ export async function POST(req: Request) {
 
     const rawExtOrderId: string | undefined = body.order?.extOrderId;
     const bookingIdFromExtOrderId = rawExtOrderId ? rawExtOrderId.split(':')[0] : undefined;
+    const orderIdFromPayu: string | undefined = body.order?.orderId;
 
-    if (body.order && body.order.status === 'WAITING_FOR_CONFIRMATION' && rawExtOrderId && body.order.orderId) {
+    console.log('PayU notify:', {
+      status: body.order?.status,
+      extOrderId: rawExtOrderId,
+      orderId: orderIdFromPayu,
+    });
+
+    let resolvedBookingId = bookingIdFromExtOrderId;
+    if (!resolvedBookingId && orderIdFromPayu) {
+      const { data: bookingByPayu } = await supabaseAdmin
+        .from('bookings')
+        .select('id')
+        .eq('payu_id', orderIdFromPayu)
+        .single();
+      if (bookingByPayu?.id) resolvedBookingId = bookingByPayu.id;
+    }
+    if (resolvedBookingId && orderIdFromPayu) {
+      await supabaseAdmin
+        .from('bookings')
+        .update({ payu_id: orderIdFromPayu })
+        .eq('id', resolvedBookingId);
+    }
+
+    if (resolvedBookingId) {
+      console.log('PayU notify resolved booking:', resolvedBookingId);
+    }
+
+    if (body.order && body.order.status === 'WAITING_FOR_CONFIRMATION' && rawExtOrderId && orderIdFromPayu) {
       if (!process.env.PAYU_CLIENT_ID || !process.env.PAYU_CLIENT_SECRET) {
         return NextResponse.json({ error: 'PAYU_CLIENT_ID and PAYU_CLIENT_SECRET must be defined' }, { status: 400 });
       }
@@ -64,8 +91,8 @@ export async function POST(req: Request) {
       const accessToken = tokenData.access_token;
 
       const confirmUrl = env === 'sandbox'
-        ? `https://secure.snd.payu.com/api/v2_1/orders/${body.order.orderId}/captures`
-        : `https://secure.payu.com/api/v2_1/orders/${body.order.orderId}/captures`;
+        ? `https://secure.snd.payu.com/api/v2_1/orders/${orderIdFromPayu}/captures`
+        : `https://secure.payu.com/api/v2_1/orders/${orderIdFromPayu}/captures`;
 
       const confirmRes = await fetch(confirmUrl, {
         method: 'POST',
@@ -77,11 +104,11 @@ export async function POST(req: Request) {
 
       console.log('confirmRes', await confirmRes.json());
 
-      return NextResponse.json({ confirmRes, orderId: body.order.orderId});
+      return NextResponse.json({ confirmRes, orderId: orderIdFromPayu });
     }
 
-    if (body.order && body.order.status === 'COMPLETED' && bookingIdFromExtOrderId) {
-      const bookingId = bookingIdFromExtOrderId;
+    if (body.order && body.order.status === 'COMPLETED' && resolvedBookingId) {
+      const bookingId = resolvedBookingId;
 
       // 1. Отримуємо інфу про ордер
       const { data: booking, error: bookingError  } = await supabaseAdmin
@@ -202,11 +229,11 @@ export async function POST(req: Request) {
       return new Response('', { status: 200 });
     }
 
-    if (body.order && (body.order.status === 'CANCELED' || body.order.status === 'REJECTED') && bookingIdFromExtOrderId) {
+    if (body.order && (body.order.status === 'CANCELED' || body.order.status === 'REJECTED') && resolvedBookingId) {
       await supabaseAdmin
         .from('bookings')
         .update({ status: 'cancelled' })
-        .eq('id', bookingIdFromExtOrderId);
+        .eq('id', resolvedBookingId);
       return new Response('', { status: 200 });
     }
 

@@ -71,7 +71,7 @@ async function fetchOrder(accessToken: string, env: string, orderId: string) {
   return orderData.orders[0] as PayuOrder;
 }
 
-export async function POST(req: Request) {
+async function handleReconcile(req: Request) {
   try {
     if (!requireCronAuth(req)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -169,4 +169,12 @@ export async function POST(req: Request) {
     console.error('PayU reconcile error:', err);
     return NextResponse.json({ error: 'Reconcile failed' }, { status: 500 });
   }
+}
+
+export async function POST(req: Request) {
+  return handleReconcile(req);
+}
+
+export async function GET(req: Request) {
+  return handleReconcile(req);
 }

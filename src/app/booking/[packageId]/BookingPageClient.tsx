@@ -1,7 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react';
 import { useI18n } from '@/i18n/I18nContext';
-import { useParams } from 'next/navigation';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Image from 'next/image';
@@ -9,6 +8,10 @@ import InFomoFooterButton from '@/components/InFomoFooterButton';
 import { pl } from 'date-fns/locale/pl';
 
 registerLocale('pl', pl);
+
+interface BookingPageClientProps {
+  packageId?: string;
+}
 
 interface Package {
   id: string;
@@ -131,10 +134,8 @@ function FlyingObjects() {
   );
 }
 
-export default function BookingPage() {
+export default function BookingPageClient({ packageId }: BookingPageClientProps) {
   const { t, locale, setLocale } = useI18n();
-  const params = useParams();
-  const packageId = params && Array.isArray(params.packageId) ? params.packageId[0] : params?.packageId;
   const [pkg, setPkg] = useState<Package | null>(null);
   const [form, setForm] = useState<BookingForm>({
     date: '',
@@ -207,6 +208,7 @@ export default function BookingPage() {
   );
 
   useEffect(() => {
+    if (!packageId) return;
     fetch(`/api/booking/packages`)
       .then(res => res.json())
       .then((data: Package[]) => {
@@ -220,6 +222,7 @@ export default function BookingPage() {
 
   // Функция для загрузки дат по диапазону
   const loadDates = useCallback(async (start: Date, end: Date) => {
+    if (!packageId) return;
     setLoadingDates(true);
     const startDate = formatDatePoland(start);
     const endDate = formatDatePoland(end);
@@ -259,7 +262,7 @@ export default function BookingPage() {
   }, [packageId, loadDates, loadedMonths]);
 
   useEffect(() => {
-    if (!form.date) return;
+    if (!form.date || !packageId) return;
     const today = new Date().setHours(0,0,0,0);
     const hours = new Date().getHours();
     const minutes = new Date().getMinutes();
@@ -288,6 +291,7 @@ export default function BookingPage() {
   }
   // При смене месяца подгружаем даты для нового месяца
   const handleMonthChange = (date: Date) => {
+    if (!packageId) return;
     const start = new Date(date.getFullYear(), date.getMonth(), 1);
     const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
     const monthKey = `${start.getFullYear()}-${start.getMonth()}`;
@@ -822,6 +826,10 @@ export default function BookingPage() {
     setBookingId(null);
   }, [form.date, form.time, packageId]);
 
+  if (!packageId) {
+    return <div style={{color:'#fff',textAlign:'center',marginTop:80}}>Nie znaleziono pakietu.</div>;
+  }
+
   if (!pkg) return <div style={{color:'#fff',textAlign:'center',marginTop:80}}>{t('booking.loading')}</div>;
 
   return (
@@ -921,4 +929,4 @@ export default function BookingPage() {
       `}</style>
     </div>
   );
-} 
+}

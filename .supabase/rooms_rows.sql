@@ -1,0 +1,1 @@
+INSERT INTO "public"."rooms" ("id", "name", "priority") VALUES ('5757f6b4-c95b-4050-88de-ac00a2bb1269', 'Room2', '2'), ('6cdbbe09-73ae-471e-a3da-13bfa83a52c1', 'Room1', '1'), ('9ed4926f-2bb9-45c6-ac7c-1c5af8afa6cb', 'Room3', '3'), ('e1c128dd-8b88-47fb-bcfe-ada02a5ba079', 'Room4', '4');

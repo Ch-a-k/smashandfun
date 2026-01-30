@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export async function POST(req: Request) {
   try {
@@ -11,7 +11,10 @@ export async function POST(req: Request) {
 
     // Для отладки можно логировать:
 
-    if (body.order && body.order.status === 'WAITING_FOR_CONFIRMATION' && body.order.extOrderId && body.order.orderId) {
+    const rawExtOrderId: string | undefined = body.order?.extOrderId;
+    const bookingIdFromExtOrderId = rawExtOrderId ? rawExtOrderId.split(':')[0] : undefined;
+
+    if (body.order && body.order.status === 'WAITING_FOR_CONFIRMATION' && rawExtOrderId && body.order.orderId) {
       if (!process.env.PAYU_CLIENT_ID || !process.env.PAYU_CLIENT_SECRET) {
         return NextResponse.json({ error: 'PAYU_CLIENT_ID and PAYU_CLIENT_SECRET must be defined' }, { status: 400 });
       }
@@ -23,8 +26,8 @@ export async function POST(req: Request) {
       const tokenUrl = env === 'sandbox'
         ? 'https://secure.snd.payu.com/pl/standard/user/oauth/authorize'
         : 'https://secure.payu.com/pl/standard/user/oauth/authorize';
-      const clientId: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID : process.env.PAYU_CLIENT_ID;
-      const clientSecret: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET : process.env.PAYU_CLIENT_SECRET;
+      const clientId = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID! : process.env.PAYU_CLIENT_ID!;
+      const clientSecret = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET! : process.env.PAYU_CLIENT_SECRET!;
 
       const params = new URLSearchParams();
       params.append('grant_type', 'client_credentials');
@@ -39,10 +42,16 @@ export async function POST(req: Request) {
         },
         body: params.toString(),
       });
-      const tokenData = await tokenRes.json();
-      if (!tokenRes.ok) {
-        console.error('PayU: Błąd tokenu', tokenData);
-        return NextResponse.json({ error: 'Błąd tokenu Payu', details: tokenData }, { status: 500 });
+      const tokenText = await tokenRes.text();
+      let tokenData: { access_token?: string } | null = null;
+      try {
+        tokenData = tokenText ? JSON.parse(tokenText) : null;
+      } catch {
+        tokenData = null;
+      }
+      if (!tokenRes.ok || !tokenData?.access_token) {
+        console.error('PayU: Błąd tokenu', tokenText);
+        return NextResponse.json({ error: 'Błąd tokenu Payu', details: tokenText }, { status: 500 });
       }
       const accessToken = tokenData.access_token;
 
@@ -63,11 +72,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ confirmRes, orderId: body.order.orderId});
     }
 
-    if (body.order && body.order.status === 'COMPLETED' && body.order.extOrderId) {
-      const bookingId = body.order.extOrderId;
+    if (body.order && body.order.status === 'COMPLETED' && bookingIdFromExtOrderId) {
+      const bookingId = bookingIdFromExtOrderId;
 
       // 1. Отримуємо інфу про ордер
-      const { data: booking, error: bookingError  } = await supabase
+      const { data: booking, error: bookingError  } = await supabaseAdmin
         .from('bookings')
         .select()
         .eq('id', bookingId)
@@ -82,7 +91,7 @@ export async function POST(req: Request) {
       const newPaymentAmount = Number(body.order.totalAmount) / 100;
 
       // 2. Отримуємо інфу про оплати по даному ордеру
-      const { data: getExistingPayments, error: getPaymentsError } = await supabase
+      const { data: getExistingPayments, error: getPaymentsError } = await supabaseAdmin
         .from('payments')
         .select('amount')
         .eq('booking_id', bookingId);
@@ -102,14 +111,12 @@ export async function POST(req: Request) {
         bookingStatus = 'paid';
       }
 
-      if (getExistingPayments.length === 0 && newPaymentAmount < orderTotal) {
-        paymentStatus = 'paid';
-      } else if (newTotal >= orderTotal) {
+      if (newTotal >= orderTotal) {
         paymentStatus = 'paid';
       }
 
       // 3. Обновляем статус ордера
-      const { error: updateBookingError } = await supabase
+      const { error: updateBookingError } = await supabaseAdmin
         .from('bookings')
         .update({ status: bookingStatus })
         .eq('id', bookingId);
@@ -122,7 +129,7 @@ export async function POST(req: Request) {
       // 4. Получаем название пакета
       let packageName = '';
       if (booking && booking.package_id) {
-        const { data: pkg } = await supabase
+        const { data: pkg } = await supabaseAdmin
           .from('packages')
           .select('name')
           .eq('id', booking.package_id)
@@ -131,8 +138,17 @@ export async function POST(req: Request) {
         packageName = pkg?.name ?? '';
       }
       
-      // 5. Додаємо дані про оплату в нашу БД
-      const { error: paymentsError } = await supabase
+      // 5. Додаємо дані про оплату в нашу БД (idempotent)
+      const { data: existingPayment } = await supabaseAdmin
+        .from('payments')
+        .select('id')
+        .eq('transaction_id', body.order.orderId)
+        .single();
+      if (existingPayment) {
+        return new Response('', { status: 200 });
+      }
+
+      const { error: paymentsError } = await supabaseAdmin
         .from('payments')
         .insert([
           {
@@ -171,6 +187,14 @@ export async function POST(req: Request) {
         })
       });
 
+      return new Response('', { status: 200 });
+    }
+
+    if (body.order && (body.order.status === 'CANCELED' || body.order.status === 'REJECTED') && bookingIdFromExtOrderId) {
+      await supabaseAdmin
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', bookingIdFromExtOrderId);
       return new Response('', { status: 200 });
     }
 

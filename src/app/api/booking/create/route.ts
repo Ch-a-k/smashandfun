@@ -13,6 +13,13 @@ export type BookingWithPackage = {
   package: { duration: number; cleanup_time?: number | null };
 };
 
+function normalizePrice(value: unknown): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const asString = String(value ?? '').replace(',', '.');
+  const parsed = Number(asString);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 function getRoomPriority(args: {
   packageName: string;
   allowedRooms: string[];
@@ -80,7 +87,7 @@ export async function POST(req: Request) {
   const sortedRooms = getRoomPriority({ packageName, allowedRooms, roomPriority: pkg.room_priority });
   let selectedRoomId: string | null = null;
 
-  const { data: getBookings, error: getBookingError } = await supabase
+  const { data: getBookings, error: getBookingError } = await supabaseAdmin
     .from('bookings')
     .select(`
       id,
@@ -140,7 +147,7 @@ export async function POST(req: Request) {
     // Суммируем с учётом количества каждого предмета
     totalPrice += (extraItems as ExtraSel[]).reduce((sum, sel) => {
       const item = filteredItems.find(i => i.id === sel.id);
-      return item ? sum + Number(item.price) * (sel.count || 1) : sum;
+      return item ? sum + normalizePrice(item.price) * (sel.count || 1) : sum;
     }, 0);
   }
 

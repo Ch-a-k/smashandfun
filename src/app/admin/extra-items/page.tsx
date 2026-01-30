@@ -10,6 +10,13 @@ interface ExtraItem {
   description: string;
 }
 
+function normalizePrice(value: unknown): number {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const asString = String(value ?? '').replace(',', '.');
+  const parsed = Number(asString);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 const emptyItem: Omit<ExtraItem, 'id'> = {
   name: '',
   price: 0,
@@ -26,6 +33,7 @@ function ExtraItemsPage() {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   async function fetchItems() {
     setLoading(true);
@@ -55,23 +63,33 @@ function ExtraItemsPage() {
       price: item.price,
       description: item.description,
     });
+    setFormError(null);
     setModalOpen(true);
   }
 
   function openAdd() {
     setEditId(null);
     setForm(emptyItem);
+    setFormError(null);
     setModalOpen(true);
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setFormError(null);
+    const normalizedPrice = normalizePrice(form.price);
+    if (normalizedPrice <= 0) {
+      setFormError('Cena musi być większa niż 0');
+      setSaving(false);
+      return;
+    }
+    const dataToSave = { ...form, price: normalizedPrice };
     if (editId) {
       // Update
       const { error } = await supabase
         .from('extra_items')
-        .update(form)
+        .update(dataToSave)
         .eq('id', editId);
       if (error) {
         alert('Błąd zapisu: ' + error.message);
@@ -82,7 +100,7 @@ function ExtraItemsPage() {
       // Insert
       const { error } = await supabase
         .from('extra_items')
-        .insert([form]);
+        .insert([dataToSave]);
       if (error) {
         alert('Błąd dodawania: ' + error.message);
         setSaving(false);
@@ -154,11 +172,23 @@ function ExtraItemsPage() {
               <input type="text" value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))} required style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
             </label>
             <label>Cena (PLN)
-              <input type="number" value={form.price} onChange={e => setForm(f => ({...f, price: Number(e.target.value)}))} required min={0} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
+              <input
+                type="number"
+                value={form.price}
+                onChange={e => {
+                  const value = e.target.value.replace(',', '.');
+                  setForm(f => ({...f, price: Number(value)}));
+                }}
+                required
+                min={0}
+                step={0.01}
+                style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}}
+              />
             </label>
             <label>Opis
               <textarea value={form.description} onChange={e => setForm(f => ({...f, description: e.target.value}))} rows={3} style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none', resize:'vertical'}} />
             </label>
+            {formError && <div style={{color:'#ff4d4f'}}>{formError}</div>}
             <div style={{display:'flex', gap:12, marginTop:8}}>
               <button type="submit" disabled={saving} style={{background:'#f36e21', color:'#fff', border:'none', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, cursor:saving?'not-allowed':'pointer'}}>{saving ? 'Zapisywanie...' : 'Zapisz'}</button>
               <button type="button" onClick={()=>setModalOpen(false)} style={{background:'#23222a', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, cursor:'pointer'}}>Anuluj</button>

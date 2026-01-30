@@ -1,0 +1,1 @@
+INSERT INTO "public"."booking_settings_dates" ("id", "default_start", "default_end", "special_dates", "default_start_weekdays", "default_end_weekdays", "default_start_weekends", "default_end_weekends") VALUES ('1', '14:00', '21:00', '[]', '14:00', '21:00', '12:00', '21:00');

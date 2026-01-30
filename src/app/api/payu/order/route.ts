@@ -1,5 +1,6 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 interface Product {
   name: string;
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
   if (Number(amount) <= 0) {
     console.log('PayU: Płatne nakaz', amount, extOrderId);
     if(extOrderId) {
-      const { data: booking, error: bookingError  } = await supabase
+      const { data: booking, error: bookingError  } = await supabaseAdmin
         .from('bookings')
         .select()
         .eq('id', extOrderId)
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
 
       let packageName = '';
       if (booking && booking.package_id) {
-        const { data: pkg } = await supabase
+        const { data: pkg } = await supabaseAdmin
           .from('packages')
           .select('name')
           .eq('id', booking.package_id)
@@ -117,8 +118,8 @@ export async function POST(req: Request) {
   const tokenUrl = env === 'sandbox'
     ? 'https://secure.snd.payu.com/pl/standard/user/oauth/authorize'
     : 'https://secure.payu.com/pl/standard/user/oauth/authorize';
-  const clientId: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID : process.env.PAYU_CLIENT_ID;
-  const clientSecret: string = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET : process.env.PAYU_CLIENT_SECRET;
+  const clientId = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_ID! : process.env.PAYU_CLIENT_ID!;
+  const clientSecret = env === 'sandbox' ? process.env.PAYU_SANDBOX_CLIENT_SECRET! : process.env.PAYU_CLIENT_SECRET!;
 
   const params = new URLSearchParams();
   params.append('grant_type', 'client_credentials');
@@ -133,10 +134,16 @@ export async function POST(req: Request) {
     },
     body: params.toString(),
   });
-  const tokenData = await tokenRes.json();
-  if (!tokenRes.ok) {
-    console.error('PayU: Błąd tokenu', tokenData);
-    return NextResponse.json({ error: 'Błąd tokenu PayU', details: tokenData }, { status: 500 });
+  const tokenText = await tokenRes.text();
+  let tokenData: { access_token?: string } | null = null;
+  try {
+    tokenData = tokenText ? JSON.parse(tokenText) : null;
+  } catch {
+    tokenData = null;
+  }
+  if (!tokenRes.ok || !tokenData?.access_token) {
+    console.error('PayU: Błąd tokenu', tokenText);
+    return NextResponse.json({ error: 'Błąd tokenu PayU', details: tokenText }, { status: 500 });
   }
   const accessToken = tokenData.access_token;
 
@@ -144,6 +151,8 @@ export async function POST(req: Request) {
   const orderUrl = env === 'sandbox'
     ? 'https://secure.snd.payu.com/api/v2_1/orders'
     : 'https://secure.payu.com/api/v2_1/orders';
+
+  const payuExtOrderId = extOrderId ? `${extOrderId}:${crypto.randomUUID()}` : undefined;
 
   const orderPayload = {
     notifyUrl,
@@ -161,7 +170,7 @@ export async function POST(req: Request) {
       unitPrice: p.unitPrice,
       quantity: p.quantity,
     })),
-    ...(extOrderId ? { extOrderId } : {}),
+    ...(payuExtOrderId ? { extOrderId: payuExtOrderId } : {}),
     validityTime: 900, // 15 min
   };
 
@@ -176,16 +185,32 @@ export async function POST(req: Request) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(orderPayload),
+    redirect: 'manual',
   });
-  if (!orderRes.ok) {
-    console.error('PayU: Błąd tworzenia zamówienia', orderRes);
-    return NextResponse.json({ error: 'Błąd utworzenia zamówienia payu', details: orderRes }, { status: 500 });
+  const orderText = await orderRes.text();
+  let orderData: { orderId?: string; redirectUri?: string } | null = null;
+  try {
+    orderData = orderText ? JSON.parse(orderText) : null;
+  } catch {
+    orderData = null;
   }
-  const parsedUrl = new URL(orderRes.url);
-  const orderId = parsedUrl.searchParams.get('orderId');
+
+  const redirectFromHeader = orderRes.headers.get('location') || undefined;
+  const redirectUri = orderData?.redirectUri || redirectFromHeader;
+  const orderId = orderData?.orderId;
+
+  const isOk = orderRes.ok || orderRes.status === 302;
+  if (!isOk || !redirectUri) {
+    console.error('PayU: Błąd tworzenia zamówienia', {
+      status: orderRes.status,
+      headers: Object.fromEntries(orderRes.headers.entries()),
+      body: orderText,
+    });
+    return NextResponse.json({ error: 'Błąd utworzenia zamówienia payu', details: orderText }, { status: 500 });
+  }
 
   if (extOrderId && orderId) {
-    const { error: updateBookingError } = await supabase
+    const { error: updateBookingError } = await supabaseAdmin
       .from('bookings')
       .update({ payu_id: orderId })
       .eq('id', extOrderId);
@@ -195,5 +220,5 @@ export async function POST(req: Request) {
     }
   }
   // Возвращаем ссылку для оплаты
-  return NextResponse.json({ redirectUri: orderRes.url, orderId });
+  return NextResponse.json({ redirectUri, orderId });
 } 

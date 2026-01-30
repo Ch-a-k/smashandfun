@@ -35,7 +35,8 @@ export async function POST(req: Request) {
         .from('bookings')
         .select('id')
         .eq('payu_id', orderIdFromPayu)
-        .single();
+        .single()
+        .returns<{ id: string }>();
       if (bookingByPayu?.id) resolvedBookingId = bookingByPayu.id;
     }
     if (resolvedBookingId && orderIdFromPayu) {

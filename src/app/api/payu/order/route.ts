@@ -8,6 +8,14 @@ interface Product {
   quantity: number;
 }
 
+function getBaseUrl(req: Request) {
+  const envBase = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
+  if (envBase) return envBase;
+  const proto = req.headers.get('x-forwarded-proto') || 'https';
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  return host ? `${proto}://${host}` : 'https://smashandfun.pl';
+}
+
 export async function POST(req: Request) {
   const env = process.env.PAYU_ENV || 'sandbox';
   const posId = env === 'sandbox' ? process.env.PAYU_SANDBOX_POS_ID: process.env.PAYU_POS_ID;
@@ -74,12 +82,12 @@ export async function POST(req: Request) {
         packageName = pkg?.name ?? '';
       }
 
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun-admin.vercel.app'; // 'https://smashandfun.pl';
+      const baseUrl = getBaseUrl(req);
       const changeLink = `${baseUrl}/booking/change?token=${booking.change_token}`;
       const cancelLink = `${baseUrl}/booking/cancel?token=${booking.change_token}`;
 
       // 7. Отправляем письмо
-      await fetch(baseUrl + '/api/sendBookingEmail', {
+      const emailRes = await fetch(baseUrl + '/api/sendBookingEmail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -95,6 +103,10 @@ export async function POST(req: Request) {
           type: 'new'
         })
       });
+      if (!emailRes.ok) {
+        const text = await emailRes.text().catch(() => '');
+        console.error('Email send failed:', text || emailRes.status);
+      }
     }
      
     return NextResponse.json({ redirectUri: continueUrl });

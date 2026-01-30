@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
+function getBaseUrl(req: Request) {
+  const envBase = process.env.NEXT_PUBLIC_BASE_URL || process.env.BASE_URL;
+  if (envBase) return envBase;
+  const proto = req.headers.get('x-forwarded-proto') || 'https';
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host');
+  return host ? `${proto}://${host}` : 'https://smashandfun.pl';
+}
+
 export async function POST(req: Request) {
   try {
     const env = process.env.PAYU_ENV || 'sandbox';
@@ -165,12 +173,12 @@ export async function POST(req: Request) {
       }
 
       // 6. Формируем ссылки
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://smashandfun-admin.vercel.app'; // 'https://smashandfun.pl';
+      const baseUrl = getBaseUrl(req);
       const changeLink = `${baseUrl}/booking/change?token=${booking.change_token}`;
       const cancelLink = `${baseUrl}/booking/cancel?token=${booking.change_token}`;
 
       // 7. Отправляем письмо
-      await fetch(baseUrl + '/api/sendBookingEmail', {
+      const emailRes = await fetch(baseUrl + '/api/sendBookingEmail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -186,6 +194,10 @@ export async function POST(req: Request) {
           type: 'new'
         })
       });
+      if (!emailRes.ok) {
+        const text = await emailRes.text().catch(() => '');
+        console.error('Email send failed:', text || emailRes.status);
+      }
 
       return new Response('', { status: 200 });
     }

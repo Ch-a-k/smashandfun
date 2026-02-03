@@ -5,6 +5,7 @@ import CookieConsent from '@/components/CookieConsent'
 import { I18nProvider } from '@/i18n/I18nContext'
 import { Inter } from 'next/font/google'
 import GoogleTagManager from '@/components/GoogleTagManager'
+import TikTokPixel from '@/components/TikTokPixel'
 import { Analytics } from '@vercel/analytics/react'
 
 // Load custom fonts
@@ -114,6 +115,7 @@ export default function RootLayout({
           {children}
           <CookieConsent />
           <GoogleTagManager />
+          <TikTokPixel />
           <Analytics />
         </I18nProvider>
       </body>

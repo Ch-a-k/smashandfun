@@ -10,10 +10,31 @@ interface GTagEvent {
 // Типы для window.gtag
 type GTagArg = string | GTagEvent | Record<string, unknown>;
 
+// Типы для TikTok Pixel
+interface TikTokPixel {
+  page: () => void;
+  track: (event: string, properties?: Record<string, unknown>) => void;
+  identify: (properties?: Record<string, unknown>) => void;
+  instances: (id: string) => TikTokPixel;
+  debug: (enable: boolean) => void;
+  on: (event: string, callback: (...args: unknown[]) => void) => void;
+  off: (event: string, callback: (...args: unknown[]) => void) => void;
+  once: (event: string, callback: (...args: unknown[]) => void) => void;
+  ready: (callback: () => void) => void;
+  alias: (id: string) => void;
+  group: (id: string, properties?: Record<string, unknown>) => void;
+  enableCookie: () => void;
+  disableCookie: () => void;
+  holdConsent: () => void;
+  revokeConsent: () => void;
+  grantConsent: () => void;
+}
+
 declare global {
   interface Window {
     gtag?: (command: string, ...args: GTagArg[]) => void;
     dataLayer?: unknown[];
+    ttq?: TikTokPixel;
   }
 }
 
@@ -96,5 +117,27 @@ export const trackEvent = (eventParams: GTagEvent): void => {
 export const trackPageview = (url: string): void => {
   if (isAnalyticsAllowed()) {
     pageview(url);
+  }
+};
+
+// TikTok Pixel - отправка события
+export const trackTikTokEvent = (event: string, properties?: Record<string, unknown>): void => {
+  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  
+  try {
+    window.ttq.track(event, properties);
+  } catch (error) {
+    console.error('Error tracking TikTok event:', error);
+  }
+};
+
+// TikTok Pixel - просмотр страницы
+export const trackTikTokPageView = (): void => {
+  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  
+  try {
+    window.ttq.page();
+  } catch (error) {
+    console.error('Error tracking TikTok page view:', error);
   }
 }; 

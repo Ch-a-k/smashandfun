@@ -4,7 +4,8 @@ import Footer from '@/components/Footer';
 import Link from 'next/link';
 import { useI18n } from '@/i18n/I18nContext';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { trackTikTokCompletePayment } from '@/lib/analytics';
 
 const THANK_YOU_FLYING_IMAGES = [
   '/images/glass-shard-1.png',
@@ -109,14 +110,29 @@ export default function ThankYouPage() {
   const lang = (locale === 'en' ? 'en' : 'pl');
   const texts = THANK_YOU_TEXTS[lang];
   const [syncStarted, setSyncStarted] = useState(false);
+  const completePaymentTracked = useRef(false);
 
   useEffect(() => {
     if (syncStarted) return;
     const params = new URLSearchParams(window.location.search);
     const bookingId = params.get('bookingId') || undefined;
     const extOrderId = params.get('extOrderId') || undefined;
+    const packageId = params.get('packageId') || undefined;
+    const value = params.get('value') || undefined;
     if (!bookingId && !extOrderId) return;
     setSyncStarted(true);
+    
+    // Track TikTok CompletePayment event with content_id (required for VSA)
+    if (!completePaymentTracked.current) {
+      completePaymentTracked.current = true;
+      trackTikTokCompletePayment({
+        content_id: packageId || bookingId || extOrderId || 'unknown',
+        content_type: 'product',
+        value: value ? parseFloat(value) : undefined,
+        currency: 'PLN',
+      });
+    }
+    
     fetch('/api/payu/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

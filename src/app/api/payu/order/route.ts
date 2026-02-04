@@ -182,15 +182,25 @@ export async function POST(req: Request) {
     : 'https://secure.payu.com/api/v2_1/orders';
 
   const payuExtOrderId = extOrderId ? `${extOrderId}:${crypto.randomUUID()}` : undefined;
+  let packageId: string | undefined;
   if (extOrderId && payuExtOrderId) {
-    await supabaseAdmin
+    const { data: booking } = await supabaseAdmin
       .from('bookings')
       .update({ payment_id: payuExtOrderId })
-      .eq('id', extOrderId);
+      .eq('id', extOrderId)
+      .select('package_id')
+      .single<{ package_id: string }>();
+    packageId = booking?.package_id;
   }
+  
+  // Calculate the actual payment value in PLN for tracking
+  const valueInPLN = (Number(amount) / 100).toFixed(2);
+  
   const continueUrlWithParams = buildContinueUrl(continueUrl, {
     bookingId: extOrderId,
     extOrderId: payuExtOrderId,
+    packageId: packageId,
+    value: valueInPLN,
   });
 
   const orderPayload = {

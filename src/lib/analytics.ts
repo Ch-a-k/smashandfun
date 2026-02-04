@@ -140,4 +140,73 @@ export const trackTikTokPageView = (): void => {
   } catch (error) {
     console.error('Error tracking TikTok page view:', error);
   }
+};
+
+// TikTok Pixel - ViewContent event (required for VSA)
+export const trackTikTokViewContent = (params: {
+  content_id: string;
+  content_name?: string;
+  content_type?: string;
+  price?: number;
+  currency?: string;
+}): void => {
+  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  
+  try {
+    window.ttq.track('ViewContent', {
+      content_id: params.content_id,
+      content_name: params.content_name,
+      content_type: params.content_type || 'product',
+      price: params.price,
+      currency: params.currency || 'PLN',
+    });
+  } catch (error) {
+    console.error('Error tracking TikTok ViewContent:', error);
+  }
+};
+
+// TikTok Pixel - InitiateCheckout event
+export const trackTikTokInitiateCheckout = (params: {
+  content_id: string;
+  content_name?: string;
+  content_type?: string;
+  value?: number;
+  currency?: string;
+}): void => {
+  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  
+  try {
+    window.ttq.track('InitiateCheckout', {
+      content_id: params.content_id,
+      content_name: params.content_name,
+      content_type: params.content_type || 'product',
+      value: params.value,
+      currency: params.currency || 'PLN',
+    });
+  } catch (error) {
+    console.error('Error tracking TikTok InitiateCheckout:', error);
+  }
+};
+
+// TikTok Pixel - CompletePayment event
+export const trackTikTokCompletePayment = (params: {
+  content_id: string;
+  content_name?: string;
+  content_type?: string;
+  value?: number;
+  currency?: string;
+}): void => {
+  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  
+  try {
+    window.ttq.track('CompletePayment', {
+      content_id: params.content_id,
+      content_name: params.content_name,
+      content_type: params.content_type || 'product',
+      value: params.value,
+      currency: params.currency || 'PLN',
+    });
+  } catch (error) {
+    console.error('Error tracking TikTok CompletePayment:', error);
+  }
 }; 

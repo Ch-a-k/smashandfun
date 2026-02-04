@@ -1,11 +1,12 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useI18n } from '@/i18n/I18nContext';
 import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Image from 'next/image';
 import InFomoFooterButton from '@/components/InFomoFooterButton';
 import { pl } from 'date-fns/locale/pl';
+import { trackTikTokViewContent, trackTikTokInitiateCheckout } from '@/lib/analytics';
 
 registerLocale('pl', pl);
 
@@ -137,6 +138,7 @@ function FlyingObjects() {
 export default function BookingPageClient({ packageId }: BookingPageClientProps) {
   const { t, locale, setLocale } = useI18n();
   const [pkg, setPkg] = useState<Package | null>(null);
+  const viewContentTracked = useRef(false);
   const [form, setForm] = useState<BookingForm>({
     date: '',
     time: '',
@@ -214,6 +216,17 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
       .then((data: Package[]) => {
         const found = data.find((p) => p.id === packageId) || null;
         setPkg(found);
+        // Track TikTok ViewContent event with content_id (required for VSA)
+        if (found && !viewContentTracked.current) {
+          viewContentTracked.current = true;
+          trackTikTokViewContent({
+            content_id: found.id,
+            content_name: found.name,
+            content_type: 'product',
+            price: found.price,
+            currency: 'PLN',
+          });
+        }
       });
     fetch(`/api/booking/extra-items`)
       .then(res => res.json())
@@ -666,6 +679,18 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
         <button
           onClick={async () => {
             setPayLoading(true);
+            
+            // Track TikTok InitiateCheckout event with content_id (required for VSA)
+            if (pkg) {
+              trackTikTokInitiateCheckout({
+                content_id: pkg.id,
+                content_name: pkg.name,
+                content_type: 'product',
+                value: form.paymentType === 'full' ? getTotalWithPromo() : 20,
+                currency: 'PLN',
+              });
+            }
+            
             let currentBookingId = bookingId;
             if (!currentBookingId) {
               // 1. Создать бронирование, если ещё не создана

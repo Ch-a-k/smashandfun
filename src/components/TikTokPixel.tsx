@@ -7,7 +7,7 @@ import { isAnalyticsAllowed } from '@/lib/analytics';
 
 export default function TikTokPixel() {
   const pathname = usePathname();
-  const pixelId = 'D5UT3I3C77U3UMFCPIVG';
+  const pixelId = 'D6276P3C77U6LCNG39R0';
   const [isMounted, setIsMounted] = useState(false);
   const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
 

@@ -6,7 +6,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import Image from 'next/image';
 import InFomoFooterButton from '@/components/InFomoFooterButton';
 import { pl } from 'date-fns/locale/pl';
-import { trackTikTokViewContent, trackTikTokInitiateCheckout } from '@/lib/analytics';
+import { trackTikTokViewContent, trackTikTokInitiateCheckout, trackFBViewContent, trackFBInitiateCheckout } from '@/lib/analytics';
 
 registerLocale('pl', pl);
 
@@ -224,6 +224,13 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
             content_name: found.name,
             content_type: 'product',
             price: found.price,
+            currency: 'PLN',
+          });
+          trackFBViewContent({
+            content_ids: [found.id],
+            content_name: found.name,
+            content_type: 'product',
+            value: found.price,
             currency: 'PLN',
           });
         }
@@ -684,6 +691,13 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
             if (pkg) {
               trackTikTokInitiateCheckout({
                 content_id: pkg.id,
+                content_name: pkg.name,
+                content_type: 'product',
+                value: form.paymentType === 'full' ? getTotalWithPromo() : 20,
+                currency: 'PLN',
+              });
+              trackFBInitiateCheckout({
+                content_ids: [pkg.id],
                 content_name: pkg.name,
                 content_type: 'product',
                 value: form.paymentType === 'full' ? getTotalWithPromo() : 20,

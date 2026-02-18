@@ -6,6 +6,7 @@ import { I18nProvider } from '@/i18n/I18nContext'
 import { Inter } from 'next/font/google'
 import GoogleTagManager from '@/components/GoogleTagManager'
 import TikTokPixel from '@/components/TikTokPixel'
+import MetaPixel from '@/components/MetaPixel'
 import { Analytics } from '@vercel/analytics/react'
 
 // Load custom fonts
@@ -116,6 +117,7 @@ export default function RootLayout({
           <CookieConsent />
           <GoogleTagManager />
           <TikTokPixel />
+          <MetaPixel />
           <Analytics />
         </I18nProvider>
       </body>

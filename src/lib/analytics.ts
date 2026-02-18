@@ -35,6 +35,7 @@ declare global {
     gtag?: (command: string, ...args: GTagArg[]) => void;
     dataLayer?: unknown[];
     ttq?: TikTokPixel;
+    fbq?: (...args: unknown[]) => void;
   }
 }
 
@@ -197,7 +198,7 @@ export const trackTikTokCompletePayment = (params: {
   currency?: string;
 }): void => {
   if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
-  
+
   try {
     window.ttq.track('CompletePayment', {
       content_id: params.content_id,
@@ -209,4 +210,77 @@ export const trackTikTokCompletePayment = (params: {
   } catch (error) {
     console.error('Error tracking TikTok CompletePayment:', error);
   }
-}; 
+};
+
+// Facebook Pixel - ViewContent event
+export const trackFBViewContent = (params: {
+  content_ids: string[];
+  content_name?: string;
+  content_type?: string;
+  value?: number;
+  currency?: string;
+}): void => {
+  if (!isClient() || !window.fbq || !isAnalyticsAllowed()) return;
+
+  try {
+    window.fbq('track', 'ViewContent', {
+      content_ids: params.content_ids,
+      content_name: params.content_name,
+      content_type: params.content_type || 'product',
+      value: params.value,
+      currency: params.currency || 'PLN',
+    });
+  } catch (error) {
+    console.error('Error tracking FB ViewContent:', error);
+  }
+};
+
+// Facebook Pixel - InitiateCheckout event
+export const trackFBInitiateCheckout = (params: {
+  content_ids: string[];
+  content_name?: string;
+  content_type?: string;
+  value?: number;
+  currency?: string;
+  num_items?: number;
+}): void => {
+  if (!isClient() || !window.fbq || !isAnalyticsAllowed()) return;
+
+  try {
+    window.fbq('track', 'InitiateCheckout', {
+      content_ids: params.content_ids,
+      content_name: params.content_name,
+      content_type: params.content_type || 'product',
+      value: params.value,
+      currency: params.currency || 'PLN',
+      num_items: params.num_items || 1,
+    });
+  } catch (error) {
+    console.error('Error tracking FB InitiateCheckout:', error);
+  }
+};
+
+// Facebook Pixel - Purchase event
+export const trackFBPurchase = (params: {
+  content_ids: string[];
+  content_name?: string;
+  content_type?: string;
+  value?: number;
+  currency?: string;
+  num_items?: number;
+}): void => {
+  if (!isClient() || !window.fbq || !isAnalyticsAllowed()) return;
+
+  try {
+    window.fbq('track', 'Purchase', {
+      content_ids: params.content_ids,
+      content_name: params.content_name,
+      content_type: params.content_type || 'product',
+      value: params.value,
+      currency: params.currency || 'PLN',
+      num_items: params.num_items || 1,
+    });
+  } catch (error) {
+    console.error('Error tracking FB Purchase:', error);
+  }
+};

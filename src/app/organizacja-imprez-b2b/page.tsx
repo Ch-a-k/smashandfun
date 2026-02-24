@@ -10,6 +10,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useI18n } from '@/i18n/I18nContext';
 import { Calendar, Users, CheckCircle, ArrowRight, Briefcase, Award, Layers } from 'lucide-react';
+import { sendGTMEvent } from '@next/third-parties/google';
 
 export default function OrganizacjaImprezB2B() {
   const { t } = useI18n();
@@ -66,6 +67,13 @@ export default function OrganizacjaImprezB2B() {
 
       setIsSubmitting(false);
       setIsSuccess(true);
+      sendGTMEvent({
+        event: 'b2b_form_submit',
+        form_type: 'b2b',
+        service: data.service,
+        people: data.people,
+        date: data.date,
+      });
       reset();
     } catch (error) {
       setIsSubmitting(false);

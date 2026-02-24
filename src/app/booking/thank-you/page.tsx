@@ -6,6 +6,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
 import { trackTikTokCompletePayment, trackFBPurchase } from '@/lib/analytics';
+import { sendGTMEvent } from '@next/third-parties/google';
 
 const THANK_YOU_FLYING_IMAGES = [
   '/images/glass-shard-1.png',
@@ -136,6 +137,20 @@ export default function ThankYouPage() {
         content_type: 'product',
         value: value ? parseFloat(value) : undefined,
         currency: 'PLN',
+      });
+      sendGTMEvent({
+        event: 'complete_payment',
+        ecommerce: {
+          items: [{
+            item_id: packageId || bookingId || extOrderId || 'unknown',
+            item_name: packageId || 'package',
+            price: value ? parseFloat(value) : 0,
+            item_category: 'rage_room_package',
+            quantity: 1,
+          }],
+          currency: 'PLN',
+          value: value ? parseFloat(value) : 0,
+        },
       });
     }
     

@@ -19,6 +19,7 @@ import { ReactElement, useState } from 'react'
 import Link from 'next/link'
 import { FloatingImages } from '@/components/FloatingImages'
 import { ExtraItemsSection } from '@/components/ExtraItemsSection'
+import { sendGTMEvent } from '@next/third-parties/google'
 
 // Types
 type Tool = 'ubranie' | 'kask' | 'rękawice'
@@ -229,10 +230,24 @@ function PricingCard({ pkg, index }: { pkg: Package, index: number }) {
         </div>
 
         {/* Button */}
-        <Link 
+        <Link
           href={`/booking/${pkg.id}`}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => {
+            sendGTMEvent({
+              event: 'select_item',
+              ecommerce: {
+                items: [{
+                  item_id: pkg.id,
+                  item_name: pkg.name,
+                  price: parseFloat(pkg.price) || 0,
+                  item_category: 'rage_room_package',
+                  quantity: 1,
+                }],
+              },
+            });
+          }}
           className={cn(
             "block w-full py-3 px-4 rounded-lg text-center mt-6",
             "font-medium text-sm",

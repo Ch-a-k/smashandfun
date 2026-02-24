@@ -7,6 +7,7 @@ import Image from 'next/image';
 import InFomoFooterButton from '@/components/InFomoFooterButton';
 import { pl } from 'date-fns/locale/pl';
 import { trackTikTokViewContent, trackTikTokInitiateCheckout, trackFBViewContent, trackFBInitiateCheckout } from '@/lib/analytics';
+import { sendGTMEvent } from '@next/third-parties/google';
 
 registerLocale('pl', pl);
 
@@ -232,6 +233,20 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
             content_type: 'product',
             value: found.price,
             currency: 'PLN',
+          });
+          sendGTMEvent({
+            event: 'view_content',
+            ecommerce: {
+              items: [{
+                item_id: found.id,
+                item_name: found.name,
+                price: found.price,
+                item_category: 'rage_room_package',
+                quantity: 1,
+              }],
+              currency: 'PLN',
+              value: found.price,
+            },
           });
         }
       });
@@ -702,6 +717,20 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
                 content_type: 'product',
                 value: form.paymentType === 'full' ? getTotalWithPromo() : 20,
                 currency: 'PLN',
+              });
+              sendGTMEvent({
+                event: 'add_to_cart',
+                ecommerce: {
+                  items: [{
+                    item_id: pkg.id,
+                    item_name: pkg.name,
+                    price: form.paymentType === 'full' ? getTotalWithPromo() : 20,
+                    item_category: 'rage_room_package',
+                    quantity: 1,
+                  }],
+                  currency: 'PLN',
+                  value: form.paymentType === 'full' ? getTotalWithPromo() : 20,
+                },
               });
             }
             

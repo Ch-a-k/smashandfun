@@ -14,18 +14,20 @@ export async function POST(req: NextRequest) {
   // Получаем название пакета на польском
   const packageName = PACKAGE_NAMES_PL[pkg] || pkg;
 
-  // Настройка транспорта
+  // Настройка транспорта (Zoho SMTP, как в sendBookingEmail)
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.ZOHO_HOST,
+    port: Number(process.env.ZOHO_PORT),
+    secure: Number(process.env.ZOHO_PORT) === 465,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: process.env.ZOHO_USER,
+      pass: process.env.ZOHO_PASS,
     },
   });
 
   const mailOptions = {
-    from: process.env.EMAIL_USER,
-    to: process.env.EMAIL_RECEIVER || process.env.EMAIL_USER,
+    from: process.env.ZOHO_USER,
+    to: process.env.EMAIL_RECEIVER || process.env.ZOHO_USER,
     subject: 'Nowe zamówienie vouchera / New voucher order',
     text: `Imię i nazwisko / Name: ${name}\nEmail: ${email}\nTelefon / Phone: ${phone}\nPakiet / Package: ${packageName}\nWiadomość / Message: ${message}`,
     html: `<b>Imię i nazwisko / Name:</b> ${name}<br/><b>Email:</b> ${email}<br/><b>Telefon / Phone:</b> ${phone}<br/><b>Pakiet / Package:</b> ${packageName}<br/><b>Wiadomość / Message:</b> ${message}`,

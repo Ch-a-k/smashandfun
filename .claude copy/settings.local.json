@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(tr:*)",
+      "Bash(grep:*)",
+      "Bash(curl -s \"https://www.vsbrothers.eu/ru/search?trackingId=3MW5R7J04N8C64321\" -H \"Accept: text/html\" -H \"User-Agent: Mozilla/5.0\")",
+      "Bash(curl:*)",
+      "Bash(# Find the chunk that handles the search/tracking functionality curl -s \"\"https://www.vsbrothers.eu/_next/static/chunks/2651-37542632e534b42b.js\"\")",
+      "Bash(# Look in chunk that has the API base URL - checking env-config or similar chunks curl -s \"\"https://www.vsbrothers.eu/_next/static/chunks/4bd1b696-3f907eca07678979.js\"\")",
+      "Bash(# Let''s look for the tracking endpoint directly - check the seaRates widget chunk curl -s \"\"https://www.vsbrothers.eu/_next/static/chunks/app/%5Blocale%5D/search/page-0ebda12e0a077a32.js\"\")",
+      "Bash(# Find the axios instance with baseURL curl -s \"\"https://www.vsbrothers.eu/_next/static/chunks/app/%5Blocale%5D/search/page-0ebda12e0a077a32.js\"\")",
+      "Bash(# The axios instance is in another chunk - find it # o.A references the axios module - let''s check what module handles the base config curl -s \"\"https://www.vsbrothers.eu/_next/static/chunks/4519-aa70c4ff78cd6fa1.js\"\")",
+      "Bash(done)",
+      "Bash(# Try the actual API endpoint directly curl -s \"\"https://www.vsbrothers.eu/tracking/3MW5R7J04N8C64321\"\" -H \"\"Accept: application/json\"\")"
+    ]
+  }
+}

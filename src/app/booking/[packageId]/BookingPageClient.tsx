@@ -136,6 +136,25 @@ function FlyingObjects() {
   );
 }
 
+function getUtmParams(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const params = new URLSearchParams(window.location.search);
+  const utm: Record<string, string> = {};
+  for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content']) {
+    const val = params.get(key);
+    if (val) utm[key] = val;
+  }
+  // Save to sessionStorage so they persist across booking steps
+  if (Object.keys(utm).length > 0) {
+    sessionStorage.setItem('booking_utm', JSON.stringify(utm));
+  }
+  const saved = sessionStorage.getItem('booking_utm');
+  if (saved) {
+    try { return { ...JSON.parse(saved), ...utm }; } catch { return utm; }
+  }
+  return utm;
+}
+
 export default function BookingPageClient({ packageId }: BookingPageClientProps) {
   const { t, locale, setLocale } = useI18n();
   const [pkg, setPkg] = useState<Package | null>(null);
@@ -738,6 +757,7 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
             if (!currentBookingId) {
               // 1. Создать бронирование, если ещё не создана
               
+              const utmParams = getUtmParams();
               const res = await fetch('/api/booking/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -751,6 +771,9 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
                   paymentType: form.paymentType,
                   name: form.name,
                   phone: form.phone,
+                  ...utmParams,
+                  referrer: typeof document !== 'undefined' ? document.referrer || null : null,
+                  landing_page: typeof window !== 'undefined' ? window.location.pathname : null,
                 })
               });
               const data = await res.json();

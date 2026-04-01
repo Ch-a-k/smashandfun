@@ -61,6 +61,7 @@ function overlaps(aStart: dayjs.Dayjs, aEnd: dayjs.Dayjs, bStart: dayjs.Dayjs, b
 
 export async function POST(req: Request) {
   const { email, packageId, date, time, extraItems, promoCode, name, phone,
+    utm_source, utm_medium, utm_campaign, utm_term, utm_content, referrer, landing_page,
     } = await req.json();
 
   // Получаем пакет и список допустимых комнат
@@ -208,6 +209,13 @@ export async function POST(req: Request) {
         name: name || null,
         phone: phone || null,
         change_token: changeToken,
+        utm_source: utm_source || null,
+        utm_medium: utm_medium || null,
+        utm_campaign: utm_campaign || null,
+        utm_term: utm_term || null,
+        utm_content: utm_content || null,
+        referrer: referrer || null,
+        landing_page: landing_page || null,
       }
     ])
     .select()

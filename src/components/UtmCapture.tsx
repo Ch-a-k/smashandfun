@@ -15,12 +15,13 @@ export default function UtmCapture() {
     }
     if (Object.keys(utm).length === 0) return;
     // Merge with existing (new values override old)
-    const saved = sessionStorage.getItem(STORAGE_KEY);
+    // Use localStorage so it persists across tabs (target="_blank" booking links)
+    const saved = localStorage.getItem(STORAGE_KEY);
     let merged = utm;
     if (saved) {
       try { merged = { ...JSON.parse(saved), ...utm }; } catch { /* ignore */ }
     }
-    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
   }, []);
   return null;
 }

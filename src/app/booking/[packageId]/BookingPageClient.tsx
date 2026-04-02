@@ -144,11 +144,12 @@ function getUtmParams(): Record<string, string> {
     const val = params.get(key);
     if (val) utm[key] = val;
   }
-  // Save to sessionStorage so they persist across booking steps
+  // Save to localStorage so it persists across tabs (booking opens in new tab)
   if (Object.keys(utm).length > 0) {
-    sessionStorage.setItem('booking_utm', JSON.stringify(utm));
+    localStorage.setItem('booking_utm', JSON.stringify(utm));
   }
-  const saved = sessionStorage.getItem('booking_utm');
+  // Read from localStorage (shared across tabs, unlike sessionStorage)
+  const saved = localStorage.getItem('booking_utm');
   if (saved) {
     try { return { ...JSON.parse(saved), ...utm }; } catch { return utm; }
   }

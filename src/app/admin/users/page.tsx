@@ -807,7 +807,7 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
             <SourceEditCell currentValue={sourceEditValue ?? user.displaySource ?? ''} onChange={onSourceChange} />
           ) : (
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {user.displaySource ? <span>{getUtmBadge(user.displaySource)}</span> : (user.utmSources.length === 0 ? <span style={{ color: '#555', fontSize: 11 }}>direct</span> : user.utmSources.map(s => <span key={s}>{getUtmBadge(s)}</span>))}
+              {user.displaySource && user.displaySource.toLowerCase() !== 'direct' ? <span>{getUtmBadge(user.displaySource)}</span> : (user.utmSources.length === 0 || user.displaySource?.toLowerCase() === 'direct' ? <span style={{ color: '#555', fontSize: 11 }}>direct</span> : user.utmSources.map(s => <span key={s}>{getUtmBadge(s)}</span>))}
             </div>
           )}
         </td>

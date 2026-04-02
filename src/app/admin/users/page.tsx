@@ -11,6 +11,8 @@ interface User {
   name?: string;
   phone?: string;
   created_at?: string;
+  segment?: string | null;
+  manual_source?: string | null;
 }
 
 interface BookingRow {
@@ -44,8 +46,10 @@ interface UserStats extends User {
   depositSum: number;
   bookings: BookingRow[];
   utmSources: string[];
+  displaySource: string | null; // manual_source override or first UTM source
   lastBookingDate: string | null;
-  mainStatus: string; // most relevant status for this user
+  mainStatus: string;
+  segment: 'b2b' | 'b2c' | 'none';
 }
 
 type SortKey = 'name' | 'email' | 'created_at' | 'bookingsCount' | 'bookingsSum' | 'lastBookingDate';
@@ -97,6 +101,31 @@ function getUserMainStatus(bookings: BookingRow[]): string {
   return 'none';
 }
 
+function getUserSegment(bookings: BookingRow[], manualSegment?: string | null): 'b2b' | 'b2c' | 'none' {
+  // Manual override takes priority
+  if (manualSegment === 'b2b') return 'b2b';
+  if (manualSegment === 'b2c') return 'b2c';
+  // Auto-detect from UTM
+  for (const b of bookings) {
+    const fields = [b.utm_source, b.utm_medium, b.utm_campaign].map(f => (f || '').toLowerCase());
+    if (fields.some(f => f.includes('b2b'))) return 'b2b';
+  }
+  for (const b of bookings) {
+    const fields = [b.utm_source, b.utm_medium, b.utm_campaign].map(f => (f || '').toLowerCase());
+    if (fields.some(f => f.includes('b2c'))) return 'b2c';
+  }
+  return 'none';
+}
+
+function getSegmentBadge(segment: 'b2b' | 'b2c' | 'none') {
+  const base: React.CSSProperties = { display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5 };
+  switch (segment) {
+    case 'b2b': return <span style={{ ...base, background: '#1a237e', color: '#90caf9' }}>B2B</span>;
+    case 'b2c': return <span style={{ ...base, background: '#004d40', color: '#80cbc4' }}>B2C</span>;
+    default: return <span style={{ ...base, background: '#333', color: '#777' }}>—</span>;
+  }
+}
+
 // ─── Main Component ──────────────────────────────────────────
 function UsersPage() {
   const [users, setUsers] = useState<UserStats[]>([]);
@@ -111,6 +140,7 @@ function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [segmentFilter, setSegmentFilter] = useState<string>("all");
 
   // Sort
   const [sortKey, setSortKey] = useState<SortKey>('created_at');
@@ -122,6 +152,48 @@ function UsersPage() {
 
   // Expanded rows
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // Edit mode (segment + source)
+  const [segmentEditMode, setSegmentEditMode] = useState(false);
+  const [segmentEdits, setSegmentEdits] = useState<Record<string, string>>({});
+  const [sourceEdits, setSourceEdits] = useState<Record<string, string>>({});
+  const [segmentSaving, setSegmentSaving] = useState(false);
+
+  function setSegmentEdit(userId: string, value: string) {
+    setSegmentEdits(prev => ({ ...prev, [userId]: value }));
+  }
+  function setSourceEdit(userId: string, value: string) {
+    setSourceEdits(prev => ({ ...prev, [userId]: value }));
+  }
+  const editCount = new Set([...Object.keys(segmentEdits), ...Object.keys(sourceEdits)]).size;
+
+  async function saveSegmentEdits() {
+    const allIds = new Set([...Object.keys(segmentEdits), ...Object.keys(sourceEdits)]);
+    if (allIds.size === 0) { setSegmentEditMode(false); return; }
+    setSegmentSaving(true);
+    setError("");
+    let failed = 0;
+    for (const userId of allIds) {
+      const update: Record<string, string | null> = {};
+      if (userId in segmentEdits) update.segment = segmentEdits[userId] === 'none' ? null : segmentEdits[userId];
+      if (userId in sourceEdits) update.manual_source = sourceEdits[userId] || null;
+      const { error } = await supabase.from('users').update(update).eq('id', userId);
+      if (error) {
+        if (error.message?.includes('segment') || error.message?.includes('manual_source')) {
+          setError('Brakuje kolumn. Uruchom w Supabase SQL Editor:\n\nALTER TABLE users ADD COLUMN IF NOT EXISTS segment text DEFAULT NULL;\nALTER TABLE users ADD COLUMN IF NOT EXISTS manual_source text DEFAULT NULL;');
+          setSegmentSaving(false);
+          return;
+        }
+        failed++;
+      }
+    }
+    setSegmentSaving(false);
+    if (failed > 0) setError(`Nie udalo sie zapisac ${failed} zmian`);
+    setSegmentEdits({});
+    setSourceEdits({});
+    setSegmentEditMode(false);
+    fetchData();
+  }
 
   // ─── Paginated fetch (Supabase caps at 1000 rows) ────────
   const PAGE_LIMIT = 1000;
@@ -199,8 +271,10 @@ function UsersPage() {
         depositSum,
         bookings: userBookings,
         utmSources: Array.from(utmSet),
+        displaySource: u.manual_source || (utmSet.size > 0 ? Array.from(utmSet)[0] : null),
         lastBookingDate: sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null,
         mainStatus: getUserMainStatus(userBookings),
+        segment: getUserSegment(userBookings, u.segment),
       };
     });
     setUsers(stats);
@@ -277,6 +351,7 @@ function UsersPage() {
     if (utmFilter === 'direct') result = result.filter(u => u.utmSources.length === 0);
     else if (utmFilter !== 'all') result = result.filter(u => u.utmSources.includes(utmFilter));
     if (statusFilter !== 'all') result = result.filter(u => u.bookings.some(b => b.status === statusFilter));
+    if (segmentFilter !== 'all') result = result.filter(u => u.segment === segmentFilter);
     if (dateFrom || dateTo) {
       result = result.filter(u => u.bookings.some(b => {
         if (dateFrom && b.date < dateFrom) return false;
@@ -285,7 +360,7 @@ function UsersPage() {
       }));
     }
     return result;
-  }, [users, search, utmFilter, statusFilter, dateFrom, dateTo]);
+  }, [users, search, utmFilter, statusFilter, segmentFilter, dateFrom, dateTo]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -308,7 +383,7 @@ function UsersPage() {
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize);
-  useEffect(() => { setPage(1); }, [search, utmFilter, statusFilter, dateFrom, dateTo, pageSize]);
+  useEffect(() => { setPage(1); }, [search, utmFilter, statusFilter, segmentFilter, dateFrom, dateTo, pageSize]);
 
   // ─── Sort Handler ────────────────────────────────────────
   function handleSort(key: SortKey) {
@@ -327,11 +402,12 @@ function UsersPage() {
   // ─── CSV Export ──────────────────────────────────────────
   function exportCSV() {
     const BOM = '\uFEFF';
-    let csv = BOM + 'Email;Imie;Telefon;Data rejestracji;Rezerwacje;Oplacone;Zaliczki;Suma (PLN);Zrodla UTM;Ostatnia rezerwacja\n';
+    let csv = BOM + 'Email;Imie;Telefon;Segment;Data rejestracji;Rezerwacje;Oplacone;Zaliczki;Suma (PLN);Zrodla UTM;Ostatnia rezerwacja\n';
     sorted.forEach(u => {
       const paid = u.bookings.filter(b => b.status === 'paid').length;
       const dep = u.bookings.filter(b => b.status === 'deposit').length;
-      csv += `${u.email};${u.name || ''};${u.phone || ''};${u.created_at ? u.created_at.slice(0, 10) : ''};${u.bookingsCount};${paid};${dep};${u.bookingsSum.toFixed(2)};${u.utmSources.join(', ') || 'direct'};${u.lastBookingDate || ''}\n`;
+      const seg = u.segment === 'b2b' ? 'B2B' : u.segment === 'b2c' ? 'B2C' : '';
+      csv += `${u.email};${u.name || ''};${u.phone || ''};${seg};${u.created_at ? u.created_at.slice(0, 10) : ''};${u.bookingsCount};${paid};${dep};${u.bookingsSum.toFixed(2)};${u.utmSources.join(', ') || 'direct'};${u.lastBookingDate || ''}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -361,9 +437,25 @@ function UsersPage() {
           <h1 style={{ fontSize: 28, fontWeight: 100, color: '#f36e21', margin: 0 }}>Klienci i Analityka</h1>
           <p style={{ fontSize: 14, color: '#888', margin: '4px 0 0' }}>Oplacone, zaliczki, zrodla ruchu (Google / TikTok / Facebook), UTM, rezerwacje</p>
         </div>
-        <button onClick={exportCSV} style={{ background: '#4caf50', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <FaFileExport size={14} /> Eksportuj CSV
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {!segmentEditMode ? (
+            <button onClick={() => setSegmentEditMode(true)} style={{ background: '#5c6bc0', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+              Edytuj dane
+            </button>
+          ) : (
+            <>
+              <button onClick={saveSegmentEdits} disabled={segmentSaving || editCount === 0} style={{ background: '#4caf50', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 700, fontSize: 14, cursor: segmentSaving ? 'not-allowed' : 'pointer' }}>
+                {segmentSaving ? 'Zapisywanie...' : `Zapisz (${editCount})`}
+              </button>
+              <button onClick={() => { setSegmentEditMode(false); setSegmentEdits({}); setSourceEdits({}); }} style={{ background: '#23222a', color: '#fff', border: '2px solid #5c6bc0', borderRadius: 8, padding: '8px 20px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                Anuluj
+              </button>
+            </>
+          )}
+          <button onClick={exportCSV} style={{ background: '#4caf50', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 20px', fontWeight: 700, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <FaFileExport size={14} /> Eksportuj CSV
+          </button>
+        </div>
       </div>
 
       {/* UTM migration warning */}
@@ -408,6 +500,14 @@ function UsersPage() {
         <div style={{ ...cardStyle, borderLeft: '3px solid #ef5350' }}>
           <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaTimesCircle size={12} color="#ef5350" /> Anulowane</span>
           <span style={{ ...valueStyle, color: '#ef5350' }}>{analytics.cancelledCount}</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #5c6bc0' }}>
+          <span style={{ ...labelStyle, color: '#90caf9' }}>B2B</span>
+          <span style={{ ...valueStyle, color: '#5c6bc0' }}>{users.filter(u => u.segment === 'b2b').length}</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #26a69a' }}>
+          <span style={{ ...labelStyle, color: '#80cbc4' }}>B2C</span>
+          <span style={{ ...valueStyle, color: '#26a69a' }}>{users.filter(u => u.segment === 'b2c').length}</span>
         </div>
       </div>
 
@@ -502,6 +602,12 @@ function UsersPage() {
           <option value="pending">Oczekujace</option>
           <option value="cancelled">Anulowane</option>
         </select>
+        <select value={segmentFilter} onChange={e => setSegmentFilter(e.target.value)} style={{ ...inputStyle, minWidth: 110 }}>
+          <option value="all">B2B / B2C</option>
+          <option value="b2b">B2B</option>
+          <option value="b2c">B2C</option>
+          <option value="none">Bez oznaczenia</option>
+        </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <label style={{ fontSize: 12, color: '#aaa' }}>Od:</label>
           <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ ...inputStyle, width: 140 }} />
@@ -510,8 +616,8 @@ function UsersPage() {
           <label style={{ fontSize: 12, color: '#aaa' }}>Do:</label>
           <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ ...inputStyle, width: 140 }} />
         </div>
-        {(search || utmFilter !== 'all' || statusFilter !== 'all' || dateFrom || dateTo) && (
-          <button onClick={() => { setSearch(''); setUtmFilter('all'); setStatusFilter('all'); setDateFrom(''); setDateTo(''); }} style={{ background: 'transparent', color: '#f36e21', border: '1px solid #f36e21', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+        {(search || utmFilter !== 'all' || statusFilter !== 'all' || segmentFilter !== 'all' || dateFrom || dateTo) && (
+          <button onClick={() => { setSearch(''); setUtmFilter('all'); setStatusFilter('all'); setSegmentFilter('all'); setDateFrom(''); setDateTo(''); }} style={{ background: 'transparent', color: '#f36e21', border: '1px solid #f36e21', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
             Wyczysc filtry
           </button>
         )}
@@ -541,13 +647,14 @@ function UsersPage() {
           <div style={{ padding: 40, textAlign: 'center', color: '#666' }}>Brak klientow spelniajacych kryteria</div>
         ) : (
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1050 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1100 }}>
               <thead>
                 <tr>
                   <th style={{ ...thStyle, width: 36 }}></th>
                   <th style={thStyle} onClick={() => handleSort('email')}>Email <SortIcon col="email" /></th>
                   <th style={thStyle} onClick={() => handleSort('name')}>Imie <SortIcon col="name" /></th>
                   <th style={{ ...thStyle }}>Telefon</th>
+                  <th style={{ ...thStyle }}>Segment</th>
                   <th style={thStyle} onClick={() => handleSort('created_at')}>Rejestracja <SortIcon col="created_at" /></th>
                   <th style={thStyle} onClick={() => handleSort('bookingsCount')}>Rez. <SortIcon col="bookingsCount" /></th>
                   <th style={{ ...thStyle }}>Status</th>
@@ -558,7 +665,7 @@ function UsersPage() {
               </thead>
               <tbody>
                 {paginated.map(u => (
-                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} />
+                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} />
                 ))}
               </tbody>
             </table>
@@ -598,8 +705,59 @@ function getPageNumbers(current: number, total: number): (number | string)[] {
   return pages;
 }
 
+// ─── Source Edit Cell (dropdown + custom input) ─────────────
+const SOURCE_PRESETS = ['google', 'facebook', 'tiktok', 'direct'];
+
+function SourceEditCell({ currentValue, onChange }: { currentValue: string; onChange: (val: string) => void }) {
+  const isPreset = SOURCE_PRESETS.includes(currentValue.toLowerCase());
+  const [customMode, setCustomMode] = useState(!isPreset && currentValue !== '');
+
+  const selectStyle: React.CSSProperties = { background: '#18171c', color: '#fff', border: '2px solid #5c6bc0', borderRadius: 6, padding: '2px 6px', fontSize: 12, fontWeight: 700, cursor: 'pointer', width: 110 };
+
+  if (customMode) {
+    return (
+      <div style={{ display: 'flex', gap: 2, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+        <input
+          type="text"
+          value={currentValue}
+          onChange={e => onChange(e.target.value)}
+          onClick={e => e.stopPropagation()}
+          autoFocus
+          placeholder="wpisz..."
+          style={{ ...selectStyle, width: 80 }}
+        />
+        <button onClick={e => { e.stopPropagation(); setCustomMode(false); onChange(''); }} style={{ background: 'none', border: 'none', color: '#5c6bc0', cursor: 'pointer', fontSize: 14, padding: '0 2px' }} title="Wybierz z listy">✕</button>
+      </div>
+    );
+  }
+
+  return (
+    <select
+      value={isPreset ? currentValue.toLowerCase() : '__custom'}
+      onChange={e => {
+        e.stopPropagation();
+        if (e.target.value === '__custom') {
+          setCustomMode(true);
+          onChange(currentValue);
+        } else {
+          onChange(e.target.value);
+        }
+      }}
+      onClick={e => e.stopPropagation()}
+      style={selectStyle}
+    >
+      <option value="">—</option>
+      <option value="google">Google</option>
+      <option value="facebook">Facebook</option>
+      <option value="tiktok">TikTok</option>
+      <option value="direct">Direct</option>
+      <option value="__custom">Inne...</option>
+    </select>
+  );
+}
+
 // ─── User Row ──────────────────────────────────────────────
-function UserRow({ user, isExpanded, onToggle, packages }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string> }) {
+function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void }) {
   const tdStyle: React.CSSProperties = { padding: '10px 12px', fontSize: 13 };
   const paidCount = user.bookings.filter(b => b.status === 'paid').length;
   const depositCount = user.bookings.filter(b => b.status === 'deposit').length;
@@ -619,6 +777,20 @@ function UserRow({ user, isExpanded, onToggle, packages }: { user: UserStats; is
         <td style={{ ...tdStyle, fontWeight: 700, color: '#f36e21', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</td>
         <td style={tdStyle}>{user.name || <span style={{ color: '#555' }}>-</span>}</td>
         <td style={tdStyle}>{user.phone || <span style={{ color: '#555' }}>-</span>}</td>
+        <td style={tdStyle}>
+          {segmentEditMode ? (
+            <select
+              value={segmentEditValue ?? user.segment}
+              onChange={e => { e.stopPropagation(); onSegmentChange(e.target.value); }}
+              onClick={e => e.stopPropagation()}
+              style={{ background: '#18171c', color: '#fff', border: '2px solid #5c6bc0', borderRadius: 6, padding: '2px 6px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >
+              <option value="none">—</option>
+              <option value="b2b">B2B</option>
+              <option value="b2c">B2C</option>
+            </select>
+          ) : getSegmentBadge(user.segment)}
+        </td>
         <td style={{ ...tdStyle, color: '#aaa', fontSize: 12 }}>{user.created_at ? user.created_at.slice(0, 10) : '-'}</td>
         <td style={{ ...tdStyle, fontWeight: 700 }}>{user.bookingsCount}</td>
         <td style={tdStyle}>
@@ -631,16 +803,20 @@ function UserRow({ user, isExpanded, onToggle, packages }: { user: UserStats; is
         </td>
         <td style={{ ...tdStyle, fontWeight: 700, color: '#4caf50' }}>{user.bookingsSum.toFixed(0)} zl</td>
         <td style={tdStyle}>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {user.utmSources.length === 0 ? <span style={{ color: '#555', fontSize: 11 }}>direct</span> : user.utmSources.map(s => <span key={s}>{getUtmBadge(s)}</span>)}
-          </div>
+          {segmentEditMode ? (
+            <SourceEditCell currentValue={sourceEditValue ?? user.displaySource ?? ''} onChange={onSourceChange} />
+          ) : (
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+              {user.displaySource ? <span>{getUtmBadge(user.displaySource)}</span> : (user.utmSources.length === 0 ? <span style={{ color: '#555', fontSize: 11 }}>direct</span> : user.utmSources.map(s => <span key={s}>{getUtmBadge(s)}</span>))}
+            </div>
+          )}
         </td>
         <td style={{ ...tdStyle, color: '#aaa', fontSize: 12 }}>{user.lastBookingDate || '-'}</td>
       </tr>
 
       {isExpanded && (
         <tr>
-          <td colSpan={10} style={{ padding: 0, background: '#1e1e26' }}>
+          <td colSpan={11} style={{ padding: 0, background: '#1e1e26' }}>
             <div style={{ padding: '12px 20px 16px 52px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9f58', marginBottom: 8 }}>Rezerwacje klienta ({user.bookings.length})</div>
               {user.bookings.length === 0 ? <div style={{ color: '#555', fontSize: 13 }}>Brak rezerwacji</div> : (

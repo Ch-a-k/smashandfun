@@ -7,6 +7,7 @@ import { Inter } from 'next/font/google'
 import GoogleTagManager from '@/components/GoogleTagManager'
 import TikTokPixel from '@/components/TikTokPixel'
 import MetaPixel from '@/components/MetaPixel'
+import UtmCapture from '@/components/UtmCapture'
 import { Analytics } from '@vercel/analytics/react'
 
 // Load custom fonts
@@ -113,6 +114,7 @@ export default function RootLayout({
       </head>
       <body className="bg-[#231f20]">
         <I18nProvider>
+          <UtmCapture />
           {children}
           <CookieConsent />
           <GoogleTagManager />

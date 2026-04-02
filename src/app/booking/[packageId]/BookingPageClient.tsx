@@ -136,6 +136,17 @@ function FlyingObjects() {
   );
 }
 
+const CLICK_ID_MAP: Record<string, string> = {
+  gclid: 'google', gbraid: 'google', wbraid: 'google',
+  fbclid: 'facebook', ttclid: 'tiktok',
+};
+
+const REFERRER_MAP: [RegExp, string][] = [
+  [/google\./i, 'google'], [/facebook\.com|fb\.com|fb\.me/i, 'facebook'],
+  [/instagram\.com/i, 'facebook'], [/tiktok\.com/i, 'tiktok'],
+  [/youtube\.com|youtu\.be/i, 'google'], [/bing\.com/i, 'bing'],
+];
+
 function getUtmParams(): Record<string, string> {
   if (typeof window === 'undefined') return {};
   const params = new URLSearchParams(window.location.search);
@@ -144,7 +155,37 @@ function getUtmParams(): Record<string, string> {
     const val = params.get(key);
     if (val) utm[key] = val;
   }
-  // Save to localStorage so it persists across tabs (booking opens in new tab)
+
+  // Detect source from click IDs (gclid, fbclid, ttclid)
+  if (!utm.utm_source) {
+    for (const [clickId, source] of Object.entries(CLICK_ID_MAP)) {
+      if (params.get(clickId)) {
+        utm.utm_source = source;
+        if (!utm.utm_medium) utm.utm_medium = 'cpc';
+        break;
+      }
+    }
+  }
+
+  // Detect source from referrer
+  if (!utm.utm_source && document.referrer) {
+    const ref = document.referrer;
+    const isSelf = ref.includes(window.location.hostname);
+    if (!isSelf) {
+      for (const [pattern, source] of REFERRER_MAP) {
+        if (pattern.test(ref)) {
+          utm.utm_source = source;
+          if (!utm.utm_medium) utm.utm_medium = 'referral';
+          break;
+        }
+      }
+      if (!utm.utm_source) {
+        try { utm.utm_source = new URL(ref).hostname.replace('www.', ''); utm.utm_medium = 'referral'; } catch { /* ignore */ }
+      }
+    }
+  }
+
+  // Save to localStorage so it persists across tabs
   if (Object.keys(utm).length > 0) {
     localStorage.setItem('booking_utm', JSON.stringify(utm));
   }
@@ -773,8 +814,10 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
                   name: form.name,
                   phone: form.phone,
                   ...utmParams,
-                  referrer: typeof document !== 'undefined' ? document.referrer || null : null,
-                  landing_page: typeof window !== 'undefined' ? window.location.pathname : null,
+                  // referrer & landing_page from localStorage (captured on first visit)
+                  // utmParams already contains them if UtmCapture saved them
+                  referrer: utmParams.referrer || (typeof document !== 'undefined' ? document.referrer || null : null),
+                  landing_page: utmParams.landing_page || (typeof window !== 'undefined' ? window.location.pathname : null),
                 })
               });
               const data = await res.json();

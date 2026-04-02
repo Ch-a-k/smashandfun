@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { supabase } from '@/lib/supabaseClient';
 import { withAdminAuth } from '../components/withAdminAuth';
 import { FaChevronDown, FaChevronUp, FaSort, FaSortUp, FaSortDown, FaGoogle, FaTiktok, FaFacebook, FaGlobe, FaSearch, FaFileExport, FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaMoneyBillWave, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa';
@@ -837,8 +837,19 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
                       </tr>
                     </thead>
                     <tbody>
-                      {user.bookings.map(b => (
-                        <tr key={b.id} style={{ borderBottom: '1px solid #2a2a2f' }}>
+                      {user.bookings.map(b => {
+                        const utmParts: string[] = [];
+                        if (b.utm_source) utmParts.push(`utm_source=${b.utm_source}`);
+                        if (b.utm_medium) utmParts.push(`utm_medium=${b.utm_medium}`);
+                        if (b.utm_campaign) utmParts.push(`utm_campaign=${b.utm_campaign}`);
+                        if (b.utm_term) utmParts.push(`utm_term=${b.utm_term}`);
+                        if (b.utm_content) utmParts.push(`utm_content=${b.utm_content}`);
+                        const landingUrl = b.landing_page
+                          ? `${b.landing_page}${utmParts.length > 0 ? '?' + utmParts.join('&') : ''}`
+                          : utmParts.length > 0 ? `/?${utmParts.join('&')}` : null;
+                        return (
+                        <React.Fragment key={b.id}>
+                        <tr style={{ borderBottom: landingUrl ? 'none' : '1px solid #2a2a2f' }}>
                           <td style={{ padding: '6px 8px', fontWeight: 600 }}>{b.date}</td>
                           <td style={{ padding: '6px 8px' }}>{b.time?.slice(0, 5)}</td>
                           <td style={{ padding: '6px 8px', color: '#ccc' }}>{b.package_id ? (packages[b.package_id] || b.package_id.slice(0, 8)) : '-'}</td>
@@ -850,7 +861,17 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
                           <td style={{ padding: '6px 8px', color: '#aaa', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.utm_campaign || '-'}</td>
                           <td style={{ padding: '6px 8px', color: '#666', fontSize: 11 }}>{b.created_at ? b.created_at.slice(0, 16).replace('T', ' ') : '-'}</td>
                         </tr>
-                      ))}
+                        {landingUrl && (
+                          <tr style={{ borderBottom: '1px solid #2a2a2f' }}>
+                            <td colSpan={10} style={{ padding: '2px 8px 6px', fontSize: 11 }}>
+                              <span style={{ color: '#555', marginRight: 4 }}>URL:</span>
+                              <code style={{ color: '#7986cb', background: '#1a1a2e', padding: '1px 6px', borderRadius: 4, fontSize: 10, wordBreak: 'break-all' }}>{landingUrl}</code>
+                            </td>
+                          </tr>
+                        )}
+                        </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

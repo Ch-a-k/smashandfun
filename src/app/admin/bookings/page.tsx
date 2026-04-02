@@ -5,7 +5,7 @@ import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import React from 'react';
 import { withAdminAuth } from '../components/withAdminAuth';
-import { FaTrash } from 'react-icons/fa';
+import { FaTrash, FaMoneyBillWave } from 'react-icons/fa';
 import dayjs from "dayjs";
 import { pl }  from 'date-fns/locale/pl';
 
@@ -117,6 +117,31 @@ function normalizeBookingTotal(rawTotal: number, paymentsSum: number) {
   return rawTotal;
 }
 
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'paid': return 'Opłacono';
+    case 'deposit': return 'Zaliczka';
+    case 'pending': return 'Oczekuje';
+    case 'cancelled': return 'Anulowano';
+    default: return status;
+  }
+}
+
+function getStatusDotColor(status: string): string {
+  switch (status) {
+    case 'paid': return 'bg-green-500';
+    case 'deposit': return 'bg-blue-500';
+    case 'pending': return 'bg-yellow-500';
+    case 'cancelled': return 'bg-red-500';
+    default: return 'bg-gray-500';
+  }
+}
+
+function formatPaymentDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+}
+
 // Варианты статусов оплаты
 const STATUS_OPTIONS = [
   { value: 'paid', label: 'paid' },
@@ -140,23 +165,19 @@ type Package = {
 // Возвращает текущую дату/время в зоне Europe/Warsaw
 function getPolandDate(): Date {
   const now = new Date();
-  // Получить строку локального времени в Польше
-  const polandString = now.toLocaleString('en-US');
+  const polandString = now.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' });
   return new Date(polandString);
 }
 
 // Преобразует строку 'YYYY-MM-DD' в Date в зоне Europe/Warsaw
 function parsePolandDate(str: string): Date {
   const [year, month, day] = str.split('-').map(Number);
-  // Создаём дату в польской зоне (локальное время)
-  const polandString = new Date(year, month - 1, day).toLocaleString('en-US');
-  return new Date(polandString);
+  return new Date(year, month - 1, day);
 }
 
 // Возвращает YYYY-MM-DD для даты в зоне Europe/Warsaw
 function formatDatePoland(date: Date): string {
-  // Получаем локальное время в Польше
-  const poland = new Date(date.toLocaleString('en-US'));
+  const poland = new Date(date.toLocaleString('en-US', { timeZone: 'Europe/Warsaw' }));
   const year = poland.getFullYear();
   const month = (poland.getMonth() + 1).toString().padStart(2, '0');
   const day = poland.getDate().toString().padStart(2, '0');
@@ -259,14 +280,22 @@ function BookingsPage() {
   // Загружаем даты с резервациями и extra items
   useEffect(() => {
     async function fetchBookedDates() {
-      const { data } = await supabase
-        .from('bookings')
-        .select('date')
-        .returns<{ date: string }[]>();
-      if (data) {
-        const uniqueDates = Array.from(new Set(data.map((b) => b.date)));
-        setBookedDates(uniqueDates.map(d => new Date(d)));
+      const allDates: string[] = [];
+      let offset = 0;
+      const PAGE_SIZE = 1000;
+      while (true) {
+        const { data } = await supabase
+          .from('bookings')
+          .select('date')
+          .range(offset, offset + PAGE_SIZE - 1)
+          .returns<{ date: string }[]>();
+        if (!data || data.length === 0) break;
+        allDates.push(...data.map(b => b.date));
+        if (data.length < PAGE_SIZE) break;
+        offset += PAGE_SIZE;
       }
+      const uniqueDates = Array.from(new Set(allDates));
+      setBookedDates(uniqueDates.map(d => new Date(d)));
       // Загружаем extra items
       const { data: extraItems } = await supabase
         .from('extra_items')
@@ -286,10 +315,11 @@ function BookingsPage() {
       const { data: roomsData } = await supabase.from('rooms').select('id, name');
       setRooms((roomsData as Room[]) || []);
       // Получаем пакеты
-      const { data: packagesData } = await supabase.from('packages').select('id, name, duration, cleanup_time');
-      setPackages(Object.fromEntries(((packagesData as {id: string, name: string, duration: number, cleanup_time?: number}[])||[]).map((p) => [p.id, p.name])));
+      const { data: packagesData } = await supabase.from('packages').select('id, name, duration, cleanup_time, price');
+      setPackages(Object.fromEntries(((packagesData as {id: string, name: string, duration: number, cleanup_time?: number, price?: number}[])||[]).map((p) => [p.id, p.name])));
       setPackageDurations(Object.fromEntries(((packagesData as {id: string, duration: number}[])||[]).map((p) => [p.id, p.duration || 60])));
       setPackageCleanupTimes(Object.fromEntries(((packagesData as {id: string, cleanup_time?: number}[])||[]).map((p) => [p.id, p.cleanup_time ?? 15])));
+      setPackagePrices(Object.fromEntries(((packagesData as {id: string, price?: number}[])||[]).map((p) => [p.id, Number(p.price) || 0])));
       // Получаем бронирования на выбранную дату
       const dateStr = formatDatePoland(date);
       const { data: bookingsData } = await supabase
@@ -559,14 +589,24 @@ function BookingsPage() {
         const dateStr = (editForm.date || new Date().toISOString().slice(0,10));
         const { data: bookingsData } = await supabase
           .from('bookings')
-          .select('*')
+          .select(`
+            *,
+            payments (
+              id,
+              status,
+              amount,
+              transaction_id,
+              created_at
+            )
+          `)
           .eq('date', dateStr)
           .returns<Booking[]>();
         setBookings(bookingsData || []);
+        setDatesCache({});
+        setTimesCache({});
       }
     } else {
-      const { id, payments, ...fields } = editForm;
-      console.log('payments', payments);
+      const { id, payments: _payments, ...fields } = editForm;
       const { error } = await supabase.from('bookings').update({ ...fields, room_id: roomId }).eq('id', id);
       if (error) {
         setError('Błąd zapisu: ' + error.message);
@@ -575,10 +615,21 @@ function BookingsPage() {
         const dateStr = editForm.date;
         const { data: bookingsData } = await supabase
           .from('bookings')
-          .select('*')
+          .select(`
+            *,
+            payments (
+              id,
+              status,
+              amount,
+              transaction_id,
+              created_at
+            )
+          `)
           .eq('date', dateStr)
           .returns<Booking[]>();
         setBookings(bookingsData || []);
+        setDatesCache({});
+        setTimesCache({});
       }
     }
     setSaving(false);
@@ -620,12 +671,6 @@ function BookingsPage() {
         .select('*')
         .returns<PromoCode[]>();
       if (promoData) setPromoCodes(promoData);
-      // package prices
-      const { data: pkgData } = await supabase
-        .from('packages')
-        .select('id, price')
-        .returns<{ id: string; price: number }[]>();
-      if (pkgData) setPackagePrices(Object.fromEntries(pkgData.map((p) => [p.id, Number(p.price)])));
       // extra item prices
       const { data: extraData } = await supabase
         .from('extra_items')
@@ -750,19 +795,29 @@ function BookingsPage() {
       setError('Błąd usuwania: ' + error.message);
     } else {
       closeModal();
-      // Odśwież listę rezerwacji na wybrany dzień
       const dateStr = editForm.date;
       const { data: bookingsData } = await supabase
         .from('bookings')
-        .select('*')
+        .select(`
+          *,
+          payments (
+            id,
+            status,
+            amount,
+            transaction_id,
+            created_at
+          )
+        `)
         .eq('date', dateStr)
         .returns<Booking[]>();
       setBookings(bookingsData || []);
+      setDatesCache({});
+      setTimesCache({});
     }
     setSaving(false);
   }
 
-  async function handleDeleteBooking() {
+  async function handleDeletePayments() {
     if (!editForm) return;
     if (!window.confirm('Czy na pewno chcesz usunąć wszystkie płatności tej rezerwacji?')) return;
     setSaving(true);
@@ -773,11 +828,19 @@ function BookingsPage() {
       setError('Błąd usuwania: ' + error.message);
     } else {
       closeModal();
-      // Odśwież listę rezerwacji na wybrany dzień
       const dateStr = editForm.date;
       const { data: bookingsData } = await supabase
         .from('bookings')
-        .select('*')
+        .select(`
+          *,
+          payments (
+            id,
+            status,
+            amount,
+            transaction_id,
+            created_at
+          )
+        `)
         .eq('date', dateStr)
         .returns<Booking[]>();
       setBookings(bookingsData || []);
@@ -823,6 +886,7 @@ function BookingsPage() {
         <h1 className="text-2xl font-bold text-gray-100">Kalendarz rezerwacji</h1>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-gray-700">Sprawdź płatności:</span>
+          <div className="relative z-20">
           <DatePicker
             selected={reconcileFrom}
             onChange={d => setReconcileFrom(d)}
@@ -831,6 +895,8 @@ function BookingsPage() {
             locale="pl"
             placeholderText="Od"
           />
+          </div>
+          <div className="relative z-20">
           <DatePicker
             selected={reconcileTo}
             onChange={d => setReconcileTo(d)}
@@ -839,6 +905,7 @@ function BookingsPage() {
             locale="pl"
             placeholderText="Do"
           />
+          </div>
           <button
             className="px-3 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 font-semibold disabled:opacity-50"
             onClick={handleManualReconcile}
@@ -859,12 +926,13 @@ function BookingsPage() {
       {reconcileStatus && (
         <div className="mb-3 text-sm text-gray-700">{reconcileStatus}</div>
       )}
-      <div className="mb-4 flex items-center gap-4">
+      <div className="mb-4 flex flex-wrap items-center gap-4">
         <span className="text-gray-700 relative">Data
           {loading && (
             <span className="absolute -right-5 top-1/2 -translate-y-1/2 animate-spin inline-block w-4 h-4 border-2 border-t-transparent border-gray-500 rounded-full ml-2"></span>
           )}
         :</span>
+        <div className="relative z-20">
         <DatePicker
           selected={date}
           onChange={d => d && setDate(d)}
@@ -873,22 +941,133 @@ function BookingsPage() {
           locale="pl"
           highlightDates={bookedDates}
         />
+        </div>
 
         <label style={{display:'flex',alignItems:'center',gap:4}}>
-          <input 
-            type="checkbox" 
-            checked={isHoliday} 
-            onChange={() => updateHoliday(!isHoliday)} /> <span className="text-gray-700 relative">Holiday</span>
+          <input
+            type="checkbox"
+            checked={isHoliday}
+            onChange={() => updateHoliday(!isHoliday)} /> <span className="text-gray-700 relative">Dzień wolny</span>
         </label>
-          
+
       </div>
 
-      <div className="overflow-x-auto">
+      {isHoliday && (
+        <div className="mb-4 px-4 py-2 rounded-lg border-2 border-yellow-400 bg-yellow-50 text-yellow-800 font-semibold flex items-center gap-2">
+          <span className="text-lg">⚠️</span> Ten dzień jest oznaczony jako dzień wolny — ceny świąteczne
+        </div>
+      )}
+
+      {/* Day summary bar */}
+      {!loading && bookings.length > 0 && (() => {
+        const counts: Record<string, number> = { paid: 0, deposit: 0, pending: 0, cancelled: 0 };
+        for (const bk of bookings) {
+          const paymentsSum = bk.payments?.reduce((s, p) => s + Number(p.amount) / 100, 0) ?? 0;
+          const rawPrice = Number(bk.total_price);
+          const price = normalizeBookingTotal(rawPrice, paymentsSum);
+          const diff = price - paymentsSum;
+          let st = bk.status || 'pending';
+          if (st !== 'cancelled') {
+            if (price === 0 && st === 'paid') st = 'paid';
+            else if (diff <= 0 && price > 0) st = 'paid';
+            else if (paymentsSum > 0) st = 'deposit';
+            else st = 'pending';
+          }
+          counts[st] = (counts[st] || 0) + 1;
+        }
+        return (
+          <div className="mb-4 px-4 py-2 rounded-lg bg-white border border-gray-300 flex flex-wrap items-center gap-4 text-sm text-gray-700">
+            <span className="font-bold">Rezerwacje: {bookings.length}</span>
+            {counts.paid > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full bg-green-500" /> Opłacone: {counts.paid}</span>}
+            {counts.deposit > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-500" /> Zaliczka: {counts.deposit}</span>}
+            {counts.pending > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500" /> Oczekujące: {counts.pending}</span>}
+            {counts.cancelled > 0 && <span className="flex items-center gap-1"><span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500" /> Anulowane: {counts.cancelled}</span>}
+          </div>
+        );
+      })()}
+
+      {/* Mobile/Tablet: grouped by room */}
+      <div className="block md:hidden">
+        {loading ? (
+          <div className="text-gray-700 py-4 text-center">Ładowanie...</div>
+        ) : bookings.length === 0 ? (
+          <div className="text-gray-500 py-4 text-center">Brak rezerwacji na ten dzień</div>
+        ) : (
+          <div className="space-y-5">
+            {rooms.map((room) => {
+              const roomBookings = bookings
+                .filter(b => b.room_id === room.id)
+                .sort((a, b) => a.time.localeCompare(b.time));
+              if (roomBookings.length === 0) return null;
+              return (
+                <div key={room.id}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-sm font-bold text-gray-200 uppercase tracking-wide">{room.name}</h3>
+                    <span className="inline-block bg-orange-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                      {roomBookings.length}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {roomBookings.map((bk) => {
+                      const paymentsSum = bk.payments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
+                      const rawPrice = Number(bk.total_price);
+                      const price = normalizeBookingTotal(rawPrice, paymentsSum);
+                      const diff = price - paymentsSum;
+                      let status = bk.status || 'pending';
+                      if (status !== 'cancelled') {
+                        if (price === 0 && status === 'paid') {
+                          status = 'paid';
+                        } else if (diff <= 0 && price > 0) {
+                          status = 'paid';
+                        } else if (paymentsSum > 0) {
+                          status = 'deposit';
+                        } else {
+                          status = 'pending';
+                        }
+                      }
+                      return (
+                        <div
+                          key={bk.id}
+                          className={`p-3 rounded-lg border-2 shadow-sm cursor-pointer ${getStatusColor(status)}`}
+                          onClick={() => openModal(bk)}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="font-bold text-sm">{bk.name || bk.user_email}</div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white bg-opacity-50">{packageDurations[bk.package_id] || 60} min</span>
+                              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white bg-opacity-50">{getStatusLabel(status)}</span>
+                            </div>
+                          </div>
+                          <div className="text-xs mt-1">{bk.time.slice(0,5)} · {packages[bk.package_id] || '—'}</div>
+                          <div className="text-xs mt-0.5">{price} zł · Zapł: {paymentsSum} zł · Saldo: {diff} zł</div>
+                          {(() => {
+                            const lastPayment = bk.payments?.filter(p => p.status === 'paid' || p.status === 'deposit').sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+                            if (!lastPayment) return null;
+                            return <div className="text-[10px] mt-0.5 opacity-75">Ostatnia płatność: {formatPaymentDate(lastPayment.created_at)}</div>;
+                          })()}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: calendar table */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full border border-gray-400 bg-gray-50">
             <thead>
             <tr>
-              <th className="border border-gray-400 px-2 py-1 bg-gray-200 w-20 text-gray-700 relative">
+              <th className="border border-gray-400 px-2 py-1 bg-gray-200 w-20 text-gray-700 relative sticky left-0 z-10">
                 Godzina
+                {bookings.length > 0 && (
+                  <span className="ml-1 inline-block bg-gray-600 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 align-middle">
+                    {bookings.length}
+                  </span>
+                )}
                 {loading && (
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 animate-spin inline-block w-4 h-4 border-2 border-t-transparent border-gray-500 rounded-full ml-2"></span>
                 )}
@@ -911,13 +1090,14 @@ function BookingsPage() {
             <tbody>
             {GODZINY.map((hour, rowIdx) => (
               <tr key={hour}>
-                <td className="border border-gray-300 px-2 py-1 text-center font-semibold text-gray-700 bg-gray-100">{hour}</td>
+                <td className="border border-gray-300 px-2 py-1 text-center font-semibold text-gray-700 bg-gray-100 sticky left-0 z-10">{hour}</td>
                 {rooms.map((room) => {
                   // Проверяем, есть ли бронирование, начинающееся в этот слот
                   const bks = getBooking(room.id, hour, formatDatePoland(date));
                   // Проверяем, не перекрывает ли этот слот уже занятая ячейка
                   let isCovered = false;
                   let isCleanup = false;
+                  let cleanupMinutesForCell = 15;
                   // Найдём, есть ли бронирование, которое закончилось ровно перед этим слотом
                   for (let prev = 0; prev < rowIdx; prev++) {
                     const prevHour = GODZINY[prev];
@@ -936,6 +1116,7 @@ function BookingsPage() {
                       // Проверяем, нужно ли добавить уборку (может быть несколько слотов)
                       if (prevStartIdx >= 0 && rowIdx >= prevStartIdx + slots && rowIdx < prevStartIdx + slots + Math.ceil(cleanup / 15)) {
                         isCleanup = true;
+                        cleanupMinutesForCell = cleanup;
                         break;
                       }
                     }
@@ -943,8 +1124,8 @@ function BookingsPage() {
                   if (isCovered) return <td key={room.id} className="hidden" />;
                   if (isCleanup) {
                     return (
-                      <td key={room.id} className="border border-gray-300 px-1 py-1 align-top min-w-[160px] bg-gray-300 text-gray-600 text-center font-semibold">
-                          Czas na czyszczenie
+                      <td key={room.id} className="border border-gray-300 px-1 py-1 align-top min-w-[160px] bg-gray-200 text-gray-500 text-center italic text-xs">
+                          Czyszczenie ({cleanupMinutesForCell} min)
                       </td>
                     );
                   }
@@ -974,15 +1155,26 @@ function BookingsPage() {
                     <td
                       key={room.id}
                       rowSpan={isNaN(slots) ? 1 : slots}
-                      className={`mb-2 p-2 rounded border shadow-sm cursor-pointer align-top min-w-[160px] ${getStatusColor(status)}`}
+                      className={`mb-2 p-2 rounded border shadow-sm cursor-pointer align-top min-w-[170px] ${getStatusColor(status)}`}
                       onClick={() => openModal(bks[0])}
                     >
-                      <div className="font-bold">{bks[0].name || bks[0].user_email}</div>
-                      <div className="text-xs">{bks[0].time.slice(0,5)}{bks[0].time_end ? ` - ${bks[0].time_end.slice(0,5)}` : ''}</div>
-                      <div className="text-xs">Pakiet: {packages[bks[0].package_id] || bks[0].package_id}</div>
-                      <div className="text-xs">Kwota: {price}</div>
-                      <div className="text-xs">Zapłacono: {paymentsSum}</div>
-                      <div className="text-xs">Saldo: {diff}</div>
+                      <div className="flex justify-between items-start">
+                        <div className="font-bold text-sm leading-tight">{bks[0].name || bks[0].user_email}</div>
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white bg-opacity-50 whitespace-nowrap ml-1">{duration} min</span>
+                      </div>
+                      <div className="text-[11px] opacity-80">{rooms.find(r => r.id === bks[0].room_id)?.name || '—'}</div>
+                      <div className="text-xs">{packages[bks[0].package_id] || bks[0].package_id}</div>
+                      <div className="text-xs mt-0.5">{price} zł · Zapł: {paymentsSum} zł</div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className={`inline-block w-2 h-2 rounded-full ${getStatusDotColor(status)}`} />
+                        <span className="text-[10px] font-medium">
+                          {getStatusLabel(status)}
+                          {(() => {
+                            const lastPay = bks[0].payments?.filter(p => p.status === 'paid' || p.status === 'deposit').sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+                            return lastPay ? ` ${formatPaymentDate(lastPay.created_at)}` : '';
+                          })()}
+                        </span>
+                      </div>
                   </td>
                   );
                 })}
@@ -992,12 +1184,12 @@ function BookingsPage() {
           </table>
       </div>
       {modalOpen && editForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-gray-100 rounded-lg shadow-lg p-6 w-full max-w-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-0 sm:p-4">
+          <div className="bg-gray-100 rounded-none sm:rounded-lg shadow-lg p-4 sm:p-6 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl relative overflow-y-auto">
             <button onClick={closeModal} className="absolute top-2 right-2 text-gray-500 hover:text-black text-2xl">×</button>
             <h2 className="text-xl font-bold mb-4 text-gray-900">Edytuj rezerwację</h2>
             <form className="space-y-2" onSubmit={e => {e.preventDefault(); handleSave();}}>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs text-gray-800">Użytkownik (email)</label>
                   <input className="w-full border rounded px-2 py-1 bg-white text-gray-900" value={editForm.user_email || ''} name="user_email" onChange={handleChange} />
@@ -1095,8 +1287,8 @@ function BookingsPage() {
                     ))}
                   </select>
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-xs text-gray-800">Comment</label>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-gray-800">Komentarz</label>
                   <textarea 
                     className="w-full border rounded px-2 py-1 bg-white text-gray-900"
                     name="comment"
@@ -1104,7 +1296,7 @@ function BookingsPage() {
                     onChange={handleChange}
                     ></textarea>
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className="block text-xs text-gray-800">Extra items</label>
                   <div className="w-full border rounded px-2 py-1 bg-white min-h-[38px] text-gray-900">
                     {/* Список выбранных */}
@@ -1158,32 +1350,68 @@ function BookingsPage() {
                         </div>
                   </div>
                 </div>
+              {/* Payments info */}
+              {!isNew && Array.isArray(editForm.payments) && editForm.payments.length > 0 && (
+                <div className="sm:col-span-2 mt-2">
+                  <label className="block text-xs text-gray-800 mb-1">Płatności</label>
+                  <div className="border rounded bg-white overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="bg-gray-50 text-gray-600">
+                          <th className="px-2 py-1 text-left">Kwota</th>
+                          <th className="px-2 py-1 text-left">Status</th>
+                          <th className="px-2 py-1 text-left">Transaction ID</th>
+                          <th className="px-2 py-1 text-left">Data</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {editForm.payments.map((p: Payment) => (
+                          <tr key={p.id} className="border-t">
+                            <td className="px-2 py-1 font-semibold">{(Number(p.amount) / 100).toFixed(2)} zł</td>
+                            <td className="px-2 py-1">
+                              <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${
+                                p.status === 'paid' ? 'bg-green-100 text-green-800' :
+                                p.status === 'deposit' ? 'bg-blue-100 text-blue-800' :
+                                'bg-yellow-100 text-yellow-800'
+                              }`}>{p.status}</span>
+                            </td>
+                            <td className="px-2 py-1 text-gray-500 font-mono">{p.transaction_id || '—'}</td>
+                            <td className="px-2 py-1 text-gray-500">{p.created_at ? new Date(p.created_at).toLocaleString('pl-PL') : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
               </div>
               {error && <div className="text-red-600 text-sm mt-2">{error}</div>}
               {emailStatus && <div className="text-blue-700 text-sm mt-2">{emailStatus}</div>}
-              <div className="flex gap-2 mt-4 justify-end">
+              <div className="flex flex-wrap gap-2 mt-4 justify-end">
                 <button type="button" onClick={closeModal} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300">Zamknij</button>
                 <button type="submit" disabled={saving} className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">{saving ? 'Zapisywanie...' : 'Zapisz'}</button>
                 <button
                   type="button"
                   onClick={handleDelete}
                   disabled={saving}
-                  className="p-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
+                  className="px-3 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center gap-1.5 text-sm"
                   title="Usuń rezerwację"
-                  style={{ minWidth: 44, minHeight: 44 }}
                 >
-                  <FaTrash size={18} />
+                  <FaTrash size={14} />
+                  <span className="hidden sm:inline">Usuń rezerwację</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteBooking}
-                  disabled={saving}
-                  className="p-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 flex items-center justify-center"
-                  title="Usuń wszystkie płatności tej rezerwacji"
-                  style={{ minWidth: 44, minHeight: 44 }}
-                >
-                  <FaTrash size={18} />
-                </button>
+                {!isNew && (
+                  <button
+                    type="button"
+                    onClick={handleDeletePayments}
+                    disabled={saving}
+                    className="px-3 py-2 rounded bg-gray-600 text-white hover:bg-gray-700 disabled:opacity-50 flex items-center gap-1.5 text-sm"
+                    title="Usuń wszystkie płatności tej rezerwacji"
+                  >
+                    <FaMoneyBillWave size={14} />
+                    <span className="hidden sm:inline">Usuń płatności</span>
+                  </button>
+                )}
                 <div style={{display:'flex', alignItems:'center', gap:4}}>
                   <button
                     type="button"

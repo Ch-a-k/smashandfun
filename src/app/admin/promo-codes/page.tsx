@@ -177,13 +177,13 @@ function PromoCodesPage() {
       <h1 style={{fontSize:28, fontWeight:100, color:'#f36e21', marginBottom:18}}>Promocje</h1>
       <p style={{fontSize:16, opacity:0.9, marginBottom:18}}>Twórz i zarządzaj kodami promocyjnymi oraz rabatami (procent lub zł).</p>
       <button onClick={openAdd} style={{background:'#f36e21', color:'#fff', border:'none', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, marginBottom:24, cursor:'pointer'}}>Dodaj kod promocyjny</button>
-      <div style={{background:'#23222a', borderRadius:12, padding:32, minHeight:180, color:'#fff', fontSize:16}}>
+      <div style={{background:'#23222a', borderRadius:12, padding:'16px 12px', minHeight:180, color:'#fff', fontSize:16, overflowX:'auto'}}>
         {loading ? (
           <div>Ładowanie...</div>
         ) : error ? (
           <div style={{color:'#ff4d4f'}}>{error}</div>
         ) : (
-          <table style={{width:'100%', borderCollapse:'collapse'}}>
+          <table style={{width:'100%', borderCollapse:'collapse', minWidth:900}}>
             <thead>
               <tr style={{background:'#18171c', color:'#ff9f58'}}>
                 <th style={{padding:'8px 12px', textAlign:'left'}}>Kod</th>
@@ -222,8 +222,8 @@ function PromoCodesPage() {
       </div>
       {/* Модальное окно редактирования/добавления */}
       {modalOpen && (
-        <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'flex-start', justifyContent:'center', overflow:'auto'}}>
-          <form onSubmit={handleSave} style={{background:'#23222a', borderRadius:14, padding:'36px 32px', minWidth:340, boxShadow:'0 4px 32px #0008', color:'#fff', display:'flex', flexDirection:'column', gap:18, maxHeight:'90vh', overflowY:'auto', marginTop:40}}>
+        <div className="fixed inset-0 z-[1000] flex items-start justify-center overflow-auto" style={{background:'rgba(0,0,0,0.55)'}}>
+          <form onSubmit={handleSave} className="w-full min-h-[100dvh] p-6 md:w-auto md:min-w-[340px] md:max-w-[500px] md:min-h-0 md:my-10 md:rounded-[14px] md:p-8" style={{background:'#23222a', boxShadow:'0 4px 32px #0008', color:'#fff', display:'flex', flexDirection:'column', gap:18, overflowY:'auto'}}>
             <h2 style={{color:'#f36e21', fontWeight:800, fontSize:22, marginBottom:8}}>{editId ? 'Edytuj kod promocyjny' : 'Nowy kod promocyjny'}</h2>
             <label>Kod
               <input type="text" value={form.code} onChange={e => setForm(f => ({...f, code: e.target.value}))} required style={{width:'100%', marginTop:6, background:'#18171c', color:'#fff', border:'2px solid #f36e21', borderRadius:8, padding:'10px 14px', fontSize:16, fontWeight:600, outline:'none'}} />
@@ -274,8 +274,8 @@ function PromoCodesPage() {
       )}
       {/* Модальное окно подтверждения удаления */}
       {deleteId && (
-        <div style={{position:'fixed', top:0, left:0, right:0, bottom:0, background:'rgba(0,0,0,0.55)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center'}}>
-          <div style={{background:'#23222a', borderRadius:14, padding:'36px 32px', minWidth:320, boxShadow:'0 4px 32px #0008', color:'#fff', display:'flex', flexDirection:'column', gap:18, alignItems:'center'}}>
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.55)'}}>
+          <div className="w-full max-w-sm" style={{background:'#23222a', borderRadius:14, padding:'36px 24px', boxShadow:'0 4px 32px #0008', color:'#fff', display:'flex', flexDirection:'column', gap:18, alignItems:'center'}}>
             <div style={{fontSize:18, fontWeight:700, marginBottom:8}}>Czy na pewno chcesz usunąć ten kod promocyjny?</div>
             <div style={{display:'flex', gap:12}}>
               <button onClick={()=>handleDelete(deleteId)} disabled={deleteLoading} style={{background:'#ff4d4f', color:'#fff', border:'none', borderRadius:8, padding:'10px 28px', fontWeight:700, fontSize:17, cursor:deleteLoading?'not-allowed':'pointer'}}>{deleteLoading ? 'Usuwanie...' : 'Usuń'}</button>

@@ -88,73 +88,99 @@ export async function POST(req: Request) {
 
   const durationMinutes = Number(pkg.duration) || 60;
   const cleanupMinutes = Number(pkg.cleanup_time) || 15;
-  const slotStart = normalizeTime(String(newTime));
-  const slotEnd = addMinutes(slotStart, durationMinutes + cleanupMinutes);
 
-  // Берём брони на этот день и комнаты пакета (без cancelled), исключаем текущую бронь
-  type DayBookingRow = {
-    id: string;
-    room_id: string;
-    time: string;
-    // Depending on PostgREST relationship config, this can be an object or an array
-    package:
-      | { duration: number; cleanup_time?: number | null }
-      | Array<{ duration: number; cleanup_time?: number | null }>
-      | null;
-  };
-  const { data: dayBookings, error: dayErr } = await supabase
-    .from('bookings')
-    .select(`
-      id,
-      room_id,
-      time,
-      status,
-      package:package_id (duration, cleanup_time)
-    `)
-    .in('room_id', roomOrder)
-    .eq('date', newDate)
-    .neq('status', 'cancelled')
-    .neq('id', booking.id)
-    .returns<DayBookingRow[]>();
-
-  if (dayErr) {
-    console.error('change-date: day bookings error', dayErr);
-    return NextResponse.json({ error: 'Błąd sprawdzania dostępności' }, { status: 500 });
-  }
-
-  // Подбираем первую свободную комнату
+  // Атомарный выбор комнаты через RPC (с fallback на старую логику)
   let selectedRoomId: string | null = null;
-  for (const roomId of roomOrder) {
-    const roomBookings = (dayBookings || []).filter((b: any) => b.room_id === roomId);
-    let overlap = false;
-    for (const b of roomBookings) {
-      const bStart = normalizeTime(String(b.time));
-      const pkgInfo = Array.isArray(b.package) ? b.package[0] : b.package;
-      const bDuration = pkgInfo?.duration ? Number(pkgInfo.duration) : durationMinutes;
-      const bCleanup = pkgInfo?.cleanup_time ? Number(pkgInfo.cleanup_time) : cleanupMinutes;
-      const bEnd = addMinutes(bStart, bDuration + bCleanup);
-      if (!(slotEnd <= bStart || slotStart >= bEnd)) {
-        overlap = true;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rpcResult, error: rpcError } = await supabase.rpc('change_booking_room', {
+    p_booking_id: booking.id,
+    p_room_order: roomOrder,
+    p_new_date: newDate,
+    p_new_time: newTime,
+    p_duration_minutes: durationMinutes,
+    p_cleanup_minutes: cleanupMinutes,
+  });
+
+  const rpcNotFound = rpcError && (
+    rpcError.message?.includes('change_booking_room') ||
+    rpcError.code === '42883' ||
+    rpcError.message?.includes('Could not find the function')
+  );
+
+  if (rpcNotFound) {
+    // --- FALLBACK: старая логика SELECT + loop ---
+    const slotStart = normalizeTime(String(newTime));
+    const slotEnd = addMinutes(slotStart, durationMinutes + cleanupMinutes);
+
+    type DayBookingRow = {
+      id: string;
+      room_id: string;
+      time: string;
+      package:
+        | { duration: number; cleanup_time?: number | null }
+        | Array<{ duration: number; cleanup_time?: number | null }>
+        | null;
+    };
+    const { data: dayBookings, error: dayErr } = await supabase
+      .from('bookings')
+      .select(`
+        id,
+        room_id,
+        time,
+        status,
+        package:package_id (duration, cleanup_time)
+      `)
+      .in('room_id', roomOrder)
+      .eq('date', newDate)
+      .neq('status', 'cancelled')
+      .neq('id', booking.id)
+      .returns<DayBookingRow[]>();
+
+    if (dayErr) {
+      console.error('change-date: day bookings error', dayErr);
+      return NextResponse.json({ error: 'Błąd sprawdzania dostępności' }, { status: 500 });
+    }
+
+    for (const roomId of roomOrder) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const roomBookings = (dayBookings || []).filter((b: any) => b.room_id === roomId);
+      let overlap = false;
+      for (const b of roomBookings) {
+        const bStart = normalizeTime(String(b.time));
+        const pkgInfo = Array.isArray(b.package) ? b.package[0] : b.package;
+        const bDuration = pkgInfo?.duration ? Number(pkgInfo.duration) : durationMinutes;
+        const bCleanup = pkgInfo?.cleanup_time ? Number(pkgInfo.cleanup_time) : cleanupMinutes;
+        const bEnd = addMinutes(bStart, bDuration + bCleanup);
+        if (!(slotEnd <= bStart || slotStart >= bEnd)) {
+          overlap = true;
+          break;
+        }
+      }
+      if (!overlap) {
+        selectedRoomId = roomId;
         break;
       }
     }
-    if (!overlap) {
-      selectedRoomId = roomId;
-      break;
+
+    if (!selectedRoomId) {
+      return NextResponse.json({ error: 'Brak dostępnych pokoi na wybrany termin' }, { status: 409 });
     }
-  }
 
-  if (!selectedRoomId) {
+    // Обновляем дату/время/комнату
+    const { error: updateError } = await supabase
+      .from('bookings')
+      .update({ date: newDate, time: newTime, room_id: selectedRoomId, updated_at: dayjs().toISOString() })
+      .eq('id', booking.id);
+    if (updateError) {
+      return NextResponse.json({ error: 'Błąd zmiany rezerwacji' }, { status: 500 });
+    }
+  } else if (rpcError) {
+    return NextResponse.json({ error: rpcError.message }, { status: 500 });
+  } else if ((rpcResult as Record<string, unknown>)?.error === 'NO_AVAILABLE_ROOM') {
     return NextResponse.json({ error: 'Brak dostępnych pokoi na wybrany termin' }, { status: 409 });
-  }
-
-  // Обновляем дату/время/комнату (token НЕ удаляем, чтобы cancel_link работал)
-  const { error: updateError } = await supabase
-    .from('bookings')
-    .update({ date: newDate, time: newTime, room_id: selectedRoomId, updated_at: dayjs().toISOString() })
-    .eq('id', booking.id);
-  if (updateError) {
-    return NextResponse.json({ error: 'Błąd zmiany rezerwacji' }, { status: 500 });
+  } else {
+    selectedRoomId = (rpcResult as Record<string, unknown>).room_id as string;
   }
 
   // Фиксируем, что изменение по ссылке было выполнено (одноразовость)

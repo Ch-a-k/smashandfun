@@ -361,7 +361,8 @@ function AdminDashboard() {
       background: `#18171c url('https://www.toptal.com/designers/subtlepatterns/uploads/dot-grid.png') repeat`,
       padding: 0,
       margin: 0,
-      color: "#fff"
+      color: "#fff",
+      overflowX: "hidden"
     }}>
       <div
         style={{
@@ -370,7 +371,7 @@ function AdminDashboard() {
           margin: "0 auto",
           padding: "18px 8px 18px 8px",
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(340px, 100%), 1fr))",
           gap: 18,
           alignItems: "flex-start"
         }}
@@ -462,6 +463,7 @@ function AdminDashboard() {
             <div style={{fontWeight:600, fontSize:15, marginBottom:4, color:'#ff9f58', display:'flex', alignItems:'center', gap:6}}>
               Raport po pakietach <TooltipInfo text="Liczba rezerwacji i suma przychodu dla każdego pakietu w wybranym okresie." />
             </div>
+            <div style={{overflowX:'auto'}}>
             <table style={{width:'100%', borderCollapse:'collapse', background:'#18171c', color:'#fff', borderRadius:8, overflow:'hidden', fontSize:14}}>
               <thead>
                 <tr style={{background:'#23222a', color:'#ff9f58'}}>
@@ -485,21 +487,22 @@ function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
         {/* Графики и топ-клиенты */}
         <div style={{width:'100%', minWidth:260, gridColumn: '1 / -1', display:'flex', gap:18, flexWrap:'wrap', marginBottom:0}}>
           {/* Столбчатая диаграмма по пакетам */}
-          <div style={{flex:'1 1 320px', minWidth:260, background:'#18171c', borderRadius:10, padding:10, marginBottom:0}}>
+          <div style={{flex:'1 1 300px', maxWidth:520, minWidth:'min(260px, 100%)', background:'#18171c', borderRadius:10, padding:10, marginBottom:0}}>
             <div style={{fontWeight:600, fontSize:14, marginBottom:4, color:'#ff9f58', display:'flex', alignItems:'center', gap:6}}>
               Pakiety (liczba rezerwacji) <TooltipInfo text="Wizualizacja liczby rezerwacji dla każdego pakietu w wybranym okresie." />
             </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={packageStats} margin={{top:6,right:6,left:0,bottom:6}}>
-                <XAxis dataKey="name" stroke="#fff" fontSize={12} tick={{fill:'#fff'}} interval={0} angle={-15} dy={10} height={50} />
-                <YAxis stroke="#fff" fontSize={12} tick={{fill:'#fff'}} allowDecimals={false} />
-                <RechartsTooltip contentStyle={{background:'#23222a',color:'#fff',border:'1px solid #f36e21', fontSize:13}} />
-                <Bar dataKey="count" fill="#f36e21">
+            <ResponsiveContainer width="100%" height={Math.max(180, 60 + packageStats.length * 26)}>
+              <BarChart data={packageStats.map(p => ({...p, shortName: p.name.length > 22 ? p.name.slice(0, 20) + '…' : p.name}))} layout="vertical" margin={{top:6,right:16,left:6,bottom:6}}>
+                <YAxis dataKey="shortName" type="category" stroke="#fff" fontSize={10} tick={{fill:'#fff'}} width={150} interval={0} />
+                <XAxis type="number" stroke="#fff" fontSize={11} tick={{fill:'#fff'}} allowDecimals={false} />
+                <RechartsTooltip contentStyle={{background:'#23222a',color:'#fff',border:'1px solid #f36e21', fontSize:13}} formatter={(value: number) => [value, 'Rezerwacje']} labelFormatter={(label: string) => {const found = packageStats.find(p => (p.name.length > 22 ? p.name.slice(0,20)+'…' : p.name) === label); return found ? found.name : label;}} />
+                <Bar dataKey="count" fill="#f36e21" barSize={16}>
                   {packageStats.map((_, idx) => (
                     <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
                   ))}
@@ -508,7 +511,7 @@ function AdminDashboard() {
             </ResponsiveContainer>
           </div>
           {/* Круговая диаграмма по клиентам */}
-          <div style={{flex:'1 1 320px', minWidth:260, background:'#18171c', borderRadius:10, padding:10, marginBottom:0}}>
+          <div style={{flex:'1 1 300px', minWidth:'min(260px, 100%)', background:'#18171c', borderRadius:10, padding:10, marginBottom:0, overflow:'hidden'}}>
             <div style={{fontWeight:600, fontSize:14, marginBottom:4, color:'#ff9f58', display:'flex', alignItems:'center', gap:6}}>
               Top 5 klientów (wg sumy) <TooltipInfo text="Najlepsi klienci według sumy wydatków w wybranym okresie." />
             </div>
@@ -534,9 +537,11 @@ function AdminDashboard() {
                   align="right"
                   verticalAlign="middle"
                   iconType="circle"
-                  formatter={(value, entry, idx) => (
-                    <span style={{color:'#fff',fontSize:12}}>{clientStats[idx]?.email}</span>
-                  )}
+                  formatter={(value, entry, idx) => {
+                    const email = clientStats[idx]?.email || '';
+                    const short = email.length > 18 ? email.slice(0, 16) + '…' : email;
+                    return <span style={{color:'#fff',fontSize:11}} title={email}>{short}</span>;
+                  }}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -544,10 +549,10 @@ function AdminDashboard() {
         </div>
         {/* Heatmap: obciążenie slotów */}
         <div style={{width:'100%', minWidth:260, gridColumn: '1 / -1', display:'grid', gap:18, marginTop:0}}>
-          <div style={{background:'#18171c', borderRadius:10, padding:10}}>
+          <div style={{background:'#18171c', borderRadius:10, padding:10, overflowX:'auto'}}>
             <div style={{fontWeight:600, fontSize:14, marginBottom:8, color:'#ff9f58'}}>Obciążenie slotów (heatmapa)</div>
             {/* Header hours */}
-            <div style={{display:'grid', gridTemplateColumns:`120px repeat(${heatmapHours.length}, minmax(28px, 1fr))`, gap:4, alignItems:'stretch'}}>
+            <div style={{display:'grid', gridTemplateColumns:`120px repeat(${heatmapHours.length}, minmax(28px, 1fr))`, gap:4, alignItems:'stretch', minWidth: Math.max(400, 120 + heatmapHours.length * 36)}}>
               <div style={{padding:'6px 8px', color:'#aaa', fontSize:12}}>Data</div>
               {heatmapHours.map(h => (
                 <div key={h} style={{padding:'6px 4px', textAlign:'center', color:'#aaa', fontSize:12}}>{h}:00</div>
@@ -569,7 +574,7 @@ function AdminDashboard() {
             </div>
             <div style={{marginTop:8, color:'#aaa', fontSize:12}}>Im jaśniejszy kolor, tym więcej rezerwacji w slocie. Komórka bez koloru – brak rezerwacji. Filtry zakresu według bieżącej daty.</div>
           </div>
-          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:18}}>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap:18}}>
             <div style={{background:'#18171c', borderRadius:10, padding:10}}>
               <div style={{fontWeight:600, fontSize:14, marginBottom:8, color:'#ff9f58'}}>TOP dni (najbardziej obciążone)</div>
               <table style={{width:'100%', borderCollapse:'collapse', color:'#fff', fontSize:14}}>
@@ -611,16 +616,17 @@ function AdminDashboard() {
           </div>
         </div>
         {/* Статистика по пакетам */}
-        <div style={{marginBottom:10, background:'#23222a', borderRadius:10, padding:10}}>
+        <div style={{marginBottom:10, background:'#23222a', borderRadius:10, padding:10, overflow:'hidden'}}>
           <div style={{fontWeight:600, fontSize:15, marginBottom:4, color:'#ff9f58', display:'flex', alignItems:'center', gap:6}}>
             Statystyka według pakietów <TooltipInfo text="Podsumowanie liczby rezerwacji i przychodu dla każdego pakietu (wszystkie dane)." />
           </div>
-          <table style={{width:'100%', borderCollapse:'collapse', background:'#18171c', color:'#fff', borderRadius:8, overflow:'hidden', fontSize:14}}>
+          <div style={{overflowX:'auto'}}>
+          <table style={{width:'100%', borderCollapse:'collapse', background:'#18171c', color:'#fff', borderRadius:8, overflow:'hidden', fontSize:14, tableLayout:'fixed'}}>
             <thead>
               <tr style={{background:'#23222a', color:'#ff9f58'}}>
-                <th style={{padding:'6px 8px', textAlign:'left'}}>Pakiet</th>
-                <th style={{padding:'6px 8px', textAlign:'left'}}>Liczba rezerwacji</th>
-                <th style={{padding:'6px 8px', textAlign:'left'}}>Suma (PLN)</th>
+                <th style={{padding:'6px 8px', textAlign:'left', width:'55%'}}>Pakiet</th>
+                <th style={{padding:'6px 8px', textAlign:'left', width:'20%'}}>Rezerwacje</th>
+                <th style={{padding:'6px 8px', textAlign:'left', width:'25%'}}>Suma (PLN)</th>
               </tr>
             </thead>
             <tbody>
@@ -628,25 +634,27 @@ function AdminDashboard() {
                 <tr><td colSpan={3} style={{padding:'6px 8px', color:'#aaa'}}>Brak danych</td></tr>
               ) : packageStats.map((p,idx)=>(
                 <tr key={idx} style={{borderBottom:'1px solid #333'}}>
-                  <td style={{padding:'6px 8px'}}>{p.name}</td>
+                  <td style={{padding:'6px 8px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:0}}>{p.name}</td>
                   <td style={{padding:'6px 8px'}}>{p.count}</td>
                   <td style={{padding:'6px 8px'}}>{p.sum.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
         {/* Статистика по клиентам */}
-        <div style={{background:'#23222a', borderRadius:10, padding:10}}>
+        <div style={{background:'#23222a', borderRadius:10, padding:10, overflow:'hidden'}}>
           <div style={{fontWeight:600, fontSize:15, marginBottom:4, color:'#ff9f58', display:'flex', alignItems:'center', gap:6}}>
             Top klienci (wg sumy) <TooltipInfo text="Suma dotyczy wszystkich zarezerwowanych terminów (nie tylko opłaconych). Klienci są sortowani według łącznej wartości wszystkich rezerwacji, niezależnie od ich statusu." />
           </div>
-          <table style={{width:'100%', borderCollapse:'collapse', background:'#18171c', color:'#fff', borderRadius:8, overflow:'hidden', fontSize:14}}>
+          <div style={{overflowX:'auto'}}>
+          <table style={{width:'100%', borderCollapse:'collapse', background:'#18171c', color:'#fff', borderRadius:8, overflow:'hidden', fontSize:14, tableLayout:'fixed'}}>
             <thead>
               <tr style={{background:'#23222a', color:'#ff9f58'}}>
-                <th style={{padding:'6px 8px', textAlign:'left'}}>E-mail</th>
-                <th style={{padding:'6px 8px', textAlign:'left'}}>Liczba rezerwacji</th>
-                <th style={{padding:'6px 8px', textAlign:'left'}}>Suma (PLN)</th>
+                <th style={{padding:'6px 8px', textAlign:'left', width:'55%'}}>E-mail</th>
+                <th style={{padding:'6px 8px', textAlign:'left', width:'20%'}}>Rezerwacje</th>
+                <th style={{padding:'6px 8px', textAlign:'left', width:'25%'}}>Suma (PLN)</th>
               </tr>
             </thead>
             <tbody>
@@ -654,13 +662,14 @@ function AdminDashboard() {
                 <tr><td colSpan={3} style={{padding:'6px 8px', color:'#aaa'}}>Brak danych</td></tr>
               ) : clientStats.slice(0,10).map((c,idx)=>(
                 <tr key={idx} style={{borderBottom:'1px solid #333'}}>
-                  <td style={{padding:'6px 8px'}}>{c.email}</td>
+                  <td style={{padding:'6px 8px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:0}}>{c.email}</td>
                   <td style={{padding:'6px 8px'}}>{c.count}</td>
                   <td style={{padding:'6px 8px'}}>{c.sum.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

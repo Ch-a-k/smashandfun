@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabaseClient';
 import { withAdminAuth } from '../components/withAdminAuth';
 
@@ -10,6 +11,7 @@ interface Admin {
 }
 
 function AdminsPage() {
+  const router = useRouter();
   const [admins, setAdmins] = useState<Admin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -43,7 +45,6 @@ function AdminsPage() {
 
   useEffect(() => {
     fetchAdmins();
-    // Pobierz swoją rolę i email
     const email = typeof window !== 'undefined' ? localStorage.getItem('admin_email') : null;
     setMeEmail(email);
     if (!email) return;
@@ -52,8 +53,14 @@ function AdminsPage() {
       .select('role')
       .eq('email', email)
       .single()
-      .then(({ data }) => setCurrentRole((data as { role?: string } | null)?.role ?? null));
-  }, []);
+      .then(({ data }) => {
+        const role = (data as { role?: string } | null)?.role ?? null;
+        setCurrentRole(role);
+        if (role && role !== 'superadmin') {
+          router.replace('/admin/bookings');
+        }
+      });
+  }, [router]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -152,14 +159,14 @@ function AdminsPage() {
   }
 
   if (currentRole !== 'superadmin') {
-    return <div style={{color:'#fff',marginTop:80,textAlign:'center',fontSize:22}}>Dostęp tylko dla superadmina</div>;
+    return <div style={{color:'#fff',marginTop:80,textAlign:'center',fontSize:16}}>Ładowanie...</div>;
   }
 
   return (
     <div style={{color:'#fff'}}>
       <h1 style={{fontSize:28, fontWeight:100, color:'#f36e21', marginBottom:18}}>Administratorzy</h1>
       <p style={{fontSize:16, opacity:0.9, marginBottom:18}}>Zarządzaj dostępem: dodawaj, usuwaj i zmieniaj role administratorów. Możesz ustawić lub zmienić hasło.</p>
-      <form onSubmit={handleAdd} style={{display:'flex',gap:12,marginBottom:24,alignItems:'center'}}>
+      <form onSubmit={handleAdd} className="flex flex-col md:flex-row gap-3 mb-6 items-stretch md:items-center">
         <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600}} />
         <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Hasło" required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600}} />
         <select value={role} onChange={e=>setRole(e.target.value as 'admin'|'superadmin')} style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:8,padding:'8px 14px',fontSize:16,fontWeight:600}}>
@@ -169,11 +176,11 @@ function AdminsPage() {
         <button type="submit" disabled={saving} style={{background:'#f36e21',color:'#fff',border:'none',borderRadius:8,padding:'8px 22px',fontWeight:700,fontSize:16,cursor:saving?'not-allowed':'pointer'}}>Dodaj</button>
       </form>
       {error && <div style={{color:'#ff4d4f',marginBottom:12}}>{error}</div>}
-      <div style={{background:'#23222a', borderRadius:12, padding:32, minHeight:120, color:'#fff', fontSize:16}}>
+      <div style={{background:'#23222a', borderRadius:12, padding:'16px 12px', minHeight:120, color:'#fff', fontSize:16, overflowX:'auto'}}>
         {loading ? (
           <div>Ładowanie...</div>
         ) : (
-          <table style={{width:'100%', borderCollapse:'collapse'}}>
+          <table style={{width:'100%', borderCollapse:'collapse', minWidth:700}}>
             <thead>
               <tr style={{background:'#18171c', color:'#ff9f58'}}>
                 <th style={{padding:'8px 12px', textAlign:'left'}}>Email</th>
@@ -188,8 +195,8 @@ function AdminsPage() {
                   <td style={{padding:'8px 12px'}}>{a.role}</td>
                   <td style={{padding:'8px 12px', textAlign:'center'}}>
                     {a.email !== meEmail && (
-                      <>
-                        <button onClick={()=>handleChangeRole(a.id, a.role==='admin'?'superadmin':'admin')} style={{background:'#2196f3',color:'#fff',border:'none',borderRadius:6,padding:'6px 14px',fontWeight:600,cursor:'pointer',marginRight:8}}>
+                      <div className="flex flex-wrap gap-2 items-center justify-center">
+                        <button onClick={()=>handleChangeRole(a.id, a.role==='admin'?'superadmin':'admin')} style={{background:'#2196f3',color:'#fff',border:'none',borderRadius:6,padding:'6px 14px',fontWeight:600,cursor:'pointer'}}>
                           Ustaw jako {a.role==='admin'?'superadmin':'admin'}
                         </button>
                         <button
@@ -203,7 +210,6 @@ function AdminsPage() {
                             padding:'6px 14px',
                             fontWeight:600,
                             cursor:deletingId === a.id ? 'not-allowed' : 'pointer',
-                            marginRight:8
                           }}
                         >
                           {deletingId === a.id ? 'Usuwanie...' : 'Usuń'}
@@ -211,13 +217,13 @@ function AdminsPage() {
                         {changePwdId !== a.id ? (
                           <button onClick={()=>{setChangePwdId(a.id);setNewPwd("");}} style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:6,padding:'6px 14px',fontWeight:600,cursor:'pointer'}}>Zmień hasło</button>
                         ) : (
-                          <form onSubmit={e=>{e.preventDefault();handleChangePassword(a.email);}} style={{display:'inline-flex',gap:6,alignItems:'center',marginLeft:8}}>
+                          <form onSubmit={e=>{e.preventDefault();handleChangePassword(a.email);}} className="flex flex-wrap gap-2 items-center">
                             <input type="password" value={newPwd} onChange={e=>setNewPwd(e.target.value)} placeholder="Nowe hasło" required style={{background:'#18171c',color:'#fff',border:'2px solid #f36e21',borderRadius:6,padding:'4px 10px',fontSize:15,fontWeight:600}} />
                             <button type="submit" disabled={pwdLoading} style={{background:'#f36e21',color:'#fff',border:'none',borderRadius:6,padding:'6px 14px',fontWeight:600,cursor:pwdLoading?'not-allowed':'pointer'}}>Zapisz</button>
                             <button type="button" onClick={()=>setChangePwdId(null)} style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:6,padding:'6px 10px',fontWeight:600,cursor:'pointer'}}>Anuluj</button>
                           </form>
                         )}
-                      </>
+                      </div>
                     )}
                     {a.email === meEmail && <span style={{color:'#aaa',fontSize:13}}>Nie możesz usunąć ani zmienić swojego hasła tutaj</span>}
                   </td>

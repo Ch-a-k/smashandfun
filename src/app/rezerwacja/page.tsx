@@ -9,6 +9,8 @@ import Link from 'next/link';
 import { FloatingImages } from '@/components/FloatingImages';
 import { ExtraItemsSection } from '@/components/ExtraItemsSection';
 import InFomoFooterButton from '@/components/InFomoFooterButton';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import { sendGTMEvent } from '@next/third-parties/google';
 
 // Типы
@@ -281,6 +283,8 @@ export default function RezerwacjaPage() {
   }, []);
 
   return (
+    <>
+    <Header />
     <section className="relative w-full bg-[#231f20] py-24 overflow-hidden">
       {/* Background effects */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 to-transparent" style={{ pointerEvents: 'none' }} />
@@ -307,5 +311,7 @@ export default function RezerwacjaPage() {
       {/* IN-FOMO button */}
       <InFomoFooterButton />
     </section>
+    <Footer />
+    </>
   );
 } 

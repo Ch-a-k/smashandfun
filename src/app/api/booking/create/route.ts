@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     utm_source, utm_medium, utm_campaign, utm_term, utm_content, referrer, landing_page,
     } = await req.json();
 
-  // Получаем пакет и список допустимых комнат
+  // 1. Получаем пакет и список допустимых комнат
   const { data: pkg, error: pkgError } = await supabase
     .from('packages')
     .select('name, allowed_rooms, room_priority, duration, cleanup_time, price')
@@ -86,53 +86,11 @@ export async function POST(req: Request) {
   const packageName = (pkg.name ?? '').toLowerCase();
   const allowedRooms: string[] = (pkg.allowed_rooms ?? []).filter(Boolean);
   const sortedRooms = getRoomPriority({ packageName, allowedRooms, roomPriority: pkg.room_priority });
-  let selectedRoomId: string | null = null;
 
-  const { data: getBookings, error: getBookingError } = await supabaseAdmin
-    .from('bookings')
-    .select(`
-      id,
-      room_id,
-      date,
-      time,
-      status,
-      package:package_id (duration, cleanup_time)
-    `)
-    .in('room_id', sortedRooms)
-    .eq('date', date)
-    .neq('status', 'cancelled')
-    .returns<BookingWithPackage[]>();
-
-  if (getBookingError) {
-    return NextResponse.json({ error: getBookingError.message }, { status: 500 });
-  }
   const durationMinutes = Number(pkg.duration) || 60;
   const cleanupMinutes = Number(pkg.cleanup_time) || 15;
-  const targetStart = dayjs(`${date} ${time}`);
-  const targetEnd = targetStart.add(durationMinutes + cleanupMinutes, 'm');
 
-  for (const roomId of sortedRooms) {
-    const bookingsForRoom = getBookings.filter((b: BookingWithPackage) => b.room_id === roomId);
-
-    const conflict = bookingsForRoom.some((b: BookingWithPackage) => {
-      const bStart = dayjs(`${b.date} ${b.time}`);
-      const bDuration = b.package?.duration ? Number(b.package.duration) : durationMinutes;
-      const bCleanup = b.package?.cleanup_time ? Number(b.package.cleanup_time) : cleanupMinutes;
-      const bEnd = bStart.add(bDuration + bCleanup, 'm');
-      return overlaps(targetStart, targetEnd, bStart, bEnd);
-    });
-
-    if (!conflict) {
-      selectedRoomId = roomId;
-      break;
-    }
-  }
-
-  if (!selectedRoomId) {
-    return NextResponse.json({ error: 'Brak dostępnych pokoi na wybrany czas' }, { status: 409 });
-  }
-
-  // Считаем сумму: базовая цена + доп. предметы
+  // 2. Считаем сумму: базовая цена + доп. предметы
   let totalPrice = Number(pkg.price) || 0;
   if (Array.isArray(extraItems) && extraItems.length > 0) {
     type ExtraSel = { id: string; count?: number };
@@ -145,14 +103,14 @@ export async function POST(req: Request) {
     if (itemsError) {
       return NextResponse.json({ error: itemsError.message }, { status: 500 });
     }
-    // Суммируем с учётом количества каждого предмета
     totalPrice += (extraItems as ExtraSel[]).reduce((sum, sel) => {
       const item = filteredItems.find(i => i.id === sel.id);
       return item ? sum + normalizePrice(item.price) * (sel.count || 1) : sum;
     }, 0);
   }
 
-  // Применяем промокод (если есть)
+  // 3. Применяем промокод (валидация + расчёт скидки, но count обновляем ПОСЛЕ успешной брони)
+  let promoToUpdate: { code: string; currentCount: number } | null = null;
   if (promoCode) {
     const { data: promo, error: promoError } = await supabase
       .from('promo_codes')
@@ -167,66 +125,157 @@ export async function POST(req: Request) {
 
     if (promoError) {
       console.error(promoError);
-      return NextResponse.json({ error: promoError.message }, { status: 500 });;
+      return NextResponse.json({ error: promoError.message }, { status: 500 });
     }
-    if (!promoError && promo) {
+    if (promo) {
       if (promo.discount_amount) {
         totalPrice = Math.max(0, totalPrice - Number(promo.discount_amount));
       } else if (promo.discount_percent) {
         totalPrice = totalPrice * (1 - Number(promo.discount_percent) / 100);
       }
-    }
-
-    const currentCount = promo.used_count || 0;
-    // 2. Оновити з інкрементом +1
-    const { error: updateError } = await supabaseAdmin
-      .from('promo_codes')
-      .update({ used_count: currentCount + 1 })
-      .eq('code', promoCode);
-  
-    if(updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 500 });
+      promoToUpdate = { code: promoCode, currentCount: promo.used_count || 0 };
     }
   }
 
-  // Генерируем change_token
+  // 4. Генерируем change_token
   const changeToken = crypto.randomBytes(24).toString('hex');
+  const status = totalPrice == 0 ? 'paid' : 'pending';
 
-  // Создаём бронирование
-  const { data: booking, error: bookingError } = await supabaseAdmin
-    .from('bookings')
-    .insert([
-      {
-        user_email: email,
-        package_id: packageId,
-        room_id: selectedRoomId,
+  // 5. Атомарный выбор комнаты + создание брони (через RPC с advisory lock)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let booking: any = null;
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc('book_room', {
+    p_room_order: sortedRooms,
+    p_date: date,
+    p_time: time,
+    p_duration_minutes: durationMinutes,
+    p_cleanup_minutes: cleanupMinutes,
+    p_user_email: email,
+    p_package_id: packageId,
+    p_extra_items: extraItems || [],
+    p_total_price: totalPrice,
+    p_status: status,
+    p_promo_code: promoCode || null,
+    p_name: name || null,
+    p_phone: phone || null,
+    p_change_token: changeToken,
+    p_utm_source: utm_source || null,
+    p_utm_medium: utm_medium || null,
+    p_utm_campaign: utm_campaign || null,
+    p_utm_term: utm_term || null,
+    p_utm_content: utm_content || null,
+    p_referrer: referrer || null,
+    p_landing_page: landing_page || null,
+  });
+
+  // Если функция ещё не создана — fallback на старую логику (без защиты от race condition)
+  const rpcNotFound = rpcError && (
+    rpcError.message?.includes('book_room') ||
+    rpcError.code === '42883' ||
+    rpcError.message?.includes('Could not find the function')
+  );
+
+  if (rpcNotFound) {
+    // --- FALLBACK: старая логика SELECT + loop + INSERT ---
+    const { data: getBookings, error: getBookingError } = await supabaseAdmin
+      .from('bookings')
+      .select(`
+        id,
+        room_id,
         date,
         time,
-        extra_items: extraItems || [],
-        total_price: totalPrice,
-        status: totalPrice == 0 ? 'paid' : 'pending',
-        promo_code: promoCode || null,
-        name: name || null,
-        phone: phone || null,
-        change_token: changeToken,
-        utm_source: utm_source || null,
-        utm_medium: utm_medium || null,
-        utm_campaign: utm_campaign || null,
-        utm_term: utm_term || null,
-        utm_content: utm_content || null,
-        referrer: referrer || null,
-        landing_page: landing_page || null,
-      }
-    ])
-    .select()
-    .single();
+        status,
+        package:package_id (duration, cleanup_time)
+      `)
+      .in('room_id', sortedRooms)
+      .eq('date', date)
+      .neq('status', 'cancelled')
+      .returns<BookingWithPackage[]>();
 
-  if (bookingError) {
-    return NextResponse.json({ error: bookingError.message }, { status: 500 });
+    if (getBookingError) {
+      return NextResponse.json({ error: getBookingError.message }, { status: 500 });
+    }
+
+    const targetStart = dayjs(`${date} ${time}`);
+    const targetEnd = targetStart.add(durationMinutes + cleanupMinutes, 'm');
+    let selectedRoomId: string | null = null;
+
+    for (const roomId of sortedRooms) {
+      const bookingsForRoom = getBookings.filter((b: BookingWithPackage) => b.room_id === roomId);
+      const conflict = bookingsForRoom.some((b: BookingWithPackage) => {
+        const bStart = dayjs(`${b.date} ${b.time}`);
+        const bDuration = b.package?.duration ? Number(b.package.duration) : durationMinutes;
+        const bCleanup = b.package?.cleanup_time ? Number(b.package.cleanup_time) : cleanupMinutes;
+        const bEnd = bStart.add(bDuration + bCleanup, 'm');
+        return overlaps(targetStart, targetEnd, bStart, bEnd);
+      });
+
+      if (!conflict) {
+        selectedRoomId = roomId;
+        break;
+      }
+    }
+
+    if (!selectedRoomId) {
+      return NextResponse.json({ error: 'Brak dostępnych pokoi na wybrany czas' }, { status: 409 });
+    }
+
+    const { data: insertedBooking, error: bookingError } = await supabaseAdmin
+      .from('bookings')
+      .insert([
+        {
+          user_email: email,
+          package_id: packageId,
+          room_id: selectedRoomId,
+          date,
+          time,
+          extra_items: extraItems || [],
+          total_price: totalPrice,
+          status,
+          promo_code: promoCode || null,
+          name: name || null,
+          phone: phone || null,
+          change_token: changeToken,
+          utm_source: utm_source || null,
+          utm_medium: utm_medium || null,
+          utm_campaign: utm_campaign || null,
+          utm_term: utm_term || null,
+          utm_content: utm_content || null,
+          referrer: referrer || null,
+          landing_page: landing_page || null,
+        }
+      ])
+      .select()
+      .single();
+
+    if (bookingError) {
+      return NextResponse.json({ error: bookingError.message }, { status: 500 });
+    }
+    booking = insertedBooking;
+  } else if (rpcError) {
+    return NextResponse.json({ error: rpcError.message }, { status: 500 });
+  } else if ((rpcResult as Record<string, unknown>)?.error === 'NO_AVAILABLE_ROOM') {
+    return NextResponse.json({ error: 'Brak dostępnych pokoi na wybrany czas' }, { status: 409 });
+  } else {
+    booking = rpcResult;
   }
 
-  // Upsert пользователя в таблицу users (с именем и телефоном, если есть)
+  // 6. Обновляем счётчик промокода (только после успешной брони)
+  if (promoToUpdate) {
+    const { error: updateError } = await supabaseAdmin
+      .from('promo_codes')
+      .update({ used_count: promoToUpdate.currentCount + 1 })
+      .eq('code', promoToUpdate.code);
+
+    if (updateError) {
+      console.error('Failed to update promo code count:', updateError);
+    }
+  }
+
+  // 7. Upsert пользователя в таблицу users
   await supabaseAdmin.from('users').upsert({ email, name, phone }, { onConflict: 'email' });
 
   return NextResponse.json({ booking });
-} 
+}

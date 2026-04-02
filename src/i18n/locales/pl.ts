@@ -375,6 +375,7 @@ export const pl = {
           '• Informacje o rezerwacjach i preferencjach',
           '• Dane dotyczące płatności',
           '• Informacje techniczne o urządzeniu i sposobie korzystania z naszej strony',
+          '• Dane dotyczące źródła ruchu (parametry UTM, strona odsyłająca, strona docelowa) — w celu analizy skuteczności kampanii marketingowych i przypisania rezerwacji do odpowiedniego kanału reklamowego. Dane te są przetwarzane na podstawie prawnie uzasadnionego interesu administratora (art. 6 ust. 1 lit. f RODO) i przechowywane w pamięci lokalnej przeglądarki (localStorage).',
           'Dane są zbierane tylko w zakresie niezbędnym do świadczenia usług i obsługi klienta.'
         ]
       },

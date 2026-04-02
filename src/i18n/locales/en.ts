@@ -341,6 +341,7 @@ export const en = {
           '• Booking information and preferences',
           '• Payment data',
           '• Technical information about your device and how you use our website',
+          '• Traffic source data (UTM parameters, referring page, landing page) — for analysing the effectiveness of marketing campaigns and attributing bookings to the relevant advertising channel. This data is processed on the basis of the legitimate interest of the controller (Art. 6(1)(f) GDPR) and stored in the browser\'s local storage (localStorage).',
           'Data is collected only to the extent necessary for providing services and customer support.'
         ]
       },

@@ -6,6 +6,7 @@ import DatePicker, { registerLocale } from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import Image from 'next/image';
 import InFomoFooterButton from '@/components/InFomoFooterButton';
+import { getUtmParams } from '@/lib/bookingUtm';
 import { pl } from 'date-fns/locale/pl';
 
 registerLocale('pl', pl);
@@ -665,7 +666,7 @@ export default function BookingPage() {
             let currentBookingId = bookingId;
             if (!currentBookingId) {
               // 1. Создать бронирование, если ещё не создана
-              
+              const utmParams = getUtmParams();
               const res = await fetch('/api/booking/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -679,6 +680,9 @@ export default function BookingPage() {
                   paymentType: form.paymentType,
                   name: form.name,
                   phone: form.phone,
+                  ...utmParams,
+                  referrer: utmParams.referrer || (typeof document !== 'undefined' ? document.referrer || null : null),
+                  landing_page: utmParams.landing_page || (typeof window !== 'undefined' ? window.location.pathname : null),
                 })
               });
               const data = await res.json();

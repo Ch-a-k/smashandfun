@@ -36,7 +36,7 @@ export default function AdminSidebar() {
   if (!isAuth) return null;
 
   const allMenu = role === 'superadmin'
-    ? [...menu, { href: "/admin/admins", label: "Adminy" }]
+    ? [...menu, { href: "/admin/ads", label: "IF. ADS" }, { href: "/admin/admins", label: "Adminy" }]
     : menu;
 
   return (
@@ -92,6 +92,25 @@ export default function AdminSidebar() {
             {item.label}
           </Link>
         ))}
+        {role === 'superadmin' && (
+          <Link
+            href="/admin/ads"
+            style={{
+              display: 'block',
+              padding: '12px 32px',
+              color: pathname === '/admin/ads' ? '#f36e21' : '#fff',
+              background: pathname === '/admin/ads' ? 'rgba(243,110,33,0.08)' : 'none',
+              fontWeight: pathname === '/admin/ads' ? 700 : 500,
+              borderLeft: pathname === '/admin/ads' ? '4px solid #f36e21' : '4px solid transparent',
+              textDecoration: 'none',
+              fontSize: 17,
+              transition: 'all 0.15s',
+              marginTop: 18
+            }}
+          >
+            IF. ADS
+          </Link>
+        )}
         {role === 'superadmin' && (
           <Link
             href="/admin/admins"

@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { usePathname } from 'next/navigation';
-import Script from 'next/script';
-import { useEffect, useState } from 'react';
-import { isAnalyticsAllowed, trackPageview } from '@/lib/analytics';
+import { usePathname } from "next/navigation";
+import Script from "next/script";
+import { useEffect, useState } from "react";
+import { isAnalyticsAllowed, trackPageview } from "@/lib/analytics";
 
 export default function GoogleTagManager() {
   const pathname = usePathname();
-  const gtmId = process.env.NEXT_PUBLIC_GTM_ID || 'GTM-WNX4P4QZ';
+  const gtmId = process.env.NEXT_PUBLIC_GTM_ID || "GTM-XXXXXXX"; // Замените на ваш GTM ID или оставьте заглушку
   const [isMounted, setIsMounted] = useState(false);
   const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
 
@@ -30,7 +30,7 @@ export default function GoogleTagManager() {
   }
 
   // Не грузим аналитику в админке (и не получаем CORS/iframe шум в консоли)
-  if (pathname?.startsWith('/admin')) {
+  if (pathname?.startsWith("/admin")) {
     return null;
   }
 
@@ -47,10 +47,10 @@ export default function GoogleTagManager() {
         strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtm.js?id=${gtmId}`}
         onLoad={() => {
-          console.log('Google Tag Manager loaded successfully');
+          console.log("Google Tag Manager loaded successfully");
         }}
         onError={(e) => {
-          console.error('Error loading Google Tag Manager:', e);
+          console.error("Error loading Google Tag Manager:", e);
         }}
       />
 
@@ -74,10 +74,10 @@ export default function GoogleTagManager() {
           src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
           height="0"
           width="0"
-          style={{ display: 'none', visibility: 'hidden' }}
+          style={{ display: "none", visibility: "hidden" }}
           title="Google Tag Manager"
         />
       </noscript>
     </>
   );
-} 
+}

@@ -22,7 +22,7 @@ GoogleTagManager & TikTokPixel
 
 ```javascript
 // Очистить согласие на cookies
-localStorage.removeItem('cookieConsent');
+localStorage.removeItem("cookieConsent");
 
 // Перезагрузить страницу
 location.reload();
@@ -39,10 +39,11 @@ location.reload();
 3. Проверьте localStorage:
 
 ```javascript
-JSON.parse(localStorage.getItem('cookieConsent'))
+JSON.parse(localStorage.getItem("cookieConsent"));
 ```
 
 **Ожидаемый результат:**
+
 ```json
 {
   "necessary": true,
@@ -55,10 +56,10 @@ JSON.parse(localStorage.getItem('cookieConsent'))
 
 ```javascript
 // Google Tag Manager НЕ должен быть загружен
-console.log('GTM loaded:', typeof window.gtag !== 'undefined');
+console.log("GTM loaded:", typeof window.gtag !== "undefined");
 
 // TikTok Pixel НЕ должен быть загружен
-console.log('TikTok Pixel loaded:', typeof window.ttq !== 'undefined');
+console.log("TikTok Pixel loaded:", typeof window.ttq !== "undefined");
 ```
 
 **Ожидаемый результат:** Оба должны показать `false`
@@ -74,15 +75,16 @@ console.log('TikTok Pixel loaded:', typeof window.ttq !== 'undefined');
 
 ```javascript
 // Проверка localStorage
-JSON.parse(localStorage.getItem('cookieConsent'))
+JSON.parse(localStorage.getItem("cookieConsent"));
 
 // Проверка загрузки скриптов
-console.log('GTM loaded:', typeof window.gtag !== 'undefined');
-console.log('TikTok Pixel loaded:', typeof window.ttq !== 'undefined');
-console.log('DataLayer:', window.dataLayer);
+console.log("GTM loaded:", typeof window.gtag !== "undefined");
+console.log("TikTok Pixel loaded:", typeof window.ttq !== "undefined");
+console.log("DataLayer:", window.dataLayer);
 ```
 
 **Ожидаемый результат:**
+
 - Согласие: `{ necessary: true, analytics: true, marketing: true }`
 - GTM loaded: `true`
 - TikTok Pixel loaded: `true`
@@ -101,10 +103,11 @@ console.log('DataLayer:', window.dataLayer);
 7. Проверьте:
 
 ```javascript
-JSON.parse(localStorage.getItem('cookieConsent'))
+JSON.parse(localStorage.getItem("cookieConsent"));
 ```
 
 **Ожидаемый результат:**
+
 ```json
 {
   "necessary": true,
@@ -131,20 +134,20 @@ JSON.parse(localStorage.getItem('cookieConsent'))
 ```javascript
 // Проверка Google Tag Manager
 window.dataLayer.push({
-  event: 'test_event',
-  category: 'test',
-  action: 'manual_test'
+  event: "test_event",
+  category: "test",
+  action: "manual_test",
 });
 
-console.log('DataLayer after push:', window.dataLayer);
+console.log("DataLayer after push:", window.dataLayer);
 
 // Проверка TikTok Pixel
 if (window.ttq) {
-  window.ttq.track('ViewContent', {
-    content_type: 'test',
-    content_name: 'cookie_test'
+  window.ttq.track("ViewContent", {
+    content_type: "test",
+    content_name: "cookie_test",
   });
-  console.log('TikTok event sent');
+  console.log("TikTok event sent");
 }
 ```
 
@@ -157,8 +160,8 @@ if (window.ttq) {
 3. Проверьте:
 
 ```javascript
-console.log('GTM in admin:', typeof window.gtag !== 'undefined');
-console.log('TikTok in admin:', typeof window.ttq !== 'undefined');
+console.log("GTM in admin:", typeof window.gtag !== "undefined");
+console.log("TikTok in admin:", typeof window.ttq !== "undefined");
 ```
 
 **Ожидаемый результат:** Оба должны быть `false` - аналитика не загружается в админке
@@ -215,26 +218,29 @@ console.log('TikTok in admin:', typeof window.ttq !== 'undefined');
 ## 🐛 Возможные проблемы
 
 ### Баннер не появляется:
+
 ```javascript
 // Проверьте, что согласие НЕ сохранено
-console.log(localStorage.getItem('cookieConsent'));
+console.log(localStorage.getItem("cookieConsent"));
 
 // Если есть, удалите и перезагрузите
-localStorage.removeItem('cookieConsent');
+localStorage.removeItem("cookieConsent");
 location.reload();
 ```
 
 ### Скрипты не загружаются после согласия:
+
 ```javascript
 // Проверьте флаг согласия
-const consent = JSON.parse(localStorage.getItem('cookieConsent'));
-console.log('Analytics allowed:', consent?.analytics);
+const consent = JSON.parse(localStorage.getItem("cookieConsent"));
+console.log("Analytics allowed:", consent?.analytics);
 
 // Проверьте, что страница перезагрузилась после согласия
 // (аналитика загружается только при первой загрузке страницы)
 ```
 
 ### Ошибки в консоли:
+
 - Проверьте, что `.env.local` настроен корректно
 - Убедитесь, что все зависимости установлены
 
@@ -242,33 +248,36 @@ console.log('Analytics allowed:', consent?.analytics);
 
 ## 📊 Интеграция с аналитикой
 
-### Google Tag Manager (GTM-WNX4P4QZ)
+### Google Tag Manager (GTM)
+
 - Загружается при `analytics: true`
 - Доступен через `window.gtag()`
 - DataLayer: `window.dataLayer`
 
-### TikTok Pixel (D5UT3I3C77U3UMFCPIVG)
+### TikTok Pixel
+
 - Загружается при `analytics: true`
 - Доступен через `window.ttq`
 - Методы: `page()`, `track()`, `identify()`
 
 ### События для трекинга:
+
 ```javascript
 // В вашем коде используйте:
-import { trackEvent, trackTikTokEvent } from '@/lib/analytics';
+import { trackEvent, trackTikTokEvent } from "@/lib/analytics";
 
 // Google Analytics событие
 trackEvent({
-  action: 'booking_completed',
-  category: 'ecommerce',
-  label: 'package_premium',
-  value: 200
+  action: "booking_completed",
+  category: "ecommerce",
+  label: "package_premium",
+  value: 200,
 });
 
 // TikTok событие
-trackTikTokEvent('CompleteRegistration', {
+trackTikTokEvent("CompleteRegistration", {
   value: 200,
-  currency: 'PLN',
-  content_type: 'booking'
+  currency: "PLN",
+  content_type: "booking",
 });
 ```

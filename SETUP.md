@@ -22,7 +22,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=ваш-публичный-ключ
 SUPABASE_SERVICE_ROLE_KEY=ваш-сервисный-ключ
 
 # Google Tag Manager (уже настроен)
-NEXT_PUBLIC_GTM_ID=GTM-WNX4P4QZ
+NEXT_PUBLIC_GTM_ID=
 
 # URL приложения (для локальной разработки)
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -37,6 +37,7 @@ npm install
 ## 3. Запуск проекта
 
 ### Режим разработки
+
 ```bash
 npm run dev
 ```
@@ -44,6 +45,7 @@ npm run dev
 Приложение будет доступно по адресу: http://localhost:3000
 
 ### Сборка для продакшена
+
 ```bash
 npm run build
 npm start
@@ -62,6 +64,7 @@ npm start
 ## 5. Дополнительные настройки (опционально)
 
 ### Email (для уведомлений о бронированиях)
+
 ```bash
 EMAIL_USER=ваш-email@gmail.com
 EMAIL_PASS=пароль-приложения
@@ -70,6 +73,7 @@ EMAIL_PORT=587
 ```
 
 ### PayU (для приема платежей)
+
 ```bash
 PAYU_CLIENT_ID=
 PAYU_CLIENT_SECRET=
@@ -80,8 +84,9 @@ PAYU_MD5_KEY=
 ## 6. Интегрированные аналитические инструменты
 
 Проект уже настроен с:
-- ✅ **Google Tag Manager** (GTM-WNX4P4QZ)
-- ✅ **TikTok Pixel** (D5UT3I3C77U3UMFCPIVG)
+
+- ✅ **Google Tag Manager** (GTM)
+- ✅ **TikTok Pixel**
 - ✅ **Vercel Analytics**
 
 Все аналитические инструменты работают с системой Cookie Consent и загружаются только после согласия пользователя.
@@ -89,16 +94,21 @@ PAYU_MD5_KEY=
 ## Troubleshooting
 
 ### Ошибка "supabaseUrl is required"
+
 Убедитесь, что файл `.env.local` существует и содержит правильные переменные окружения Supabase.
 
 ### Ошибки при установке зависимостей
+
 Используйте флаг `--legacy-peer-deps`:
+
 ```bash
 npm install --legacy-peer-deps
 ```
 
 ### Конфликты портов
+
 Если порт 3000 занят, укажите другой:
+
 ```bash
 npm run dev -- -p 3001
 ```

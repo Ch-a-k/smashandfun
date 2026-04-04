@@ -4,6 +4,7 @@ import localFont from 'next/font/local'
 import CookieConsent from '@/components/CookieConsent'
 import { I18nProvider } from '@/i18n/I18nContext'
 import { Inter } from 'next/font/google'
+import Script from 'next/script'
 import GoogleTagManager from '@/components/GoogleTagManager'
 import TikTokPixel from '@/components/TikTokPixel'
 import MetaPixel from '@/components/MetaPixel'
@@ -99,6 +100,25 @@ export default function RootLayout({
   return (
     <html lang="pl" className={`${impact.variable} ${akrobat.variable} ${inter.className}`}>
       <head>
+        {/* Google tag (gtag.js) */}
+        <Script
+          id="gtag-script"
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-VFW33JQ6EG"
+        />
+        <Script
+          id="gtag-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-VFW33JQ6EG');
+            `,
+          }}
+        />
+
         {/* Основные иконки */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  isConfigured, getAccessToken, buildHeaders,
-  getSearchStreamUrl, notConfiguredResponse,
+  isConfigured, runReport, notConfiguredResponse,
   getDefaultDateFrom, getDefaultDateTo,
 } from '@/lib/googleAdsClient';
 
@@ -15,58 +14,54 @@ export async function GET(req: NextRequest) {
   const dateTo = searchParams.get('dateTo') || getDefaultDateTo();
 
   try {
-    const accessToken = await getAccessToken();
-
-    const query = `
-      SELECT
-        segments.date,
-        metrics.cost_micros,
-        metrics.clicks,
-        metrics.impressions
-      FROM campaign
-      WHERE segments.date BETWEEN '${dateFrom}' AND '${dateTo}'
-        AND campaign.status != 'REMOVED'
-      ORDER BY segments.date ASC
-    `;
-
-    const gaRes = await fetch(getSearchStreamUrl(), {
-      method: 'POST',
-      headers: buildHeaders(accessToken),
-      body: JSON.stringify({ query }),
+    const data = await runReport({
+      dateRanges: [{ startDate: dateFrom, endDate: dateTo }],
+      dimensions: [{ name: 'date' }],
+      metrics: [
+        { name: 'advertiserAdCost' },
+        { name: 'advertiserAdClicks' },
+        { name: 'advertiserAdImpressions' },
+      ],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            {
+              filter: {
+                fieldName: 'sessionSource',
+                stringFilter: { value: 'google', matchType: 'EXACT' },
+              },
+            },
+            {
+              filter: {
+                fieldName: 'sessionMedium',
+                inListFilter: { values: ['cpc', 'pmax', 'cpv', 'cpm'] },
+              },
+            },
+          ],
+        },
+      },
+      orderBys: [{ dimension: { dimensionName: 'date' }, desc: false }],
+      limit: 500,
     });
 
-    if (!gaRes.ok) {
-      const errText = await gaRes.text();
-      return NextResponse.json({ configured: true, error: `Google Ads API error: ${gaRes.status} ${errText}` }, { status: 500 });
-    }
+    const daily: { date: string; cost: number; clicks: number; impressions: number }[] = [];
 
-    const gaData = await gaRes.json();
+    if (data.rows) {
+      for (const row of data.rows) {
+        const rawDate = row.dimensionValues[0]?.value || '';
+        // GA4 returns date as YYYYMMDD, convert to YYYY-MM-DD
+        const date = rawDate.length === 8
+          ? `${rawDate.slice(0, 4)}-${rawDate.slice(4, 6)}-${rawDate.slice(6, 8)}`
+          : rawDate;
 
-    interface GaResult {
-      segments?: { date?: string };
-      metrics?: { costMicros?: string; clicks?: string; impressions?: string };
-    }
-
-    // Aggregate per date (multiple campaigns per day → sum)
-    const dateMap = new Map<string, { cost: number; clicks: number; impressions: number }>();
-
-    const batches = Array.isArray(gaData) ? gaData : [gaData];
-    for (const batch of batches) {
-      const results: GaResult[] = batch.results || [];
-      for (const row of results) {
-        const date = row.segments?.date || '';
-        if (!date) continue;
-        const existing = dateMap.get(date) || { cost: 0, clicks: 0, impressions: 0 };
-        existing.cost += Number(row.metrics?.costMicros || 0) / 1_000_000;
-        existing.clicks += Number(row.metrics?.clicks || 0);
-        existing.impressions += Number(row.metrics?.impressions || 0);
-        dateMap.set(date, existing);
+        daily.push({
+          date,
+          cost: Number(row.metricValues[0]?.value || 0),
+          clicks: Number(row.metricValues[1]?.value || 0),
+          impressions: Number(row.metricValues[2]?.value || 0),
+        });
       }
     }
-
-    const daily = Array.from(dateMap.entries())
-      .map(([date, d]) => ({ date, cost: d.cost, clicks: d.clicks, impressions: d.impressions }))
-      .sort((a, b) => a.date.localeCompare(b.date));
 
     return NextResponse.json({ configured: true, daily });
   } catch (err) {

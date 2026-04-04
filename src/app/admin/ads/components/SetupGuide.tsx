@@ -8,24 +8,24 @@ interface SetupGuideProps {
 
 const steps = [
   {
-    varName: "GOOGLE_ADS_DEVELOPER_TOKEN",
-    desc: "Otwórz Google Ads → Narzędzia i ustawienia → Centrum API → Developer Token",
+    varName: "GA4_PROPERTY_ID",
+    desc: "Google Analytics → Administracja → Usługa → skopiuj ID usługi (np. 123456789)",
   },
   {
-    varName: "GOOGLE_ADS_CLIENT_ID + CLIENT_SECRET",
-    desc: "Google Cloud Console → API i usługi → Dane logowania → Utwórz dane OAuth 2.0 (typ: Aplikacja komputerowa)",
+    varName: "GA4_CLIENT_EMAIL + GA4_PRIVATE_KEY",
+    desc: "Google Cloud Console → IAM → Konta usług → Utwórz konto → pobierz klucz JSON. GA4_CLIENT_EMAIL = client_email z JSON, GA4_PRIVATE_KEY = private_key z JSON",
   },
   {
-    varName: "GOOGLE_ADS_REFRESH_TOKEN",
-    desc: "Użyj OAuth Playground lub skrypt z zakresem https://www.googleapis.com/auth/adwords, aby uzyskać refresh token",
+    varName: "Dodaj konto do GA4",
+    desc: "Google Analytics → Administracja → Zarządzanie dostępem do usługi → dodaj email konta usługi jako Czytelnik",
   },
   {
-    varName: "GOOGLE_ADS_CUSTOMER_ID",
-    desc: "10-cyfrowy identyfikator konta z nagłówka Google Ads (bez myślników)",
+    varName: "Połącz GA4 z Google Ads",
+    desc: "Google Analytics → Administracja → Połączenia z usługami → Google Ads → Połącz konto reklamowe",
   },
   {
     varName: "Dodaj do Vercel",
-    desc: "Settings → Environment Variables → dodaj wszystkie 5 zmiennych → Redeploy",
+    desc: "Settings → Environment Variables → dodaj GA4_PROPERTY_ID, GA4_CLIENT_EMAIL, GA4_PRIVATE_KEY → Redeploy",
   },
 ];
 
@@ -61,7 +61,7 @@ export default function SetupGuide({ error }: SetupGuideProps) {
         />
         <div style={{ fontSize: 13, flex: 1 }}>
           <div>
-            <b style={{ color: "#f9a825" }}>Google Ads API nie jest podłączony</b>
+            <b style={{ color: "#f9a825" }}>GA4 API nie jest podłączony</b>
           </div>
           <div style={{ color: "#ccc", marginTop: 4 }}>
             Dane o wydatkach, kliknięciach i wyświetleniach będą dostępne po dodaniu zmiennych środowiskowych.

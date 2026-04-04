@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  isConfigured, getAccessToken, buildHeaders,
-  getSearchStreamUrl, notConfiguredResponse,
+  isConfigured, runReport, notConfiguredResponse,
   getDefaultDateFrom, getDefaultDateTo,
 } from '@/lib/googleAdsClient';
 
@@ -15,51 +14,31 @@ export async function GET(req: NextRequest) {
   const dateTo = searchParams.get('dateTo') || getDefaultDateTo();
 
   try {
-    const accessToken = await getAccessToken();
-
-    const query = `
-      SELECT
-        campaign.id,
-        campaign.name,
-        campaign.status,
-        metrics.cost_micros,
-        metrics.clicks,
-        metrics.impressions,
-        metrics.conversions,
-        metrics.ctr,
-        metrics.average_cpc,
-        metrics.average_cpm
-      FROM campaign
-      WHERE segments.date BETWEEN '${dateFrom}' AND '${dateTo}'
-        AND campaign.status != 'REMOVED'
-      ORDER BY metrics.cost_micros DESC
-    `;
-
-    const gaRes = await fetch(getSearchStreamUrl(), {
-      method: 'POST',
-      headers: buildHeaders(accessToken),
-      body: JSON.stringify({ query }),
+    // Query GA4 for Google Ads campaign data
+    // advertiserAdCost, advertiserAdClicks, advertiserAdImpressions come from linked Google Ads
+    const data = await runReport({
+      dateRanges: [{ startDate: dateFrom, endDate: dateTo }],
+      dimensions: [
+        { name: 'sessionCampaignName' },
+        { name: 'sessionSource' },
+        { name: 'sessionMedium' },
+      ],
+      metrics: [
+        { name: 'sessions' },
+        { name: 'advertiserAdCost' },
+        { name: 'advertiserAdClicks' },
+        { name: 'advertiserAdImpressions' },
+        { name: 'conversions' },
+      ],
+      dimensionFilter: {
+        filter: {
+          fieldName: 'sessionSource',
+          stringFilter: { value: 'google', matchType: 'EXACT' },
+        },
+      },
+      orderBys: [{ metric: { metricName: 'advertiserAdCost' }, desc: true }],
+      limit: 500,
     });
-
-    if (!gaRes.ok) {
-      const errText = await gaRes.text();
-      return NextResponse.json({ configured: true, error: `Google Ads API error: ${gaRes.status} ${errText}` }, { status: 500 });
-    }
-
-    const gaData = await gaRes.json();
-
-    interface GaResult {
-      campaign?: { id?: string; name?: string; status?: string };
-      metrics?: {
-        costMicros?: string;
-        clicks?: string;
-        impressions?: string;
-        conversions?: number;
-        ctr?: number;
-        averageCpc?: string;
-        averageCpm?: string;
-      };
-    }
 
     const campaigns: {
       id: string;
@@ -74,23 +53,32 @@ export async function GET(req: NextRequest) {
       cpm: number;
     }[] = [];
 
-    const batches = Array.isArray(gaData) ? gaData : [gaData];
-    for (const batch of batches) {
-      const results: GaResult[] = batch.results || [];
-      for (const row of results) {
-        const c = row.campaign || {};
-        const m = row.metrics || {};
+    if (data.rows) {
+      for (const row of data.rows) {
+        const campaignName = row.dimensionValues[0]?.value || '(not set)';
+        const medium = row.dimensionValues[2]?.value || '';
+
+        // Skip organic/non-ad traffic
+        if (medium !== 'cpc' && medium !== 'pmax' && medium !== 'cpv' && medium !== 'cpm') continue;
+        // Skip (not set) campaigns
+        if (campaignName === '(not set)' || campaignName === '(direct)') continue;
+
+        const cost = Number(row.metricValues[1]?.value || 0);
+        const clicks = Number(row.metricValues[2]?.value || 0);
+        const impressions = Number(row.metricValues[3]?.value || 0);
+        const conversions = Number(row.metricValues[4]?.value || 0);
+
         campaigns.push({
-          id: c.id || '',
-          name: c.name || '',
-          status: c.status || '',
-          cost: Number(m.costMicros || 0) / 1_000_000,
-          clicks: Number(m.clicks || 0),
-          impressions: Number(m.impressions || 0),
-          conversions: m.conversions || 0,
-          ctr: m.ctr || 0,
-          cpc: Number(m.averageCpc || 0) / 1_000_000,
-          cpm: Number(m.averageCpm || 0) / 1_000_000,
+          id: campaignName.toLowerCase().replace(/\s+/g, '_'),
+          name: campaignName,
+          status: 'ENABLED',
+          cost,
+          clicks,
+          impressions,
+          conversions,
+          ctr: impressions > 0 ? clicks / impressions : 0,
+          cpc: clicks > 0 ? cost / clicks : 0,
+          cpm: impressions > 0 ? (cost / impressions) * 1000 : 0,
         });
       }
     }

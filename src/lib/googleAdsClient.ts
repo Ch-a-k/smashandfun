@@ -1,47 +1,98 @@
 import { NextResponse } from 'next/server';
+import * as crypto from 'crypto';
 
-const CLIENT_ID = process.env.GOOGLE_ADS_CLIENT_ID || '';
-const CLIENT_SECRET = process.env.GOOGLE_ADS_CLIENT_SECRET || '';
-const DEVELOPER_TOKEN = process.env.GOOGLE_ADS_DEVELOPER_TOKEN || '';
-const REFRESH_TOKEN = process.env.GOOGLE_ADS_REFRESH_TOKEN || '';
-const CUSTOMER_ID = (process.env.GOOGLE_ADS_CUSTOMER_ID || '').replace(/-/g, '');
+// ─── GA4 Config ──────────────────────────────────────────────
+const GA4_PROPERTY_ID = process.env.GA4_PROPERTY_ID || '';
+const GA4_CLIENT_EMAIL = process.env.GA4_CLIENT_EMAIL || '';
+const GA4_PRIVATE_KEY = (process.env.GA4_PRIVATE_KEY || '').replace(/\\n/g, '\n');
 
 export function isConfigured(): boolean {
-  return !!(DEVELOPER_TOKEN && REFRESH_TOKEN && CLIENT_ID && CLIENT_SECRET && CUSTOMER_ID);
+  return !!(GA4_PROPERTY_ID && GA4_CLIENT_EMAIL && GA4_PRIVATE_KEY);
 }
 
-export async function getAccessToken(): Promise<string> {
+// ─── JWT Auth for Service Account ────────────────────────────
+function base64url(data: Buffer | string): string {
+  const buf = typeof data === 'string' ? Buffer.from(data) : data;
+  return buf.toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function getAccessToken(): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }));
+  const claim = base64url(JSON.stringify({
+    iss: GA4_CLIENT_EMAIL,
+    scope: 'https://www.googleapis.com/auth/analytics.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  }));
+
+  const signInput = `${header}.${claim}`;
+  const sign = crypto.createSign('RSA-SHA256');
+  sign.update(signInput);
+  const signature = base64url(sign.sign(GA4_PRIVATE_KEY));
+
+  const jwt = `${signInput}.${signature}`;
+
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      refresh_token: REFRESH_TOKEN,
-      grant_type: 'refresh_token',
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
     }),
   });
+
   const data = await res.json();
-  if (!data.access_token) throw new Error('Failed to get access token: ' + JSON.stringify(data));
+  if (!data.access_token) throw new Error('GA4 auth failed: ' + JSON.stringify(data));
   return data.access_token;
 }
 
-export function buildHeaders(accessToken: string): HeadersInit {
-  return {
-    'Authorization': `Bearer ${accessToken}`,
-    'developer-token': DEVELOPER_TOKEN,
-    'Content-Type': 'application/json',
-  };
+// ─── GA4 Data API ────────────────────────────────────────────
+const GA4_API_BASE = 'https://analyticsdata.googleapis.com/v1beta';
+
+export interface GA4ReportRequest {
+  dateRanges: { startDate: string; endDate: string }[];
+  dimensions: { name: string }[];
+  metrics: { name: string }[];
+  dimensionFilter?: unknown;
+  limit?: number;
+  orderBys?: unknown[];
 }
 
-export function getSearchStreamUrl(): string {
-  return `https://googleads.googleapis.com/v18/customers/${CUSTOMER_ID}/googleAds:searchStream`;
+export async function runReport(request: GA4ReportRequest): Promise<GA4ReportResponse> {
+  const accessToken = await getAccessToken();
+
+  const res = await fetch(`${GA4_API_BASE}/properties/${GA4_PROPERTY_ID}:runReport`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`GA4 API error ${res.status}: ${errText}`);
+  }
+
+  return res.json();
 }
 
+export interface GA4ReportResponse {
+  rows?: {
+    dimensionValues: { value: string }[];
+    metricValues: { value: string }[];
+  }[];
+  rowCount?: number;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────
 export function notConfiguredResponse(): NextResponse {
   return NextResponse.json({
     configured: false,
-    error: 'Google Ads API nie jest skonfigurowany. Dodaj zmienne środowiskowe: GOOGLE_ADS_DEVELOPER_TOKEN, GOOGLE_ADS_REFRESH_TOKEN, GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET, GOOGLE_ADS_CUSTOMER_ID',
+    error: 'GA4 API nie jest skonfigurowany. Dodaj zmienne środowiskowe: GA4_PROPERTY_ID, GA4_CLIENT_EMAIL, GA4_PRIVATE_KEY',
   });
 }
 

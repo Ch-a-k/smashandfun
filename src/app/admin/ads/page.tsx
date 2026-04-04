@@ -177,15 +177,14 @@ function AdsPage() {
       }
     }
     for (const b of paidBookings) {
-      const cName = (b.utm_campaign || "").toLowerCase();
-      if (!cName) continue;
+      const cName = (b.utm_campaign || "(bez kampanii)").toLowerCase();
       const existing = map.get(cName);
       if (existing) {
         existing.bookings += 1;
         existing.revenue += Number(b.total_price || 0);
       } else {
         map.set(cName, {
-          name: b.utm_campaign || cName, cost: 0, clicks: 0,
+          name: b.utm_campaign || "(bez kampanii)", cost: 0, clicks: 0,
           impressions: 0, bookings: 1, revenue: Number(b.total_price || 0),
           ctr: 0, cpc: 0,
         });

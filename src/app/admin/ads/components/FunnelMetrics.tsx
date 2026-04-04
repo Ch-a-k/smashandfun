@@ -119,17 +119,17 @@ export default function FunnelMetrics({
         label="Wyświetlenia"
         value={impressions}
         barColor="#4285f4"
-        barWidth={100}
-        isEmpty={!isConfigured}
+        barWidth={impressions > 0 ? 100 : 0}
+        isEmpty={!isConfigured && impressions === 0}
       />
 
       <FunnelStep
         label="Kliknięcia"
         value={clicks}
         barColor="#fbbc05"
-        barWidth={pct(clicks, impressions)}
-        convRate={convLabel(clicks, impressions, "Wyświetleń")}
-        isEmpty={!isConfigured}
+        barWidth={pct(clicks, impressions > 0 ? impressions : clicks)}
+        convRate={impressions > 0 ? convLabel(clicks, impressions, "Wyświetleń") : undefined}
+        isEmpty={!isConfigured && clicks === 0}
       />
 
       <FunnelStep

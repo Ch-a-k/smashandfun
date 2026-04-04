@@ -1002,7 +1002,7 @@ function BookingsPage() {
               return (
                 <div key={room.id}>
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-sm font-bold text-gray-200 uppercase tracking-wide">{room.name}</h3>
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">{room.name}</h3>
                     <span className="inline-block bg-orange-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
                       {roomBookings.length}
                     </span>
@@ -1075,7 +1075,7 @@ function BookingsPage() {
               {rooms.map((room) => {
                 const count = bookings.filter(b => b.room_id === room.id).length;
                 return (
-                  <th key={room.id} className="border border-gray-400 px-2 py-1 bg-gray-200 text-center text-gray-700" >
+                  <th key={room.id} className="border border-gray-400 px-2 py-1 bg-gray-200 text-center text-sm font-bold text-gray-900 uppercase tracking-wide" >
                     {room.name}
                     {count > 0 && (
                       <span className="ml-2 inline-block bg-orange-500 text-white text-xs font-bold rounded-full px-2 py-0.5 align-middle">

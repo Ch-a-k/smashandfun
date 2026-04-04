@@ -7,7 +7,7 @@ import { isAnalyticsAllowed, trackPageview } from "@/lib/analytics";
 
 export default function GoogleTagManager() {
   const pathname = usePathname();
-  const gtmId = process.env.NEXT_PUBLIC_GTM_ID || "GTM-XXXXXXX"; // Замените на ваш GTM ID или оставьте заглушку
+  const gaId = process.env.NEXT_PUBLIC_GA_ID || "G-VFW33JQ6EG";
   const [isMounted, setIsMounted] = useState(false);
   const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
 
@@ -41,41 +41,40 @@ export default function GoogleTagManager() {
 
   return (
     <>
-      {/* Google Tag Manager - Script */}
+      {/* Google tag (gtag.js) */}
       <Script
-        id="gtm-script"
+        id="gtag-script"
         strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtm.js?id=${gtmId}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
         onLoad={() => {
-          console.log("Google Tag Manager loaded successfully");
+          console.log("Google Analytics loaded successfully");
         }}
         onError={(e) => {
-          console.error("Error loading Google Tag Manager:", e);
+          console.error("Error loading Google Analytics:", e);
         }}
       />
 
-      {/* Инициализация dataLayer без предварительной загрузки */}
       <Script
-        id="gtm-init"
+        id="gtag-init"
         strategy="afterInteractive"
         dangerouslySetInnerHTML={{
           __html: `
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${gtmId}', { send_page_view: false });
+            gtag('config', '${gaId}', { send_page_view: false });
           `,
         }}
       />
 
-      {/* Google Tag Manager - NoScript */}
+      {/* Google Analytics - NoScript fallback (не нужен для gtag, но сохраняем для совместимости) */}
       <noscript>
-        <iframe
-          src={`https://www.googletagmanager.com/ns.html?id=${gtmId}`}
+        <img
+          src={`https://www.google-analytics.com/collect?v=1&tid=${gaId}&t=pageview`}
           height="0"
           width="0"
           style={{ display: "none", visibility: "hidden" }}
-          title="Google Tag Manager"
+          alt=""
         />
       </noscript>
     </>

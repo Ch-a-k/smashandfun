@@ -14,8 +14,8 @@ export async function GET(req: NextRequest) {
   const dateTo = searchParams.get('dateTo') || getDefaultDateTo();
 
   try {
-    // Query GA4 for Google Ads campaign data
-    // advertiserAdCost, advertiserAdClicks, advertiserAdImpressions come from linked Google Ads
+    // Query GA4 — sessions from google source, grouped by campaign
+    // advertiserAd* metrics appear after GA4↔Google Ads link propagates (24-48h)
     const data = await runReport({
       dateRanges: [{ startDate: dateFrom, endDate: dateTo }],
       dimensions: [
@@ -36,52 +36,70 @@ export async function GET(req: NextRequest) {
           stringFilter: { value: 'google', matchType: 'EXACT' },
         },
       },
-      orderBys: [{ metric: { metricName: 'advertiserAdCost' }, desc: true }],
+      orderBys: [{ metric: { metricName: 'sessions' }, desc: true }],
       limit: 500,
     });
 
-    const campaigns: {
-      id: string;
-      name: string;
-      status: string;
-      cost: number;
-      clicks: number;
-      impressions: number;
-      conversions: number;
-      ctr: number;
-      cpc: number;
-      cpm: number;
-    }[] = [];
+    // Aggregate by campaign name (multiple mediums may exist for same campaign)
+    const campaignMap = new Map<string, {
+      name: string; cost: number; clicks: number; impressions: number;
+      sessions: number; conversions: number; isPaid: boolean;
+    }>();
 
     if (data.rows) {
       for (const row of data.rows) {
         const campaignName = row.dimensionValues[0]?.value || '(not set)';
         const medium = row.dimensionValues[2]?.value || '';
 
-        // Skip organic/non-ad traffic
-        if (medium !== 'cpc' && medium !== 'pmax' && medium !== 'cpv' && medium !== 'cpm') continue;
-        // Skip (not set) campaigns
-        if (campaignName === '(not set)' || campaignName === '(direct)') continue;
+        // Skip unnamed campaigns
+        if (campaignName === '(not set)' || campaignName === '(direct)' || campaignName === '(organic)') continue;
 
+        const sessions = Number(row.metricValues[0]?.value || 0);
         const cost = Number(row.metricValues[1]?.value || 0);
-        const clicks = Number(row.metricValues[2]?.value || 0);
-        const impressions = Number(row.metricValues[3]?.value || 0);
+        const adClicks = Number(row.metricValues[2]?.value || 0);
+        const adImpressions = Number(row.metricValues[3]?.value || 0);
         const conversions = Number(row.metricValues[4]?.value || 0);
 
-        campaigns.push({
-          id: campaignName.toLowerCase().replace(/\s+/g, '_'),
-          name: campaignName,
-          status: 'ENABLED',
-          cost,
-          clicks,
-          impressions,
-          conversions,
-          ctr: impressions > 0 ? clicks / impressions : 0,
-          cpc: clicks > 0 ? cost / clicks : 0,
-          cpm: impressions > 0 ? (cost / impressions) * 1000 : 0,
-        });
+        const isPaid = medium === 'cpc' || medium === 'pmax' || medium === 'cpv' || medium === 'cpm';
+
+        const key = campaignName.toLowerCase();
+        const existing = campaignMap.get(key);
+        if (existing) {
+          existing.cost += cost;
+          existing.clicks += adClicks > 0 ? adClicks : (isPaid ? sessions : 0);
+          existing.impressions += adImpressions;
+          existing.sessions += sessions;
+          existing.conversions += conversions;
+          if (isPaid) existing.isPaid = true;
+        } else {
+          campaignMap.set(key, {
+            name: campaignName,
+            cost,
+            clicks: adClicks > 0 ? adClicks : (isPaid ? sessions : 0),
+            impressions: adImpressions,
+            sessions,
+            conversions,
+            isPaid,
+          });
+        }
       }
     }
+
+    const campaigns = Array.from(campaignMap.values())
+      .filter(c => c.isPaid || c.cost > 0)
+      .map(c => ({
+        id: c.name.toLowerCase().replace(/\s+/g, '_'),
+        name: c.name,
+        status: 'ENABLED',
+        cost: c.cost,
+        clicks: c.clicks,
+        impressions: c.impressions,
+        conversions: c.conversions,
+        ctr: c.impressions > 0 ? c.clicks / c.impressions : 0,
+        cpc: c.clicks > 0 ? c.cost / c.clicks : 0,
+        cpm: c.impressions > 0 ? (c.cost / c.impressions) * 1000 : 0,
+      }))
+      .sort((a, b) => b.clicks - a.clicks || b.cost - a.cost);
 
     return NextResponse.json({
       configured: true,

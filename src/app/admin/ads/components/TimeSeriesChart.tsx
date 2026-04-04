@@ -27,10 +27,13 @@ interface ChartEntry {
 
 function generateDateRange(from: string, to: string): string[] {
   const dates: string[] = [];
-  const current = new Date(from + "T00:00:00");
-  const end = new Date(to + "T00:00:00");
+  const current = new Date(from + "T12:00:00"); // noon to avoid DST/timezone shifts
+  const end = new Date(to + "T12:00:00");
   while (current <= end) {
-    dates.push(current.toISOString().slice(0, 10));
+    const y = current.getFullYear();
+    const m = String(current.getMonth() + 1).padStart(2, "0");
+    const d = String(current.getDate()).padStart(2, "0");
+    dates.push(`${y}-${m}-${d}`);
     current.setDate(current.getDate() + 1);
   }
   return dates;
@@ -81,9 +84,9 @@ export default function TimeSeriesChart({
     fetchDaily();
   }, [fetchDaily]);
 
-  // Build revenue map from paidBookings grouped by date
+  // Build revenue map from paidBookings grouped by creation date
   const revenueByDate = paidBookings.reduce<Record<string, number>>((acc, b) => {
-    const d = b.date?.slice(0, 10) ?? "";
+    const d = (b.created_at || b.date)?.slice(0, 10) ?? "";
     if (!d) return acc;
     acc[d] = (acc[d] ?? 0) + Number(b.total_price ?? 0);
     return acc;
@@ -116,6 +119,10 @@ export default function TimeSeriesChart({
     >
       <div style={{ fontSize: 16, fontWeight: 700, color: "#f36e21", marginBottom: 20 }}>
         Trend: wydatki vs przychód
+      </div>
+
+      <div style={{ fontSize: 11, color: "#666", marginBottom: 12 }}>
+        Wydatki z GA4 Data API (mogą się różnić od Google Ads — GA4 przypisuje koszt tylko do sesji)
       </div>
 
       {loading ? (

@@ -77,9 +77,9 @@ function AdsPage() {
     setLoading(true);
     const { data } = await supabase
       .from("bookings")
-      .select("id, name, phone, user_email, total_price, status, utm_source, utm_medium, utm_campaign, utm_term, utm_content, referrer, landing_page, package_id, date")
-      .gte("date", dateFrom)
-      .lte("date", dateTo);
+      .select("id, name, phone, user_email, total_price, status, utm_source, utm_medium, utm_campaign, utm_term, utm_content, referrer, landing_page, package_id, date, created_at")
+      .gte("created_at", dateFrom)
+      .lte("created_at", dateTo + "T23:59:59");
     setBookings((data as BookingFull[]) || []);
     setLoading(false);
   }, [dateFrom, dateTo]);
@@ -117,9 +117,9 @@ function AdsPage() {
     setPrevLoading(true);
     supabase
       .from("bookings")
-      .select("id, total_price, status, utm_source, date")
-      .gte("date", prevFrom.toISOString().slice(0, 10))
-      .lte("date", prevTo.toISOString().slice(0, 10))
+      .select("id, total_price, status, utm_source, date, created_at")
+      .gte("created_at", prevFrom.toISOString().slice(0, 10))
+      .lte("created_at", prevTo.toISOString().slice(0, 10) + "T23:59:59")
       .then(({ data }) => {
         setPrevBookings((data as BookingFull[]) || []);
         setPrevLoading(false);

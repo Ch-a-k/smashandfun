@@ -23,21 +23,9 @@ export async function GET(req: NextRequest) {
         { name: 'advertiserAdImpressions' },
       ],
       dimensionFilter: {
-        andGroup: {
-          expressions: [
-            {
-              filter: {
-                fieldName: 'sessionSource',
-                stringFilter: { value: 'google', matchType: 'EXACT' },
-              },
-            },
-            {
-              filter: {
-                fieldName: 'sessionMedium',
-                inListFilter: { values: ['cpc', 'pmax', 'cpv', 'cpm'] },
-              },
-            },
-          ],
+        filter: {
+          fieldName: 'sessionSource',
+          stringFilter: { value: 'google', matchType: 'EXACT' },
         },
       },
       orderBys: [{ dimension: { dimensionName: 'date' }, desc: false }],

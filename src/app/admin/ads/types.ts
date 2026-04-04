@@ -35,6 +35,7 @@ export interface BookingFull {
   referrer?: string | null;
   landing_page?: string | null;
   date: string;
+  created_at?: string | null;
   name?: string | null;
   phone?: string | null;
   user_email?: string | null;

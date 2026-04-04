@@ -101,7 +101,7 @@ export default function SummaryCards({
       <SummaryCard
         label="Wydatki (Google Ads)"
         value={isConfigured ? formatMoney(totalSpend) : "—"}
-        sub={!isConfigured ? "Podłącz API" : undefined}
+        sub={!isConfigured ? "Podłącz API" : isConfigured && totalSpend > 0 ? "via GA4 — może być niższe niż w Google Ads" : undefined}
         color="#ea4335"
         icon={<FaMoneyBillWave />}
       />

@@ -21,8 +21,9 @@ interface CampaignChartsProps {
 }
 
 const tooltipStyle: React.CSSProperties = {
-  background: "#23222a",
-  border: "1px solid #333",
+  background: "#fff",
+  color: "#222",
+  border: "1px solid #ddd",
   borderRadius: 8,
   fontSize: 12,
 };

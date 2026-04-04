@@ -100,6 +100,20 @@ export default function RootLayout({
   return (
     <html lang="pl" className={`${impact.variable} ${akrobat.variable} ${inter.className}`}>
       <head>
+        {/* Основные иконки */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        
+        {/* Apple Touch иконки */}
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.jpg" />
+        
+        {/* Манифест и другие метаданные */}
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="theme-color" content="#f36e21" />
+        <meta name="msapplication-TileColor" content="#f36e21" />
+      </head>
+      <body className="bg-[#231f20]">
         {/* Google tag (gtag.js) */}
         <Script
           id="gtag-script"
@@ -118,21 +132,6 @@ export default function RootLayout({
             `,
           }}
         />
-
-        {/* Основные иконки */}
-        <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        
-        {/* Apple Touch иконки */}
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.jpg" />
-        
-        {/* Манифест и другие метаданные */}
-        <link rel="manifest" href="/site.webmanifest" />
-        <meta name="theme-color" content="#f36e21" />
-        <meta name="msapplication-TileColor" content="#f36e21" />
-      </head>
-      <body className="bg-[#231f20]">
         <I18nProvider>
           <UtmCapture />
           {children}

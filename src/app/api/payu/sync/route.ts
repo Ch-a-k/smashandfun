@@ -88,15 +88,27 @@ async function fetchOrderByExtOrderId(accessToken: string, env: string, extOrder
 export async function POST(req: Request) {
   try {
     const env = process.env.PAYU_ENV || 'sandbox';
-    const { bookingId, extOrderId } = await req.json();
-    if (!bookingId && !extOrderId) {
+    const { bookingId, extOrderId: extOrderIdBody } = await req.json() as {
+      bookingId?: string;
+      extOrderId?: string;
+    };
+    if (!bookingId && !extOrderIdBody) {
       return NextResponse.json({ error: 'bookingId or extOrderId is required' }, { status: 400 });
     }
 
+    let extOrderId = extOrderIdBody;
+    if (!extOrderId && bookingId) {
+      const { data: b } = await supabaseAdmin
+        .from('bookings')
+        .select('payment_id')
+        .eq('id', bookingId)
+        .maybeSingle()
+        .returns<{ payment_id: string | null }>();
+      extOrderId = b?.payment_id ?? undefined;
+    }
+
     const accessToken = await getAccessToken(env);
-    const order = extOrderId
-      ? await fetchOrderByExtOrderId(accessToken, env, extOrderId)
-      : null;
+    const order = extOrderId ? await fetchOrderByExtOrderId(accessToken, env, extOrderId) : null;
 
     if (!order) {
       return NextResponse.json({ error: 'PayU order not found' }, { status: 404 });

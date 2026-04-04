@@ -248,6 +248,10 @@ export async function POST(req: Request) {
       return new Response('', { status: 200 });
     }
 
+    if (body.order?.status === 'COMPLETED' && !resolvedBookingId) {
+      console.error('PayU notify: COMPLETED bez powiązania rezerwacji — sprawdź notifyUrl, extOrderId i payu_id w bookings');
+    }
+
     // PayU требует ответить 200 OK и вернуть пустой body
     return new Response('', { status: 200 });
   } catch (e) {

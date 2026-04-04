@@ -123,7 +123,7 @@ export const trackPageview = (url: string): void => {
 
 // TikTok Pixel - отправка события
 export const trackTikTokEvent = (event: string, properties?: Record<string, unknown>): void => {
-  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
   
   try {
     window.ttq.track(event, properties);
@@ -134,7 +134,7 @@ export const trackTikTokEvent = (event: string, properties?: Record<string, unkn
 
 // TikTok Pixel - просмотр страницы
 export const trackTikTokPageView = (): void => {
-  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
   
   try {
     window.ttq.page();
@@ -151,7 +151,7 @@ export const trackTikTokViewContent = (params: {
   price?: number;
   currency?: string;
 }): void => {
-  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
   
   try {
     window.ttq.track('ViewContent', {
@@ -174,7 +174,7 @@ export const trackTikTokInitiateCheckout = (params: {
   value?: number;
   currency?: string;
 }): void => {
-  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
   
   try {
     window.ttq.track('InitiateCheckout', {
@@ -197,7 +197,7 @@ export const trackTikTokCompletePayment = (params: {
   value?: number;
   currency?: string;
 }): void => {
-  if (!isClient() || !window.ttq || !isAnalyticsAllowed()) return;
+  if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
 
   try {
     window.ttq.track('CompletePayment', {
@@ -220,7 +220,7 @@ export const trackFBViewContent = (params: {
   value?: number;
   currency?: string;
 }): void => {
-  if (!isClient() || !window.fbq || !isAnalyticsAllowed()) return;
+  if (!isClient() || !window.fbq || !isMarketingAllowed()) return;
 
   try {
     window.fbq('track', 'ViewContent', {
@@ -244,7 +244,7 @@ export const trackFBInitiateCheckout = (params: {
   currency?: string;
   num_items?: number;
 }): void => {
-  if (!isClient() || !window.fbq || !isAnalyticsAllowed()) return;
+  if (!isClient() || !window.fbq || !isMarketingAllowed()) return;
 
   try {
     window.fbq('track', 'InitiateCheckout', {
@@ -269,7 +269,7 @@ export const trackFBPurchase = (params: {
   currency?: string;
   num_items?: number;
 }): void => {
-  if (!isClient() || !window.fbq || !isAnalyticsAllowed()) return;
+  if (!isClient() || !window.fbq || !isMarketingAllowed()) return;
 
   try {
     window.fbq('track', 'Purchase', {

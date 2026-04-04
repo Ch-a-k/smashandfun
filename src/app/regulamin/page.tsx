@@ -72,6 +72,9 @@ export default function TermsPage() {
                 <p>{t('terms.companyInfo.name')}</p>
                 <p>{t('terms.companyInfo.address')}</p>
                 <p>{t('terms.companyInfo.city')}</p>
+                <p>{t('terms.companyInfo.nip')}</p>
+                <p>{t('terms.companyInfo.regon')}</p>
+                <p>{t('terms.companyInfo.krs')}</p>
                 <p className="mt-4">{t('terms.companyInfo.validFrom')} 01.03.2024</p>
               </div>
             </motion.div>
@@ -142,6 +145,9 @@ export default function TermsPage() {
                   <p>{t('terms.companyInfo.name')}</p>
                   <p>{t('terms.companyInfo.address')}</p>
                   <p>{t('terms.companyInfo.city')}</p>
+                  <p>{t('terms.companyInfo.nip')}</p>
+                  <p>{t('terms.companyInfo.regon')}</p>
+                  <p>{t('terms.companyInfo.krs')}</p>
                   <p className="mt-4 text-sm">{t('terms.footer')}</p>
                 </div>
               </div>

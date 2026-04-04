@@ -2,27 +2,33 @@
 
 import { usePathname } from 'next/navigation';
 import Script from 'next/script';
-import { useEffect, useState } from 'react';
-import { isAnalyticsAllowed } from '@/lib/analytics';
+import { useEffect, useRef, useState } from 'react';
+import { isMarketingAllowed } from '@/lib/analytics';
 
 export default function TikTokPixel() {
   const pathname = usePathname();
   const pixelId = 'D6276P3C77U6LCNG39R0';
   const [isMounted, setIsMounted] = useState(false);
-  const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
+  const [marketingAllowed, setMarketingAllowed] = useState(false);
+  const hasTrackedInitialPageView = useRef(false);
 
   // Проверяем разрешения и устанавливаем состояние
   useEffect(() => {
     setIsMounted(true);
-    setAnalyticsAllowed(isAnalyticsAllowed());
+    setMarketingAllowed(isMarketingAllowed());
   }, []);
 
-  // Отслеживание изменения страницы
+  // Отслеживание изменения страницы, пропуская первый рендер
+  // (inline ttq.page() уже вызывается при инициализации)
   useEffect(() => {
-    if (pathname && isMounted && analyticsAllowed && typeof window !== 'undefined' && window.ttq) {
-      window.ttq.page();
+    if (pathname && isMounted && marketingAllowed && typeof window !== 'undefined' && window.ttq) {
+      if (hasTrackedInitialPageView.current) {
+        window.ttq.page();
+      } else {
+        hasTrackedInitialPageView.current = true;
+      }
     }
-  }, [pathname, isMounted, analyticsAllowed]);
+  }, [pathname, isMounted, marketingAllowed]);
 
   // Во время первого рендера на сервере или до монтирования возвращаем пустой фрагмент
   if (!isMounted) {
@@ -34,8 +40,8 @@ export default function TikTokPixel() {
     return null;
   }
 
-  // Не загружаем скрипт, если пользователь не дал согласие на аналитику
-  if (!analyticsAllowed) {
+  // Не загружаем скрипт, если пользователь не дал согласие на маркетинг
+  if (!marketingAllowed) {
     return null;
   }
 

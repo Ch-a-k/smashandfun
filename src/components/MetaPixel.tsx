@@ -2,27 +2,33 @@
 
 import { usePathname } from 'next/navigation';
 import Script from 'next/script';
-import { useEffect, useState } from 'react';
-import { isAnalyticsAllowed } from '@/lib/analytics';
+import { useEffect, useRef, useState } from 'react';
+import { isMarketingAllowed } from '@/lib/analytics';
 
 const FB_PIXEL_ID = '737878458949440';
 
 export default function MetaPixel() {
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
-  const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
+  const [marketingAllowed, setMarketingAllowed] = useState(false);
+  const hasTrackedInitialPageView = useRef(false);
 
   useEffect(() => {
     setIsMounted(true);
-    setAnalyticsAllowed(isAnalyticsAllowed());
+    setMarketingAllowed(isMarketingAllowed());
   }, []);
 
-  // Отправляем PageView при смене страницы
+  // Отправляем PageView при смене страницы, пропуская первый рендер
+  // (inline fbq script уже вызывает PageView при инициализации)
   useEffect(() => {
-    if (pathname && isMounted && analyticsAllowed && typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'PageView');
+    if (pathname && isMounted && marketingAllowed && typeof window !== 'undefined' && window.fbq) {
+      if (hasTrackedInitialPageView.current) {
+        window.fbq('track', 'PageView');
+      } else {
+        hasTrackedInitialPageView.current = true;
+      }
     }
-  }, [pathname, isMounted, analyticsAllowed]);
+  }, [pathname, isMounted, marketingAllowed]);
 
   if (!isMounted) {
     return null;
@@ -32,7 +38,7 @@ export default function MetaPixel() {
     return null;
   }
 
-  if (!analyticsAllowed) {
+  if (!marketingAllowed) {
     return null;
   }
 

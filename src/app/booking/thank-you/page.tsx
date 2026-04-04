@@ -139,7 +139,7 @@ export default function ThankYouPage() {
         currency: 'PLN',
       });
       sendGTMEvent({
-        event: 'complete_payment',
+        event: 'purchase',
         ecommerce: {
           items: [{
             item_id: packageId || bookingId || extOrderId || 'unknown',

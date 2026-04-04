@@ -362,8 +362,8 @@ export const pl = {
       general: {
         title: 'Informacje Ogólne',
         content: [
-          'Niniejsza Polityka Prywatności określa zasady przetwarzania i ochrony danych osobowych przekazanych przez Użytkowników w związku z korzystaniem z usług Smash&Fun.',
-          'Administratorem danych osobowych jest Smash&Fun z siedzibą w Warszawie przy ul. Postępu 19/4.',
+          'Niniejsza Polityka Prywatności określa zasady przetwarzania i ochrony danych osobowych przekazanych przez Użytkowników w związku z korzystaniem z usług SMASH&FUN sp. z o.o.',
+          'Administratorem danych osobowych jest SMASH&FUN sp. z o.o. z siedzibą w Warszawie przy ul. Postępu 19/4, 02-676 Warszawa, NIP: 521 407 2287, REGON: 528804913, KRS: 0001108915.',
           'Dokładamy wszelkich starań, aby chronić Państwa prywatność i bezpieczeństwo danych osobowych podczas korzystania z naszych usług.'
         ]
       },
@@ -391,14 +391,17 @@ export const pl = {
         ]
       },
       cookies: {
-        title: 'Pliki Cookies',
+        title: 'Pliki Cookies i Technologie Śledzenia',
         content: [
-          'Nasza strona wykorzystuje pliki cookies w celu:',
-          '• Zapewnienia prawidłowego działania strony',
-          '• Zapamiętywania preferencji użytkownika',
-          '• Analizy ruchu na stronie',
-          '• Dostosowania treści do potrzeb użytkowników',
-          'Użytkownik może w każdej chwili zmienić ustawienia cookies w swojej przeglądarce.'
+          'Nasza strona wykorzystuje pliki cookies i technologie śledzenia w celu:',
+          '• Zapewnienia prawidłowego działania strony (niezbędne)',
+          '• Zapamiętywania preferencji użytkownika (niezbędne)',
+          '• Analizy ruchu na stronie i skuteczności kampanii reklamowych (analityczne)',
+          '• Dostosowania treści reklamowych do potrzeb użytkowników (marketingowe)',
+          'Stosujemy mechanizm Google Consent Mode v2, który umożliwia podstawowe, anonimowe zbieranie danych analitycznych bez wykorzystania plików cookies (tryb bezplikowy), na podstawie prawnie uzasadnionego interesu administratora (art. 6 ust. 1 lit. f RODO). W tym trybie nie są przechowywane żadne pliki cookies analityczne ani marketingowe na urządzeniu użytkownika.',
+          'Po wyrażeniu zgody przez użytkownika za pośrednictwem banera cookie, odpowiednie pliki cookies są aktywowane zgodnie z dokonanymi wyborami (analityczne i/lub marketingowe).',
+          'Piksele reklamowe (Facebook Pixel, TikTok Pixel) są ładowane wyłącznie po wyrażeniu zgody na pliki marketingowe.',
+          'Użytkownik może w każdej chwili zmienić ustawienia cookies za pomocą banera cookie na stronie lub w ustawieniach przeglądarki.'
         ]
       },
       rights: {
@@ -516,19 +519,22 @@ export const pl = {
     title: "Regulamin",
     lastUpdated: "Ostatnia aktualizacja:",
     companyInfo: {
-      name: "Smashandfun",
+      name: "SMASH&FUN sp. z o.o.",
       address: "ul. Postępu 19/4",
       city: "02-676 Warszawa",
+      nip: "NIP: 521 407 2287",
+      regon: "REGON: 528804913",
+      krs: "KRS: 0001108915",
       validFrom: "Obowiązuje od:"
     },
-    footer: "© 2025 Smashandfun. Wszelkie prawa zastrzeżone.",
+    footer: "© 2025 SMASH&FUN sp. z o.o. Wszelkie prawa zastrzeżone.",
     sections: {
       general: {
         title: "1. Postanowienia Ogólne",
         content: [
-          "1.1. Niniejszy Regulamin określa zasady korzystania z usług świadczonych przez Smashandfun Sp. z o.o., zwaną dalej 'Usługodawcą', z siedzibą w Warszawie przy ul. Postępu 19/4, 02-676 Warszawa, NIP: XXX, REGON: XXX, KRS: XXX.",
+          "1.1. Niniejszy Regulamin określa zasady korzystania z usług świadczonych przez SMASH&FUN sp. z o.o., zwaną dalej 'Usługodawcą', z siedzibą w Warszawie przy ul. Postępu 19/4, 02-676 Warszawa, NIP: 521 407 2287, REGON: 528804913, KRS: 0001108915.",
           "1.2. Pokój złości (rage room) jest obiektem rozrywkowym, w którym Uczestnicy mogą w kontrolowany i bezpieczny sposób rozładować negatywne emocje poprzez niszczenie przeznaczonych do tego przedmiotów.",
-          "1.3. Korzystanie z usług Smashandfun oznacza akceptację niniejszego Regulaminu w całości, bez żadnych zastrzeżeń.",
+          "1.3. Korzystanie z usług SMASH&FUN oznacza akceptację niniejszego Regulaminu w całości, bez żadnych zastrzeżeń.",
           "1.4. Usługodawca zastrzega sobie prawo do wprowadzania zmian w Regulaminie. O wszelkich zmianach Użytkownicy będą informowani z wyprzedzeniem 14 dni poprzez stronę internetową oraz drogą mailową.",
           "1.5. Regulamin jest dostępny na stronie internetowej www.smashandfun.pl oraz w lokalu Usługodawcy w formie pisemnej.",
           "1.6. W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie mają przepisy prawa polskiego, w szczególności Kodeksu Cywilnego."
@@ -537,7 +543,7 @@ export const pl = {
       services: {
         title: "2. Zakres Świadczonych Usług",
         content: [
-          "2.1. Smashandfun oferuje następujące usługi:",
+          "2.1. SMASH&FUN oferuje następujące usługi:",
           "a) Udostępnienie pokoju złości wraz z wyposażeniem w ramach różnych pakietów czasowych",
           "b) Organizację imprez okolicznościowych (urodziny, wieczory panieńskie/kawalerskie)",
           "c) Organizację wydarzeń firmowych i integracyjnych",
@@ -723,7 +729,7 @@ export const pl = {
           "- Opis sytuacji",
           "- Oczekiwany sposób rozwiązania",
           "8.4. Dane osobowe:",
-          "a) Administratorem danych jest Smashandfun Sp. z o.o.",
+          "a) Administratorem danych jest SMASH&FUN sp. z o.o.",
           "b) Przetwarzanie zgodnie z Polityką Prywatności",
           "c) Cel przetwarzania - realizacja usług i marketing",
           "8.5. Komunikacja:",

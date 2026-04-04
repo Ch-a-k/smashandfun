@@ -42,6 +42,18 @@ const safeSetToStorage = (key: string, value: string): boolean => {
   }
 };
 
+// Updates Google Consent Mode v2 based on current consent choices
+const updateGtagConsent = (analyticsAccepted: boolean, marketingAccepted: boolean) => {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('consent', 'update', {
+      'analytics_storage': analyticsAccepted ? 'granted' : 'denied',
+      'ad_storage': marketingAccepted ? 'granted' : 'denied',
+      'ad_user_data': marketingAccepted ? 'granted' : 'denied',
+      'ad_personalization': marketingAccepted ? 'granted' : 'denied',
+    });
+  }
+};
+
 export default function CookieConsent() {
   const { t } = useI18n();
   const [showBanner, setShowBanner] = useState(false);
@@ -51,7 +63,7 @@ export default function CookieConsent() {
 
   useEffect(() => {
     setIsMounted(true);
-    
+
     try {
       // Check if user has already made a choice
       const consent = safeGetFromStorage('cookieConsent');
@@ -62,13 +74,15 @@ export default function CookieConsent() {
 
       // Проверяем, что значение является валидным JSON
       const parsedConsent = JSON.parse(consent);
-      
+
       // Проверяем, что все необходимые поля присутствуют
-      if (typeof parsedConsent === 'object' && 
-          'necessary' in parsedConsent && 
-          'analytics' in parsedConsent && 
+      if (typeof parsedConsent === 'object' &&
+          'necessary' in parsedConsent &&
+          'analytics' in parsedConsent &&
           'marketing' in parsedConsent) {
         setSettings(parsedConsent);
+        // Restore consent state for GA on page load
+        updateGtagConsent(parsedConsent.analytics, parsedConsent.marketing);
       } else {
         // Если структура неверная, сбрасываем к настройкам по умолчанию
         safeSetToStorage('cookieConsent', JSON.stringify(defaultSettings));
@@ -97,10 +111,11 @@ export default function CookieConsent() {
       safeSetToStorage('cookieConsent', JSON.stringify(allAccepted));
       setSettings(allAccepted);
       setShowBanner(false);
-      
+
       // Если настройки аналитики или маркетинга изменились, перезагружаем страницу
-      if (currentSettings?.analytics !== allAccepted.analytics || 
+      if (currentSettings?.analytics !== allAccepted.analytics ||
           currentSettings?.marketing !== allAccepted.marketing) {
+        updateGtagConsent(allAccepted.analytics, allAccepted.marketing);
         // Задержка перед перезагрузкой, чтобы модальное окно успело закрыться
         setTimeout(() => {
           console.log('Reloading page after accepting all cookies');
@@ -122,10 +137,11 @@ export default function CookieConsent() {
       safeSetToStorage('cookieConsent', JSON.stringify(settings));
       setShowBanner(false);
       setShowSettings(false);
-      
+
       // Если настройки аналитики или маркетинга изменились, перезагружаем страницу
-      if (currentSettings?.analytics !== settings.analytics || 
+      if (currentSettings?.analytics !== settings.analytics ||
           currentSettings?.marketing !== settings.marketing) {
+        updateGtagConsent(settings.analytics, settings.marketing);
         // Задержка перед перезагрузкой, чтобы модальное окно успело закрыться
         setTimeout(() => {
           console.log('Reloading page after saving cookie settings');
@@ -147,10 +163,11 @@ export default function CookieConsent() {
       safeSetToStorage('cookieConsent', JSON.stringify(defaultSettings));
       setSettings(defaultSettings);
       setShowBanner(false);
-      
+
       // Если настройки аналитики или маркетинга изменились, перезагружаем страницу
-      if (currentSettings?.analytics !== defaultSettings.analytics || 
+      if (currentSettings?.analytics !== defaultSettings.analytics ||
           currentSettings?.marketing !== defaultSettings.marketing) {
+        updateGtagConsent(defaultSettings.analytics, defaultSettings.marketing);
         // Задержка перед перезагрузкой, чтобы модальное окно успело закрыться
         setTimeout(() => {
           console.log('Reloading page after rejecting all cookies');

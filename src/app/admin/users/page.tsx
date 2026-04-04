@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabaseClient';
 import { withAdminAuth } from '../components/withAdminAuth';
 import { FaChevronDown, FaChevronUp, FaSort, FaSortUp, FaSortDown, FaGoogle, FaTiktok, FaFacebook, FaGlobe, FaSearch, FaFileExport, FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaMoneyBillWave, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa';
@@ -132,6 +133,7 @@ function getSegmentBadge(segment: 'b2b' | 'b2c' | 'none') {
 
 // ─── Main Component ──────────────────────────────────────────
 function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<UserStats[]>([]);
   const [packages, setPackages] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -170,6 +172,26 @@ function UsersPage() {
     setSourceEdits(prev => ({ ...prev, [userId]: value }));
   }
   const editCount = new Set([...Object.keys(segmentEdits), ...Object.keys(sourceEdits)]).size;
+
+  useEffect(() => {
+    async function checkRole() {
+      const email = typeof window !== "undefined" ? localStorage.getItem("admin_email") : null;
+      if (!email) {
+        router.replace("/admin/login");
+        return;
+      }
+      const { data } = await supabase
+        .from("admins")
+        .select("role")
+        .eq("email", email)
+        .single();
+      const r = (data as { role?: string } | null)?.role;
+      if (!r || r !== "superadmin") {
+        router.replace("/admin/bookings");
+      }
+    }
+    checkRole();
+  }, [router]);
 
   async function saveSegmentEdits() {
     const allIds = new Set([...Object.keys(segmentEdits), ...Object.keys(sourceEdits)]);

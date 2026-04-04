@@ -3,14 +3,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const menu = [
+const SUPERADMIN_MENU = [
   { href: "/admin", label: "Panel" },
   { href: "/admin/packages", label: "Pakiety" },
   { href: "/admin/extra-items", label: "Dodatki" },
   { href: "/admin/bookings", label: "Rezerwacje" },
   { href: "/admin/promo-codes", label: "Promocje" },
   { href: "/admin/users", label: "Klienci" },
+  { href: "/admin/ads", label: "IF. ADS" },
+  { href: "/admin/admins", label: "Administratory" },
 ];
+
+const ADMIN_MENU = [{ href: "/admin/bookings", label: "Rezerwacje" }];
 
 export default function AdminSidebar() {
   const pathname = usePathname();
@@ -45,21 +49,22 @@ export default function AdminSidebar() {
     window.location.replace("/admin/login");
   }
 
-  const allMenu = role === 'superadmin'
-    ? [...menu, { href: "/admin/ads", label: "IF. ADS" }, { href: "/admin/admins", label: "Adminy" }]
-    : menu;
+  const visibleMenu = role === 'superadmin' ? SUPERADMIN_MENU : ADMIN_MENU;
+
+  const logoutButtonClass =
+    "w-full text-left rounded-md px-8 py-2.5 text-[15px] font-medium text-gray-400 transition-colors hover:bg-white/[0.06] hover:text-gray-200 active:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f36e21]/50";
 
   return (
     <>
-      {/* Mobile: sticky top bar */}
-      <nav className="md:hidden sticky top-0 z-50 bg-[#23222a] shadow-lg">
-        <div className="flex items-center overflow-x-auto px-2 py-2 gap-1 no-scrollbar">
-          <span className="text-[#f36e21] font-black text-base shrink-0 mr-2">ADMIN</span>
-          {allMenu.map(item => (
+      {/* Mobile */}
+      <nav className="md:hidden sticky top-0 z-50 flex flex-col bg-[#23222a] shadow-lg border-b border-white/[0.06]">
+        <div className="flex items-center gap-1 overflow-x-auto px-2 py-2 no-scrollbar">
+          <span className="text-[#f36e21] font-black text-base shrink-0 pl-1 pr-2">ADMIN</span>
+          {visibleMenu.map(item => (
             <Link
               key={item.href}
               href={item.href}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+              className={`shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
                 pathname === item.href
                   ? 'bg-[#f36e21] text-white'
                   : 'text-gray-300 hover:text-white hover:bg-white/10'
@@ -68,102 +73,38 @@ export default function AdminSidebar() {
               {item.label}
             </Link>
           ))}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="shrink-0 ml-1 px-3 py-1.5 rounded-full text-sm font-semibold text-red-200 border border-red-400/40 hover:bg-red-500/15 hover:text-white transition-all whitespace-nowrap"
-          >
-            Wyloguj
+        </div>
+        <div className="shrink-0 border-t border-white/[0.06] px-2 py-1.5">
+          <button type="button" onClick={handleLogout} className={logoutButtonClass}>
+            Wyloguj się
           </button>
         </div>
       </nav>
 
-      {/* Desktop: sidebar */}
-      <aside className="hidden md:flex" style={{
-        width: 220,
-        background: '#23222a',
-        color: '#fff',
-        padding: '40px 0',
-        minHeight: '100vh',
-        boxShadow: '2px 0 16px #0004',
-        flexDirection: 'column',
-        gap: 8
-      }}>
-        <div style={{ fontWeight: 900, fontSize: 22, color: '#f36e21', textAlign: 'center', marginBottom: 32, letterSpacing: 1 }}>ADMIN</div>
-        {menu.map(item => (
-          <Link
-            key={item.href}
-            href={item.href}
-            style={{
-              display: 'block',
-              padding: '12px 32px',
-              color: pathname === item.href ? '#f36e21' : '#fff',
-              background: pathname === item.href ? 'rgba(243,110,33,0.08)' : 'none',
-              fontWeight: pathname === item.href ? 700 : 500,
-              borderLeft: pathname === item.href ? '4px solid #f36e21' : '4px solid transparent',
-              textDecoration: 'none',
-              fontSize: 17,
-              transition: 'all 0.15s'
-            }}
-          >
-            {item.label}
-          </Link>
-        ))}
-        {role === 'superadmin' && (
-          <Link
-            href="/admin/ads"
-            style={{
-              display: 'block',
-              padding: '12px 32px',
-              color: pathname === '/admin/ads' ? '#f36e21' : '#fff',
-              background: pathname === '/admin/ads' ? 'rgba(243,110,33,0.08)' : 'none',
-              fontWeight: pathname === '/admin/ads' ? 700 : 500,
-              borderLeft: pathname === '/admin/ads' ? '4px solid #f36e21' : '4px solid transparent',
-              textDecoration: 'none',
-              fontSize: 17,
-              transition: 'all 0.15s',
-              marginTop: 18
-            }}
-          >
-            IF. ADS
-          </Link>
-        )}
-        {role === 'superadmin' && (
-          <Link
-            href="/admin/admins"
-            style={{
-              display: 'block',
-              padding: '12px 32px',
-              color: pathname === '/admin/admins' ? '#f36e21' : '#fff',
-              background: pathname === '/admin/admins' ? 'rgba(243,110,33,0.08)' : 'none',
-              fontWeight: pathname === '/admin/admins' ? 700 : 500,
-              borderLeft: pathname === '/admin/admins' ? '4px solid #f36e21' : '4px solid transparent',
-              textDecoration: 'none',
-              fontSize: 17,
-              transition: 'all 0.15s',
-              marginTop: 18
-            }}
-          >
-            Administratory
-          </Link>
-        )}
-        <div style={{ marginTop: 'auto', padding: '24px 24px 0' }}>
-          <button
-            type="button"
-            onClick={handleLogout}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              borderRadius: 8,
-              border: '2px solid #c62828',
-              background: 'rgba(198,40,40,0.12)',
-              color: '#ffcdd2',
-              fontWeight: 700,
-              fontSize: 15,
-              cursor: 'pointer',
-              transition: 'all 0.15s',
-            }}
-          >
+      {/* Desktop: фиксированная высота окна — футер с выходом не «прыгает» с длиной контента main */}
+      <aside className="hidden md:flex md:flex-col md:h-dvh md:sticky md:top-0 md:shrink-0 w-[220px] bg-[#23222a] text-white shadow-[2px_0_16px_rgba(0,0,0,0.25)]">
+        <div className="shrink-0 pt-8 pb-6 text-center font-black text-[22px] tracking-wide text-[#f36e21]">
+          ADMIN
+        </div>
+
+        <nav className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-1">
+          {visibleMenu.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`block px-8 py-3 text-[17px] no-underline transition-all ${
+                pathname === item.href
+                  ? 'border-l-4 border-[#f36e21] bg-[rgba(243,110,33,0.08)] font-bold text-[#f36e21]'
+                  : 'border-l-4 border-transparent font-medium text-white hover:bg-white/[0.04]'
+              } ${item.href === '/admin/ads' || item.href === '/admin/admins' ? 'mt-[18px]' : ''}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="shrink-0 border-t border-white/[0.08] py-3 px-0">
+          <button type="button" onClick={handleLogout} className={logoutButtonClass}>
             Wyloguj się
           </button>
         </div>

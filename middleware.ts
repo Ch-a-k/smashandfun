@@ -2,30 +2,42 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const adminRole = request.cookies.get('admin_role')?.value;
-  const protectedPaths = [
+  const { pathname } = request.nextUrl;
+
+  if (!adminRole || adminRole === 'superadmin') {
+    return NextResponse.next();
+  }
+
+  if (pathname === '/admin') {
+    return NextResponse.redirect(new URL('/admin/bookings', request.url));
+  }
+
+  const superadminOnly = [
     '/admin/admins',
     '/admin/packages',
-    '/admin/promo-codes'
+    '/admin/promo-codes',
+    '/admin/extra-items',
+    '/admin/users',
+    '/admin/ads',
   ];
-  const { pathname } = request.nextUrl;
-  if (protectedPaths.some(path => pathname === path || pathname.startsWith(path + '/'))) {
-    // If cookie is missing, don't hard-block navigation.
-    // Client-side pages already verify role via Supabase.
-    if (adminRole && adminRole !== 'superadmin') {
-      return NextResponse.redirect(new URL('/admin/bookings', request.url));
-    }
+  if (superadminOnly.some((path) => pathname === path || pathname.startsWith(`${path}/`))) {
+    return NextResponse.redirect(new URL('/admin/bookings', request.url));
   }
+
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/admin/admins',
-    '/admin/packages',
-    '/admin/promo-codes',
-    // и все вложенные
+    '/admin',
     '/admin/admins/:path*',
     '/admin/packages/:path*',
-    '/admin/promo-codes/:path*'
-  ]
-}; 
+    '/admin/promo-codes/:path*',
+    '/admin/extra-items',
+    '/admin/extra-items/:path*',
+    '/admin/users',
+    '/admin/users/:path*',
+    '/admin/ads',
+    '/admin/ads/:path*',
+  ],
+};

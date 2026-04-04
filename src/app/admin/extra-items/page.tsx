@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabaseClient';
 import { withAdminAuth } from '../components/withAdminAuth';
 
@@ -24,6 +25,7 @@ const emptyItem: Omit<ExtraItem, 'id'> = {
 };
 
 function ExtraItemsPage() {
+  const router = useRouter();
   const [items, setItems] = useState<ExtraItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,6 +36,26 @@ function ExtraItemsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function checkRole() {
+      const email = typeof window !== "undefined" ? localStorage.getItem("admin_email") : null;
+      if (!email) {
+        router.replace("/admin/login");
+        return;
+      }
+      const { data } = await supabase
+        .from("admins")
+        .select("role")
+        .eq("email", email)
+        .single();
+      const r = (data as { role?: string } | null)?.role;
+      if (!r || r !== "superadmin") {
+        router.replace("/admin/bookings");
+      }
+    }
+    checkRole();
+  }, [router]);
 
   async function fetchItems() {
     setLoading(true);

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { findPaymentIdByTransactionId } from '@/lib/payuPaymentIdempotency';
 
 type PayuOrder = {
   orderId: string;
@@ -271,11 +272,7 @@ async function handleReconcile(req: Request) {
       }
 
       if (order.status === 'COMPLETED') {
-        const { data: existingPayment } = await supabaseAdmin
-          .from('payments')
-          .select('id')
-          .eq('transaction_id', order.orderId)
-          .single();
+        const existingPaymentId = await findPaymentIdByTransactionId(order.orderId);
 
         const { data: existingPayments } = await supabaseAdmin
           .from('payments')
@@ -284,7 +281,7 @@ async function handleReconcile(req: Request) {
 
         const previousTotal = existingPayments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
         const payuAmountPln = Number(order.totalAmount) / 100;
-        const newPaymentAmount = existingPayment ? 0 : payuAmountPln;
+        const newPaymentAmount = existingPaymentId ? 0 : payuAmountPln;
         const newTotal = previousTotal + newPaymentAmount;
         const orderTotal = normalizeBookingTotal(Number(booking.total_price), payuAmountPln);
         const bookingStatus: 'paid' | 'deposit' = newTotal >= orderTotal ? 'paid' : 'deposit';
@@ -297,7 +294,7 @@ async function handleReconcile(req: Request) {
             .eq('id', booking.id);
         }
 
-        if (!existingPayment) {
+        if (!existingPaymentId) {
           await supabaseAdmin
             .from('payments')
             .insert([

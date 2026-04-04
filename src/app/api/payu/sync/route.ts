@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { findPaymentIdByTransactionId } from '@/lib/payuPaymentIdempotency';
 
 type PayuOrder = {
   orderId: string;
@@ -124,12 +125,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
       }
 
-      const { data: existingPayment } = await supabaseAdmin
-        .from('payments')
-        .select('id')
-        .eq('transaction_id', order.orderId)
-        .single();
-      if (!existingPayment) {
+      const existingPaymentId = await findPaymentIdByTransactionId(order.orderId);
+      if (!existingPaymentId) {
         const { data: existingPayments } = await supabaseAdmin
           .from('payments')
           .select('amount')

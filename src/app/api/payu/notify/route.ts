@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { findPaymentIdByTransactionId } from '@/lib/payuPaymentIdempotency';
 
 function normalizeBookingTotal(rawTotal: number, payuAmountPln: number) {
   if (!Number.isFinite(rawTotal)) return 0;
@@ -187,13 +188,9 @@ export async function POST(req: Request) {
         packageName = pkg?.name ?? '';
       }
       
-      // 5. Додаємо дані про оплату в нашу БД (idempotent)
-      const { data: existingPayment } = await supabaseAdmin
-        .from('payments')
-        .select('id')
-        .eq('transaction_id', body.order.orderId)
-        .single();
-      if (existingPayment) {
+      // 5. Додаємо дані про оплату в нашу БД (idempotent; .single() ламається при дублікатах)
+      const existingPaymentId = await findPaymentIdByTransactionId(body.order.orderId);
+      if (existingPaymentId) {
         return new Response('', { status: 200 });
       }
 

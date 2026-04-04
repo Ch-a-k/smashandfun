@@ -35,6 +35,16 @@ export default function AdminSidebar() {
   }, []);
   if (!isAuth) return null;
 
+  function handleLogout() {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("admin_token");
+      localStorage.removeItem("admin_email");
+      const secure = window.location.protocol === "https:" ? "; Secure" : "";
+      document.cookie = `admin_role=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+    }
+    window.location.replace("/admin/login");
+  }
+
   const allMenu = role === 'superadmin'
     ? [...menu, { href: "/admin/ads", label: "IF. ADS" }, { href: "/admin/admins", label: "Adminy" }]
     : menu;
@@ -58,6 +68,13 @@ export default function AdminSidebar() {
               {item.label}
             </Link>
           ))}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="shrink-0 ml-1 px-3 py-1.5 rounded-full text-sm font-semibold text-red-200 border border-red-400/40 hover:bg-red-500/15 hover:text-white transition-all whitespace-nowrap"
+          >
+            Wyloguj
+          </button>
         </div>
       </nav>
 
@@ -130,6 +147,26 @@ export default function AdminSidebar() {
             Administratory
           </Link>
         )}
+        <div style={{ marginTop: 'auto', padding: '24px 24px 0' }}>
+          <button
+            type="button"
+            onClick={handleLogout}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: 8,
+              border: '2px solid #c62828',
+              background: 'rgba(198,40,40,0.12)',
+              color: '#ffcdd2',
+              fontWeight: 700,
+              fontSize: 15,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+          >
+            Wyloguj się
+          </button>
+        </div>
       </aside>
     </>
   );

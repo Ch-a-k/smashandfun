@@ -323,6 +323,8 @@ function AdminDashboard() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('admin_token');
       localStorage.removeItem('admin_email');
+      const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+      document.cookie = `admin_role=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
     }
     window.location.replace('/admin/login');
   };

@@ -7,7 +7,7 @@ import { isAnalyticsAllowed, trackPageview } from "@/lib/analytics";
 
 export default function GoogleTagManager() {
   const pathname = usePathname();
-  const gaId = process.env.NEXT_PUBLIC_GA_ID || "G-VFW33JQ6EG";
+  const gaId = "G-VFW33JQ6EG";
   const [isMounted, setIsMounted] = useState(false);
   const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
 

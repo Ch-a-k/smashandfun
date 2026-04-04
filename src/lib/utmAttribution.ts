@@ -20,7 +20,15 @@ export const CLICK_ID_MAP: Record<string, string> = {
   ttclid: 'tiktok',
 };
 
+/** Order matters: more specific hosts before generic (e.g. google.). */
 export const REFERRER_MAP: [RegExp, string][] = [
+  [/chat\.openai\.com|chatgpt\.com/i, 'chatgpt'],
+  [/perplexity\.ai/i, 'perplexity'],
+  [/claude\.ai/i, 'claude'],
+  [/copilot\.microsoft\.com/i, 'copilot'],
+  [/gemini\.google\.com/i, 'gemini'],
+  [/duckduckgo\./i, 'duckduckgo'],
+  [/yandex\./i, 'yandex'],
   [/google\./i, 'google'],
   [/facebook\.com|fb\.com|fb\.me/i, 'facebook'],
   [/instagram\.com/i, 'facebook'],

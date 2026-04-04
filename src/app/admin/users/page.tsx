@@ -85,6 +85,10 @@ function getUtmBadge(source?: string | null) {
   if (s.includes('google')) { bg = '#1a3a5c'; color = '#8ab4f8'; }
   else if (s.includes('tiktok')) { bg = '#3d0a1e'; color = '#ff6090'; }
   else if (s.includes('facebook') || s.includes('fb') || s.includes('meta') || s.includes('instagram') || s.includes('ig')) { bg = '#0d2d5e'; color = '#7eb8ff'; }
+  else if (s.includes('chatgpt') || s.includes('openai')) { bg = '#143d2e'; color = '#7ae3b5'; }
+  else if (s.includes('perplexity')) { bg = '#221a3d'; color = '#c4b5fd'; }
+  else if (s.includes('claude')) { bg = '#3d2814'; color = '#fbbf77'; }
+  else if (s.includes('copilot') || s.includes('gemini')) { bg = '#1a2d3d'; color = '#90caf9'; }
   else { bg = '#3a2a0e'; color = '#ff9f58'; }
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: bg, color, padding: '2px 8px', borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
@@ -864,8 +868,19 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
                         {landingUrl && (
                           <tr style={{ borderBottom: '1px solid #2a2a2f' }}>
                             <td colSpan={10} style={{ padding: '2px 8px 6px', fontSize: 11 }}>
-                              <span style={{ color: '#555', marginRight: 4 }}>URL:</span>
+                              <span
+                                style={{ color: '#777', marginRight: 6, cursor: 'help', borderBottom: '1px dotted #555' }}
+                                title="To nie jest dokładny link z reklamy ani kliknięcia. To zapisana przy rezerwacji ścieżka (landing) z bazy + parametry UTM z bazy — złożone do podglądu. Rzeczywisty URL z kampanii mógł zawierać np. gclid i inne parametry, których tu nie widać."
+                              >
+                                Podgląd atrybucji:
+                              </span>
                               <code style={{ color: '#7986cb', background: '#1a1a2e', padding: '1px 6px', borderRadius: 4, fontSize: 10, wordBreak: 'break-all' }}>{landingUrl}</code>
+                              {b.referrer && (
+                                <div style={{ marginTop: 4, color: '#666', fontSize: 10 }}>
+                                  <span style={{ color: '#555' }}>Referrer: </span>
+                                  <span style={{ wordBreak: 'break-all' }}>{b.referrer}</span>
+                                </div>
+                              )}
                             </td>
                           </tr>
                         )}

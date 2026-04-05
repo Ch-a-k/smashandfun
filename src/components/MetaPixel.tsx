@@ -2,43 +2,27 @@
 
 import { usePathname } from 'next/navigation';
 import Script from 'next/script';
-import { useEffect, useRef, useState } from 'react';
-import { isMarketingAllowed } from '@/lib/analytics';
+import { useEffect, useRef } from 'react';
 
-const FB_PIXEL_ID = '737878458949440';
+const FB_PIXEL_ID = '2294482037707761';
 
 export default function MetaPixel() {
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
-  const [marketingAllowed, setMarketingAllowed] = useState(false);
   const hasTrackedInitialPageView = useRef(false);
 
+  // PageView при смене страницы (первый PageView стреляет в inline-скрипте)
   useEffect(() => {
-    setIsMounted(true);
-    setMarketingAllowed(isMarketingAllowed());
-  }, []);
-
-  // Отправляем PageView при смене страницы, пропуская первый рендер
-  // (inline fbq script уже вызывает PageView при инициализации)
-  useEffect(() => {
-    if (pathname && isMounted && marketingAllowed && typeof window !== 'undefined' && window.fbq) {
+    if (pathname && typeof window !== 'undefined' && window.fbq) {
       if (hasTrackedInitialPageView.current) {
         window.fbq('track', 'PageView');
       } else {
         hasTrackedInitialPageView.current = true;
       }
     }
-  }, [pathname, isMounted, marketingAllowed]);
+  }, [pathname]);
 
-  if (!isMounted) {
-    return null;
-  }
-
-  if (pathname?.startsWith('/admin')) {
-    return null;
-  }
-
-  if (!marketingAllowed) {
+  // Не трекаем в админке
+  if (typeof window !== 'undefined' && pathname?.startsWith('/admin')) {
     return null;
   }
 

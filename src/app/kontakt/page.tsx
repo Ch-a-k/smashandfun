@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useI18n } from '@/i18n/I18nContext';
-import { trackEvent } from '@/lib/analytics';
+import { trackEvent, trackFBLead } from '@/lib/analytics';
 
 export default function Kontakt() {
   const { t } = useI18n();
@@ -51,9 +51,7 @@ export default function Kontakt() {
 
       setIsSuccess(true);
       trackEvent({ action: 'generate_lead', category: 'contact', label: 'contact_form' });
-      if (typeof window !== 'undefined' && window.fbq) {
-        window.fbq('track', 'Lead', { content_name: 'Contact Form' });
-      }
+      trackFBLead({ content_name: 'Contact Form' });
       if (typeof window !== 'undefined' && window.ttq) {
         window.ttq.track('SubmitForm', { content_name: 'Contact Form' });
       }

@@ -33,7 +33,7 @@ interface TikTokPixel {
 declare global {
   interface Window {
     gtag?: (command: string, ...args: GTagArg[]) => void;
-    dataLayer?: unknown[];
+    dataLayer?: Record<string, unknown>[];
     ttq?: TikTokPixel;
     fbq?: (...args: unknown[]) => void;
   }
@@ -212,6 +212,8 @@ export const trackTikTokCompletePayment = (params: {
   }
 };
 
+// ─── Facebook Pixel — direct fbq() calls, always fires (no consent check) ───
+
 // Facebook Pixel - ViewContent event
 export const trackFBViewContent = (params: {
   content_ids: string[];
@@ -220,19 +222,14 @@ export const trackFBViewContent = (params: {
   value?: number;
   currency?: string;
 }): void => {
-  if (!isClient() || !window.fbq || !isMarketingAllowed()) return;
-
-  try {
-    window.fbq('track', 'ViewContent', {
-      content_ids: params.content_ids,
-      content_name: params.content_name,
-      content_type: params.content_type || 'product',
-      value: params.value,
-      currency: params.currency || 'PLN',
-    });
-  } catch (error) {
-    console.error('Error tracking FB ViewContent:', error);
-  }
+  if (!isClient() || !window.fbq) return;
+  window.fbq('track', 'ViewContent', {
+    content_ids: params.content_ids,
+    content_name: params.content_name,
+    content_type: params.content_type || 'product',
+    value: params.value,
+    currency: params.currency || 'PLN',
+  });
 };
 
 // Facebook Pixel - InitiateCheckout event
@@ -244,20 +241,15 @@ export const trackFBInitiateCheckout = (params: {
   currency?: string;
   num_items?: number;
 }): void => {
-  if (!isClient() || !window.fbq || !isMarketingAllowed()) return;
-
-  try {
-    window.fbq('track', 'InitiateCheckout', {
-      content_ids: params.content_ids,
-      content_name: params.content_name,
-      content_type: params.content_type || 'product',
-      value: params.value,
-      currency: params.currency || 'PLN',
-      num_items: params.num_items || 1,
-    });
-  } catch (error) {
-    console.error('Error tracking FB InitiateCheckout:', error);
-  }
+  if (!isClient() || !window.fbq) return;
+  window.fbq('track', 'InitiateCheckout', {
+    content_ids: params.content_ids,
+    content_name: params.content_name,
+    content_type: params.content_type || 'product',
+    value: params.value,
+    currency: params.currency || 'PLN',
+    num_items: params.num_items || 1,
+  });
 };
 
 // Facebook Pixel - Purchase event
@@ -269,18 +261,27 @@ export const trackFBPurchase = (params: {
   currency?: string;
   num_items?: number;
 }): void => {
-  if (!isClient() || !window.fbq || !isMarketingAllowed()) return;
+  if (!isClient() || !window.fbq) return;
+  window.fbq('track', 'Purchase', {
+    content_ids: params.content_ids,
+    content_name: params.content_name,
+    content_type: params.content_type || 'product',
+    value: params.value,
+    currency: params.currency || 'PLN',
+    num_items: params.num_items || 1,
+  });
+};
 
-  try {
-    window.fbq('track', 'Purchase', {
-      content_ids: params.content_ids,
-      content_name: params.content_name,
-      content_type: params.content_type || 'product',
-      value: params.value,
-      currency: params.currency || 'PLN',
-      num_items: params.num_items || 1,
-    });
-  } catch (error) {
-    console.error('Error tracking FB Purchase:', error);
-  }
+// Facebook Pixel - Lead event
+export const trackFBLead = (params?: {
+  content_name?: string;
+  value?: number;
+  currency?: string;
+}): void => {
+  if (!isClient() || !window.fbq) return;
+  window.fbq('track', 'Lead', {
+    content_name: params?.content_name,
+    value: params?.value,
+    currency: params?.currency || 'PLN',
+  });
 };

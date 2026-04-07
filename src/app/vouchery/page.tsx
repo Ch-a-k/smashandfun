@@ -61,7 +61,7 @@ export default function VoucheryPage() {
         trackEvent({ action: 'generate_lead', category: 'voucher', label: 'voucher_form' });
         trackFBLead({ content_name: 'Voucher Form' });
         if (typeof window !== 'undefined' && window.ttq) {
-          window.ttq.track('SubmitForm', { content_name: 'Voucher Form' });
+          window.ttq.track('SubmitForm', { content_id: 'voucher_form', content_name: 'Voucher Form' });
         }
         setForm({ name: "", email: "", phone: "", package: "easy", message: "" });
       } else {

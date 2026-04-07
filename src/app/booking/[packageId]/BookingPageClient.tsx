@@ -6,7 +6,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import Image from 'next/image';
 import InFomoFooterButton from '@/components/InFomoFooterButton';
 import { pl } from 'date-fns/locale/pl';
-import { trackTikTokViewContent, trackTikTokInitiateCheckout, trackFBViewContent, trackFBInitiateCheckout } from '@/lib/analytics';
+import { trackTikTokViewContent, trackTikTokInitiateCheckout, trackFBViewContent, trackFBInitiateCheckout, identifyTikTokUser } from '@/lib/analytics';
 import { sendGTMEvent } from '@next/third-parties/google';
 import { getUtmParams } from '@/lib/bookingUtm';
 
@@ -519,6 +519,8 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
             if (!emailValid) errors.email = 'Nieprawidłowy adres e-mail';
             if (!phoneValid) errors.phone = 'Nieprawidłowy numer telefonu';
             if (!form.name || !form.email || !form.phone || !emailValid || !phoneValid) return;
+            // Identify user for TikTok Advanced Matching as soon as we have their data
+            identifyTikTokUser({ email: form.email, phone_number: form.phone });
             nextStep();
           }}
           disabled={!form.name || !form.email || !form.phone || !emailValid || !phoneValid}
@@ -585,7 +587,41 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
       <div style={{ display: 'flex', gap: 16, marginTop: 18 }}>
         <button onClick={prevStep} style={{ background: '#23222a', color: '#fff', border: '2px solid #f36e21', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: 17, cursor: 'pointer' }}>Powrót</button>
         <button
-          onClick={nextStep}
+          onClick={() => {
+            // Track InitiateCheckout when entering payment step
+            if (pkg) {
+              identifyTikTokUser({ email: form.email, phone_number: form.phone });
+              trackTikTokInitiateCheckout({
+                content_id: pkg.id,
+                content_name: pkg.name,
+                content_type: 'product',
+                value: getTotal(),
+                currency: 'PLN',
+              });
+              trackFBInitiateCheckout({
+                content_ids: [pkg.id],
+                content_name: pkg.name,
+                content_type: 'product',
+                value: getTotal(),
+                currency: 'PLN',
+              });
+              sendGTMEvent({
+                event: 'begin_checkout',
+                ecommerce: {
+                  items: [{
+                    item_id: pkg.id,
+                    item_name: pkg.name,
+                    price: getTotal(),
+                    item_category: 'rage_room_package',
+                    quantity: 1,
+                  }],
+                  currency: 'PLN',
+                  value: getTotal(),
+                },
+              });
+            }
+            nextStep();
+          }}
           style={{ background: '#f36e21', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: 17, cursor: 'pointer', marginTop: 0 }}
         >
           {t('booking.next')}
@@ -702,23 +738,19 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
         <button
           onClick={async () => {
             setPayLoading(true);
-            
-            // Track TikTok InitiateCheckout event with content_id (required for VSA)
+
+            // Identify user for Advanced Matching before payment
+            identifyTikTokUser({ email: form.email, phone_number: form.phone });
+
+            // Save email/phone/value for thank-you page CompletePayment event
+            try {
+              localStorage.setItem('booking_email', form.email);
+              localStorage.setItem('booking_phone', form.phone);
+              localStorage.setItem('booking_value', String(form.paymentType === 'full' ? getTotalWithPromo() : 20));
+              localStorage.setItem('booking_package_id', packageId || '');
+            } catch {}
+
             if (pkg) {
-              trackTikTokInitiateCheckout({
-                content_id: pkg.id,
-                content_name: pkg.name,
-                content_type: 'product',
-                value: form.paymentType === 'full' ? getTotalWithPromo() : 20,
-                currency: 'PLN',
-              });
-              trackFBInitiateCheckout({
-                content_ids: [pkg.id],
-                content_name: pkg.name,
-                content_type: 'product',
-                value: form.paymentType === 'full' ? getTotalWithPromo() : 20,
-                currency: 'PLN',
-              });
               sendGTMEvent({
                 event: 'add_to_cart',
                 ecommerce: {

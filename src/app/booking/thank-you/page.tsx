@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useI18n } from '@/i18n/I18nContext';
 import Image from 'next/image';
 import { useEffect, useState, useRef } from 'react';
-import { trackTikTokCompletePayment, trackFBPurchase } from '@/lib/analytics';
+import { trackTikTokCompletePayment, trackFBPurchase, identifyTikTokUser } from '@/lib/analytics';
 import { sendGTMEvent } from '@next/third-parties/google';
 
 const THANK_YOU_FLYING_IMAGES = [
@@ -118,24 +118,49 @@ export default function ThankYouPage() {
     const params = new URLSearchParams(window.location.search);
     const bookingId = params.get('bookingId') || undefined;
     const extOrderId = params.get('extOrderId') || undefined;
-    const packageId = params.get('packageId') || undefined;
-    const value = params.get('value') || undefined;
+    let packageId = params.get('packageId') || undefined;
+    let value = params.get('value') || undefined;
     if (!bookingId && !extOrderId) return;
     setSyncStarted(true);
-    
+
     // Track TikTok CompletePayment event with content_id (required for VSA)
     if (!completePaymentTracked.current) {
       completePaymentTracked.current = true;
+
+      // Advanced Matching: identify user with email/phone saved before PayU redirect
+      // Also read value/packageId from localStorage as fallback (PayU may strip URL params)
+      try {
+        const savedEmail = localStorage.getItem('booking_email');
+        const savedPhone = localStorage.getItem('booking_phone');
+        const savedValue = localStorage.getItem('booking_value');
+        const savedPackageId = localStorage.getItem('booking_package_id');
+        if (savedEmail || savedPhone) {
+          identifyTikTokUser({
+            email: savedEmail || undefined,
+            phone_number: savedPhone || undefined,
+          });
+        }
+        if (!value && savedValue) value = savedValue;
+        if (!packageId && savedPackageId) packageId = savedPackageId;
+        // Clean up
+        localStorage.removeItem('booking_email');
+        localStorage.removeItem('booking_phone');
+        localStorage.removeItem('booking_value');
+        localStorage.removeItem('booking_package_id');
+      } catch {}
+
+      const numericValue = value ? parseFloat(value) : 0;
+
       trackTikTokCompletePayment({
         content_id: packageId || bookingId || extOrderId || 'unknown',
         content_type: 'product',
-        value: value ? parseFloat(value) : undefined,
+        value: numericValue,
         currency: 'PLN',
       });
       trackFBPurchase({
         content_ids: [packageId || bookingId || extOrderId || 'unknown'],
         content_type: 'product',
-        value: value ? parseFloat(value) : undefined,
+        value: numericValue,
         currency: 'PLN',
       });
       sendGTMEvent({
@@ -144,12 +169,12 @@ export default function ThankYouPage() {
           items: [{
             item_id: packageId || bookingId || extOrderId || 'unknown',
             item_name: packageId || 'package',
-            price: value ? parseFloat(value) : 0,
+            price: numericValue,
             item_category: 'rage_room_package',
             quantity: 1,
           }],
           currency: 'PLN',
-          value: value ? parseFloat(value) : 0,
+          value: numericValue,
         },
       });
     }

@@ -53,7 +53,7 @@ export default function Kontakt() {
       trackEvent({ action: 'generate_lead', category: 'contact', label: 'contact_form' });
       trackFBLead({ content_name: 'Contact Form' });
       if (typeof window !== 'undefined' && window.ttq) {
-        window.ttq.track('SubmitForm', { content_name: 'Contact Form' });
+        window.ttq.track('SubmitForm', { content_id: 'contact_form', content_name: 'Contact Form' });
       }
       reset();
       setTimeout(() => setIsSuccess(false), 5000);

@@ -121,6 +121,25 @@ export const trackPageview = (url: string): void => {
   }
 };
 
+// TikTok Pixel - Advanced Matching (email/phone)
+export const identifyTikTokUser = (params: {
+  email?: string;
+  phone_number?: string;
+}): void => {
+  if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
+
+  try {
+    const identity: Record<string, string> = {};
+    if (params.email) identity.email = params.email;
+    if (params.phone_number) identity.phone_number = params.phone_number;
+    if (Object.keys(identity).length > 0) {
+      window.ttq.identify(identity);
+    }
+  } catch (error) {
+    console.error('Error identifying TikTok user:', error);
+  }
+};
+
 // TikTok Pixel - отправка события
 export const trackTikTokEvent = (event: string, properties?: Record<string, unknown>): void => {
   if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
@@ -152,15 +171,16 @@ export const trackTikTokViewContent = (params: {
   currency?: string;
 }): void => {
   if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
-  
+
   try {
-    window.ttq.track('ViewContent', {
+    const props: Record<string, unknown> = {
       content_id: params.content_id,
-      content_name: params.content_name,
       content_type: params.content_type || 'product',
-      price: params.price,
       currency: params.currency || 'PLN',
-    });
+    };
+    if (params.content_name) props.content_name = params.content_name;
+    if (params.price != null) props.price = params.price;
+    window.ttq.track('ViewContent', props);
   } catch (error) {
     console.error('Error tracking TikTok ViewContent:', error);
   }
@@ -175,15 +195,16 @@ export const trackTikTokInitiateCheckout = (params: {
   currency?: string;
 }): void => {
   if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
-  
+
   try {
-    window.ttq.track('InitiateCheckout', {
+    const props: Record<string, unknown> = {
       content_id: params.content_id,
-      content_name: params.content_name,
       content_type: params.content_type || 'product',
-      value: params.value,
       currency: params.currency || 'PLN',
-    });
+    };
+    if (params.content_name) props.content_name = params.content_name;
+    if (params.value != null) props.value = params.value;
+    window.ttq.track('InitiateCheckout', props);
   } catch (error) {
     console.error('Error tracking TikTok InitiateCheckout:', error);
   }
@@ -200,13 +221,14 @@ export const trackTikTokCompletePayment = (params: {
   if (!isClient() || !window.ttq || !isMarketingAllowed()) return;
 
   try {
-    window.ttq.track('CompletePayment', {
+    const props: Record<string, unknown> = {
       content_id: params.content_id,
-      content_name: params.content_name,
       content_type: params.content_type || 'product',
-      value: params.value,
       currency: params.currency || 'PLN',
-    });
+    };
+    if (params.content_name) props.content_name = params.content_name;
+    if (params.value != null) props.value = params.value;
+    window.ttq.track('CompletePayment', props);
   } catch (error) {
     console.error('Error tracking TikTok CompletePayment:', error);
   }

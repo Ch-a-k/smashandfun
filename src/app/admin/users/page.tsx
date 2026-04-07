@@ -826,21 +826,34 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
               </button>
             )}
             {segmentEditMode && confirmDelete && (
-              <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                <span style={{ color: '#ff4d4f', fontSize: 11, fontWeight: 600 }}>Usunąć klienta i wszystkie jego rezerwacje?</span>
-                <button
-                  onClick={async () => { setDeleting(true); await onDelete(user.id, user.email); setDeleting(false); setConfirmDelete(false); }}
-                  disabled={deleting}
-                  style={{ background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 6px', fontSize: 11, fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer' }}
-                >
-                  {deleting ? '...' : 'Tak'}
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  style={{ background: '#23222a', color: '#aaa', border: '1px solid #555', borderRadius: 4, padding: '2px 6px', fontSize: 11, cursor: 'pointer' }}
-                >
-                  Nie
-                </button>
+              <div style={{ position: 'relative', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                <div style={{
+                  position: 'absolute', top: -8, left: 0, zIndex: 50,
+                  background: '#2a1515', border: '1px solid #ff4d4f', borderRadius: 8,
+                  padding: '10px 14px', minWidth: 260, boxShadow: '0 4px 20px #0008',
+                }}>
+                  <div style={{ color: '#ff4d4f', fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
+                    Usunąć klienta i wszystkie jego rezerwacje?
+                  </div>
+                  <div style={{ color: '#aaa', fontSize: 11, marginBottom: 10 }}>
+                    Ta operacja jest nieodwracalna.
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      onClick={async () => { setDeleting(true); await onDelete(user.id, user.email); setDeleting(false); setConfirmDelete(false); }}
+                      disabled={deleting}
+                      style={{ background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 12px', fontSize: 12, fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer' }}
+                    >
+                      {deleting ? 'Usuwanie...' : 'Tak, usuń'}
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      style={{ background: '#23222a', color: '#aaa', border: '1px solid #555', borderRadius: 4, padding: '4px 12px', fontSize: 12, cursor: 'pointer' }}
+                    >
+                      Anuluj
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

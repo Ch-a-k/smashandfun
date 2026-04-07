@@ -309,6 +309,17 @@ function UsersPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // ─── Delete User ────────────────────────────────────────
+  async function handleDeleteUser(userId: string, email: string) {
+    setError("");
+    // Delete bookings first, then user
+    const { error: bookErr } = await supabase.from('bookings').delete().eq('user_email', email);
+    if (bookErr) { setError('Błąd usuwania rezerwacji: ' + bookErr.message); return; }
+    const { error: userErr } = await supabase.from('users').delete().eq('id', userId);
+    if (userErr) { setError('Błąd usuwania klienta: ' + userErr.message); return; }
+    fetchData();
+  }
+
   // ─── All unique UTM sources for filter ───────────────────
   const allUtmSources = useMemo(() => {
     const set = new Set<string>();
@@ -691,7 +702,7 @@ function UsersPage() {
               </thead>
               <tbody>
                 {paginated.map(u => (
-                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} />
+                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} onDelete={handleDeleteUser} />
                 ))}
               </tbody>
             </table>
@@ -783,11 +794,13 @@ function SourceEditCell({ currentValue, onChange }: { currentValue: string; onCh
 }
 
 // ─── User Row ──────────────────────────────────────────────
-function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void }) {
+function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange, onDelete }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void; onDelete: (userId: string, email: string) => Promise<void> }) {
   const tdStyle: React.CSSProperties = { padding: '10px 12px', fontSize: 13 };
   const paidCount = user.bookings.filter(b => b.status === 'paid').length;
   const depositCount = user.bookings.filter(b => b.status === 'deposit').length;
   const pendingCount = user.bookings.filter(b => b.status === 'pending').length;
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   return (
     <>
@@ -800,7 +813,38 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
         <td style={{ ...tdStyle, width: 36, textAlign: 'center', color: '#f36e21' }}>
           {isExpanded ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />}
         </td>
-        <td style={{ ...tdStyle, fontWeight: 700, color: '#f36e21', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</td>
+        <td style={{ ...tdStyle, fontWeight: 700, color: '#f36e21', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</span>
+            {segmentEditMode && !confirmDelete && (
+              <button
+                onClick={e => { e.stopPropagation(); setConfirmDelete(true); }}
+                title="Usuń klienta"
+                style={{ background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 6px', fontSize: 11, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}
+              >
+                Usuń
+              </button>
+            )}
+            {segmentEditMode && confirmDelete && (
+              <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                <span style={{ color: '#ff4d4f', fontSize: 11, fontWeight: 600 }}>Usunąć klienta i wszystkie jego rezerwacje?</span>
+                <button
+                  onClick={async () => { setDeleting(true); await onDelete(user.id, user.email); setDeleting(false); setConfirmDelete(false); }}
+                  disabled={deleting}
+                  style={{ background: '#ff4d4f', color: '#fff', border: 'none', borderRadius: 4, padding: '2px 6px', fontSize: 11, fontWeight: 700, cursor: deleting ? 'not-allowed' : 'pointer' }}
+                >
+                  {deleting ? '...' : 'Tak'}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  style={{ background: '#23222a', color: '#aaa', border: '1px solid #555', borderRadius: 4, padding: '2px 6px', fontSize: 11, cursor: 'pointer' }}
+                >
+                  Nie
+                </button>
+              </div>
+            )}
+          </div>
+        </td>
         <td style={tdStyle}>{user.name || <span style={{ color: '#555' }}>-</span>}</td>
         <td style={tdStyle}>{user.phone || <span style={{ color: '#555' }}>-</span>}</td>
         <td style={tdStyle}>

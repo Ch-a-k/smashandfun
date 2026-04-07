@@ -25,6 +25,7 @@ function AdminsPage() {
   const [newPwd, setNewPwd] = useState("");
   const [pwdLoading, setPwdLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function fetchAdmins() {
     setLoading(true);
@@ -199,21 +200,47 @@ function AdminsPage() {
                         <button onClick={()=>handleChangeRole(a.id, a.role==='admin'?'superadmin':'admin')} style={{background:'#2196f3',color:'#fff',border:'none',borderRadius:6,padding:'6px 14px',fontWeight:600,cursor:'pointer'}}>
                           Ustaw jako {a.role==='admin'?'superadmin':'admin'}
                         </button>
-                        <button
-                          onClick={() => handleDelete(a.id, a.email)}
-                          disabled={deletingId === a.id}
-                          style={{
-                            background:'#ff4d4f',
-                            color:'#fff',
-                            border:'none',
-                            borderRadius:6,
-                            padding:'6px 14px',
-                            fontWeight:600,
-                            cursor:deletingId === a.id ? 'not-allowed' : 'pointer',
-                          }}
-                        >
-                          {deletingId === a.id ? 'Usuwanie...' : 'Usuń'}
-                        </button>
+                        {confirmDeleteId === a.id ? (
+                          <div className="flex gap-2 items-center">
+                            <span style={{color:'#ff4d4f',fontSize:13,fontWeight:600}}>Na pewno usunąć?</span>
+                            <button
+                              onClick={() => { setConfirmDeleteId(null); handleDelete(a.id, a.email); }}
+                              disabled={deletingId === a.id}
+                              style={{
+                                background:'#ff4d4f',
+                                color:'#fff',
+                                border:'none',
+                                borderRadius:6,
+                                padding:'6px 14px',
+                                fontWeight:600,
+                                cursor:deletingId === a.id ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              {deletingId === a.id ? 'Usuwanie...' : 'Tak, usuń'}
+                            </button>
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:6,padding:'6px 10px',fontWeight:600,cursor:'pointer'}}
+                            >
+                              Anuluj
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteId(a.id)}
+                            style={{
+                              background:'#ff4d4f',
+                              color:'#fff',
+                              border:'none',
+                              borderRadius:6,
+                              padding:'6px 14px',
+                              fontWeight:600,
+                              cursor:'pointer',
+                            }}
+                          >
+                            Usuń
+                          </button>
+                        )}
                         {changePwdId !== a.id ? (
                           <button onClick={()=>{setChangePwdId(a.id);setNewPwd("");}} style={{background:'#23222a',color:'#fff',border:'2px solid #f36e21',borderRadius:6,padding:'6px 14px',fontWeight:600,cursor:'pointer'}}>Zmień hasło</button>
                         ) : (

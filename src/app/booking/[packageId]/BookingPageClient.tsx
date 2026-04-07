@@ -742,6 +742,16 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
             // Identify user for Advanced Matching before payment
             identifyTikTokUser({ email: form.email, phone_number: form.phone });
 
+            // TikTok SubmitForm event
+            if (typeof window !== 'undefined' && window.ttq && pkg) {
+              window.ttq.track('SubmitForm', {
+                content_id: pkg.id,
+                content_name: pkg.name,
+                value: form.paymentType === 'full' ? getTotalWithPromo() : 20,
+                currency: 'PLN',
+              });
+            }
+
             // Save email/phone/value for thank-you page CompletePayment event
             try {
               localStorage.setItem('booking_email', form.email);

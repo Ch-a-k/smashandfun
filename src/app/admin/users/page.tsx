@@ -40,6 +40,14 @@ interface PackageInfo {
   name: string;
 }
 
+interface PaymentRow {
+  id: string;
+  booking_id: string;
+  status: string;
+  amount: number | string;
+  created_at?: string;
+}
+
 interface UserStats extends User {
   bookingsCount: number;
   bookingsSum: number;
@@ -136,6 +144,7 @@ function UsersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<UserStats[]>([]);
   const [packages, setPackages] = useState<Record<string, string>>({});
+  const [paymentsByBooking, setPaymentsByBooking] = useState<Record<string, PaymentRow>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [hasUtmColumns, setHasUtmColumns] = useState(false);
@@ -252,7 +261,7 @@ function UsersPage() {
     setHasUtmColumns(useUtm);
     const bookingsFields = useUtm ? BOOKINGS_FIELDS_WITH_UTM : BOOKINGS_FIELDS_BASE;
 
-    const [usersResult, bookingsResult, packagesRes] = await Promise.all([
+    const [usersResult, bookingsResult, packagesRes, paymentsResult] = await Promise.all([
       fetchAllRows<User>((from, to) =>
         supabase.from('users').select('*').order('created_at', { ascending: true }).range(from, to)
       ),
@@ -260,6 +269,9 @@ function UsersPage() {
         supabase.from('bookings').select(bookingsFields).order('created_at', { ascending: true }).range(from, to)
       ),
       supabase.from('packages').select('id, name').returns<PackageInfo[]>(),
+      fetchAllRows<PaymentRow>((from, to) =>
+        supabase.from('payments').select('id, booking_id, status, amount, created_at').order('created_at', { ascending: true }).range(from, to)
+      ),
     ]);
 
     if (usersResult.error) { setError("Blad ladowania uzytkownikow"); setLoading(false); return; }
@@ -268,6 +280,13 @@ function UsersPage() {
     const pkgMap: Record<string, string> = {};
     (packagesRes.data || []).forEach(p => { pkgMap[p.id] = p.name; });
     setPackages(pkgMap);
+
+    // Map payments by booking_id (latest payment per booking)
+    const pmtMap: Record<string, PaymentRow> = {};
+    for (const p of paymentsResult.data) {
+      if (p.booking_id) pmtMap[p.booking_id] = p;
+    }
+    setPaymentsByBooking(pmtMap);
 
     const bookingsByEmail: Record<string, BookingRow[]> = {};
     for (const b of bookingsResult.data) {
@@ -702,7 +721,7 @@ function UsersPage() {
               </thead>
               <tbody>
                 {paginated.map(u => (
-                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} onDelete={handleDeleteUser} />
+                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} paymentsByBooking={paymentsByBooking} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} onDelete={handleDeleteUser} />
                 ))}
               </tbody>
             </table>
@@ -794,7 +813,7 @@ function SourceEditCell({ currentValue, onChange }: { currentValue: string; onCh
 }
 
 // ─── User Row ──────────────────────────────────────────────
-function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange, onDelete }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void; onDelete: (userId: string, email: string) => Promise<void> }) {
+function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange, onDelete }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; paymentsByBooking: Record<string, PaymentRow>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void; onDelete: (userId: string, email: string) => Promise<void> }) {
   const tdStyle: React.CSSProperties = { padding: '10px 12px', fontSize: 13 };
   const paidCount = user.bookings.filter(b => b.status === 'paid').length;
   const depositCount = user.bookings.filter(b => b.status === 'deposit').length;
@@ -870,7 +889,7 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
         <tr>
           <td colSpan={11} style={{ padding: 0, background: '#1e1e26' }}>
             <div style={{ padding: '12px 20px 16px 52px' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9f58', marginBottom: 8 }}>Rezerwacje klienta ({user.bookings.length})</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9f58', marginBottom: 8 }}>Rezerwacje klienta: <span style={{ color: '#f36e21', wordBreak: 'break-all' }}>{user.email}</span> ({user.bookings.length})</div>
               {user.bookings.length === 0 ? <div style={{ color: '#555', fontSize: 13 }}>Brak rezerwacji</div> : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
@@ -886,6 +905,7 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
                         <th style={{ textAlign: 'left', padding: '6px 8px' }}>Medium</th>
                         <th style={{ textAlign: 'left', padding: '6px 8px' }}>Kampania</th>
                         <th style={{ textAlign: 'left', padding: '6px 8px' }}>Utworzono</th>
+                        <th style={{ textAlign: 'left', padding: '6px 8px' }}>Opłacono</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -912,10 +932,15 @@ function UserRow({ user, isExpanded, onToggle, packages, segmentEditMode, segmen
                           <td style={{ padding: '6px 8px', color: '#aaa' }}>{b.utm_medium || '-'}</td>
                           <td style={{ padding: '6px 8px', color: '#aaa', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.utm_campaign || '-'}</td>
                           <td style={{ padding: '6px 8px', color: '#666', fontSize: 11 }}>{b.created_at ? b.created_at.slice(0, 16).replace('T', ' ') : '-'}</td>
+                          <td style={{ padding: '6px 8px', fontSize: 11 }}>{(() => {
+                            const pmt = paymentsByBooking[b.id];
+                            if (!pmt) return <span style={{ color: '#555' }}>-</span>;
+                            return <span style={{ color: pmt.status === 'paid' ? '#4caf50' : '#ff9800' }}>{pmt.created_at ? pmt.created_at.slice(0, 16).replace('T', ' ') : '-'}</span>;
+                          })()}</td>
                         </tr>
                         {landingUrl && (
                           <tr style={{ borderBottom: '1px solid #2a2a2f' }}>
-                            <td colSpan={10} style={{ padding: '2px 8px 6px', fontSize: 11 }}>
+                            <td colSpan={11} style={{ padding: '2px 8px 6px', fontSize: 11 }}>
                               <span
                                 style={{ color: '#777', marginRight: 6, cursor: 'help', borderBottom: '1px dotted #555' }}
                                 title="To nie jest dokładny link z reklamy ani kliknięcia. To zapisana przy rezerwacji ścieżka (landing) z bazy + parametry UTM z bazy — złożone do podglądu. Rzeczywisty URL z kampanii mógł zawierać np. gclid i inne parametry, których tu nie widać."

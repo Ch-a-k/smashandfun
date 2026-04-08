@@ -60,9 +60,10 @@ interface UserStats extends User {
   lastActivityDate: string; // max(latest booking created_at, user created_at)
   mainStatus: string;
   segment: 'b2b' | 'b2c' | 'none';
+  isLastBookingVoucher: boolean; // last booking had total_price = 0
 }
 
-type SortKey = 'name' | 'email' | 'created_at' | 'bookingsCount' | 'bookingsSum' | 'lastBookingDate' | 'lastActivityDate';
+type SortKey = 'name' | 'email' | 'created_at' | 'bookingsCount' | 'bookingsSum' | 'lastBookingDate' | 'lastActivityDate' | 'dateSum';
 type SortDir = 'asc' | 'desc';
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -131,12 +132,13 @@ function getUserSegment(bookings: BookingRow[], manualSegment?: string | null): 
   return 'none';
 }
 
-function getSegmentBadge(segment: 'b2b' | 'b2c' | 'none') {
+function getSegmentBadge(segment: 'b2b' | 'b2c' | 'none', isVoucher?: boolean) {
   const base: React.CSSProperties = { display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5 };
+  const voucherTag = isVoucher ? <span style={{ ...base, background: '#4a148c', color: '#ce93d8', marginLeft: 4 }}>Voucher</span> : null;
   switch (segment) {
-    case 'b2b': return <span style={{ ...base, background: '#1a237e', color: '#90caf9' }}>B2B</span>;
-    case 'b2c': return <span style={{ ...base, background: '#004d40', color: '#80cbc4' }}>B2C</span>;
-    default: return <span style={{ ...base, background: '#333', color: '#777' }}>—</span>;
+    case 'b2b': return <>{<span style={{ ...base, background: '#1a237e', color: '#90caf9' }}>B2B</span>}{voucherTag}</>;
+    case 'b2c': return <>{<span style={{ ...base, background: '#004d40', color: '#80cbc4' }}>B2C</span>}{voucherTag}</>;
+    default: return <>{<span style={{ ...base, background: '#333', color: '#777' }}>—</span>}{voucherTag}</>;
   }
 }
 
@@ -313,10 +315,14 @@ function UsersPage() {
       const bookingCreatedDates = userBookings.map(b => b.created_at || '').filter(Boolean).sort();
       const latestBookingCreated = bookingCreatedDates.length > 0 ? bookingCreatedDates[bookingCreatedDates.length - 1] : '';
       const lastActivityDate = latestBookingCreated > (u.created_at || '') ? latestBookingCreated : (u.created_at || '');
+      // Check if the most recent booking (by created_at) was free (voucher)
+      const sortedByCreated = [...userBookings].sort((a, b) => ((b.created_at || '') > (a.created_at || '') ? 1 : -1));
+      const lastBooking = sortedByCreated[0];
+      const isLastBookingVoucher = lastBooking ? (Number(lastBooking.total_price) || 0) === 0 : false;
       return {
         ...u,
         bookingsCount: userBookings.length,
-        bookingsSum: userBookings.reduce((sum, b) => sum + (Number(b.total_price) || 0), 0),
+        bookingsSum: userBookings.filter(b => b.status !== 'cancelled').reduce((sum, b) => sum + (Number(b.total_price) || 0), 0),
         paidSum,
         depositSum,
         bookings: userBookings,
@@ -324,6 +330,7 @@ function UsersPage() {
         displaySource: u.manual_source || (utmSet.size > 0 ? Array.from(utmSet)[0] : null),
         lastBookingDate: sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null,
         lastActivityDate,
+        isLastBookingVoucher,
         mainStatus: getUserMainStatus(userBookings),
         segment: getUserSegment(userBookings, u.segment),
       };
@@ -367,18 +374,20 @@ function UsersPage() {
     for (const u of users) {
       for (const b of u.bookings) {
         const price = Number(b.total_price) || 0;
-        totalBookings++; totalRevenue += price;
+        const isCancelled = b.status === 'cancelled';
+        const revenuePrice = isCancelled ? 0 : price;
+        totalBookings++; totalRevenue += revenuePrice;
 
         if (b.status === 'paid') { paidCount++; paidRevenue += price; }
         else if (b.status === 'deposit') { depositCount++; depositRevenue += price; }
         else if (b.status === 'pending') { pendingCount++; pendingRevenue += price; }
-        else if (b.status === 'cancelled') { cancelledCount++; }
+        else if (isCancelled) { cancelledCount++; }
 
         const src = b.utm_source || null;
-        if (!src) { directCount++; directRevenue += price; }
+        if (!src) { directCount++; directRevenue += revenuePrice; }
         else {
           if (!bySource[src]) bySource[src] = { count: 0, revenue: 0, paid: 0, deposit: 0, pending: 0, cancelled: 0 };
-          bySource[src].count++; bySource[src].revenue += price;
+          bySource[src].count++; bySource[src].revenue += revenuePrice;
           if (b.status === 'paid') bySource[src].paid++;
           else if (b.status === 'deposit') bySource[src].deposit++;
           else if (b.status === 'pending') bySource[src].pending++;
@@ -387,17 +396,28 @@ function UsersPage() {
         const med = b.utm_medium || null;
         if (med) {
           if (!byMedium[med]) byMedium[med] = { count: 0, revenue: 0 };
-          byMedium[med].count++; byMedium[med].revenue += price;
+          byMedium[med].count++; byMedium[med].revenue += revenuePrice;
         }
         const camp = b.utm_campaign || null;
         if (camp) {
           if (!byCampaign[camp]) byCampaign[camp] = { count: 0, revenue: 0 };
-          byCampaign[camp].count++; byCampaign[camp].revenue += price;
+          byCampaign[camp].count++; byCampaign[camp].revenue += revenuePrice;
         }
       }
     }
     return { bySource, byMedium, byCampaign, directCount, directRevenue, totalBookings, totalRevenue, paidCount, paidRevenue, depositCount, depositRevenue, pendingCount, pendingRevenue, cancelledCount };
   }, [users]);
+
+  // ─── Date-filtered sum per user (today if no filter) ─────
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const dateSumFrom = dateFrom || today;
+  const dateSumTo = dateTo || today;
+
+  function getUserDateSum(u: UserStats): number {
+    return u.bookings
+      .filter(b => b.status !== 'cancelled' && b.date >= dateSumFrom && b.date <= dateSumTo)
+      .reduce((sum, b) => sum + (Number(b.total_price) || 0), 0);
+  }
 
   // ─── Filtered + Sorted + Paginated ──────────────────────
   const filtered = useMemo(() => {
@@ -436,13 +456,15 @@ function UsersPage() {
         case 'bookingsSum': aVal = a.bookingsSum; bVal = b.bookingsSum; break;
         case 'lastBookingDate': aVal = a.lastBookingDate || ''; bVal = b.lastBookingDate || ''; break;
         case 'lastActivityDate': aVal = a.lastActivityDate; bVal = b.lastActivityDate; break;
+        case 'dateSum': aVal = getUserDateSum(a); bVal = getUserDateSum(b); break;
       }
       if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
       return 0;
     });
     return arr;
-  }, [filtered, sortKey, sortDir]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, sortKey, sortDir, dateSumFrom, dateSumTo]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize);
@@ -722,13 +744,14 @@ function UsersPage() {
                   <th style={thStyle} onClick={() => handleSort('bookingsCount')}>Rez. <SortIcon col="bookingsCount" /></th>
                   <th style={{ ...thStyle }}>Status</th>
                   <th style={thStyle} onClick={() => handleSort('bookingsSum')}>Suma <SortIcon col="bookingsSum" /></th>
+                  <th style={thStyle} onClick={() => handleSort('dateSum')}>{dateFrom || dateTo ? 'Okres' : 'Dzis'} <SortIcon col="dateSum" /></th>
                   <th style={{ ...thStyle }}>Zrodlo</th>
                   <th style={thStyle} onClick={() => handleSort('lastActivityDate')}>Aktywnosc <SortIcon col="lastActivityDate" /></th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.map(u => (
-                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} paymentsByBooking={paymentsByBooking} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} onDelete={handleDeleteUser} />
+                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} paymentsByBooking={paymentsByBooking} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} onDelete={handleDeleteUser} dateSumFrom={dateSumFrom} dateSumTo={dateSumTo} />
                 ))}
               </tbody>
             </table>
@@ -820,7 +843,7 @@ function SourceEditCell({ currentValue, onChange }: { currentValue: string; onCh
 }
 
 // ─── User Row ──────────────────────────────────────────────
-function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange, onDelete }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; paymentsByBooking: Record<string, PaymentRow>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void; onDelete: (userId: string, email: string) => Promise<void> }) {
+function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange, onDelete, dateSumFrom, dateSumTo }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; paymentsByBooking: Record<string, PaymentRow>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void; onDelete: (userId: string, email: string) => Promise<void>; dateSumFrom: string; dateSumTo: string }) {
   const tdStyle: React.CSSProperties = { padding: '10px 12px', fontSize: 13 };
   const paidCount = user.bookings.filter(b => b.status === 'paid').length;
   const depositCount = user.bookings.filter(b => b.status === 'deposit').length;
@@ -867,7 +890,7 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
               <option value="b2b">B2B</option>
               <option value="b2c">B2C</option>
             </select>
-          ) : getSegmentBadge(user.segment)}
+          ) : getSegmentBadge(user.segment, user.isLastBookingVoucher)}
         </td>
         <td style={{ ...tdStyle, color: '#aaa', fontSize: 12 }}>{user.created_at ? user.created_at.slice(0, 10) : '-'}</td>
         <td style={{ ...tdStyle, fontWeight: 700 }}>{user.bookingsCount}</td>
@@ -880,6 +903,10 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
           </div>
         </td>
         <td style={{ ...tdStyle, fontWeight: 700, color: '#4caf50' }}>{user.bookingsSum.toFixed(0)} zl</td>
+        <td style={{ ...tdStyle, fontWeight: 700, color: '#ff9f58' }}>{(() => {
+          const ds = user.bookings.filter(b => b.status !== 'cancelled' && b.date >= dateSumFrom && b.date <= dateSumTo).reduce((sum, b) => sum + (Number(b.total_price) || 0), 0);
+          return ds > 0 ? `${ds.toFixed(0)} zl` : <span style={{ color: '#555' }}>0</span>;
+        })()}</td>
         <td style={tdStyle}>
           {segmentEditMode ? (
             <SourceEditCell currentValue={sourceEditValue ?? user.displaySource ?? ''} onChange={onSourceChange} />
@@ -894,7 +921,7 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
 
       {isExpanded && (
         <tr>
-          <td colSpan={11} style={{ padding: 0, background: '#1e1e26' }}>
+          <td colSpan={12} style={{ padding: 0, background: '#1e1e26' }}>
             <div style={{ padding: '12px 20px 16px 52px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9f58', marginBottom: 8 }}>Rezerwacje klienta: <span style={{ color: '#f36e21', wordBreak: 'break-all' }}>{user.email}</span> ({user.bookings.length})</div>
               {user.bookings.length === 0 ? <div style={{ color: '#555', fontSize: 13 }}>Brak rezerwacji</div> : (

@@ -54,13 +54,14 @@ interface UserStats extends User {
   paidSum: number;
   depositSum: number;
   bookings: BookingRow[];
+  userPayments: PaymentRow[];
   utmSources: string[];
-  displaySource: string | null; // manual_source override or first UTM source
+  displaySource: string | null;
   lastBookingDate: string | null;
-  lastActivityDate: string; // max(latest booking created_at, user created_at)
+  lastActivityDate: string;
   mainStatus: string;
   segment: 'b2b' | 'b2c';
-  isLastBookingVoucher: boolean; // last booking had total_price = 0
+  isLastBookingVoucher: boolean;
 }
 
 type SortKey = 'name' | 'email' | 'created_at' | 'bookingsCount' | 'bookingsSum' | 'lastBookingDate' | 'lastActivityDate' | 'dateSum';
@@ -286,9 +287,20 @@ function UsersPage() {
     setPaymentsByBooking(pmtMap);
 
     const bookingsByEmail: Record<string, BookingRow[]> = {};
+    const bookingIdToEmail: Record<string, string> = {};
     for (const b of bookingsResult.data) {
       if (!bookingsByEmail[b.user_email]) bookingsByEmail[b.user_email] = [];
       bookingsByEmail[b.user_email].push(b);
+      bookingIdToEmail[b.id] = b.user_email;
+    }
+
+    // Group ALL payments by user email
+    const paymentsByEmail: Record<string, PaymentRow[]> = {};
+    for (const p of paymentsResult.data) {
+      const email = bookingIdToEmail[p.booking_id];
+      if (!email) continue;
+      if (!paymentsByEmail[email]) paymentsByEmail[email] = [];
+      paymentsByEmail[email].push(p);
     }
     for (const email of Object.keys(bookingsByEmail)) {
       bookingsByEmail[email].sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
@@ -320,6 +332,7 @@ function UsersPage() {
         paidSum,
         depositSum,
         bookings: userBookings,
+        userPayments: paymentsByEmail[u.email] || [],
         utmSources: Array.from(utmSet),
         displaySource: u.manual_source || (utmSet.size > 0 ? Array.from(utmSet)[0] : null),
         lastBookingDate: sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null,
@@ -402,15 +415,18 @@ function UsersPage() {
     return { bySource, byMedium, byCampaign, directCount, directRevenue, totalBookings, totalRevenue, paidCount, paidRevenue, depositCount, depositRevenue, pendingCount, pendingRevenue, cancelledCount };
   }, [users]);
 
-  // ─── Date-filtered sum per user (today if no filter) ─────
+  // ─── Date-filtered paid sum per user (today if no filter) ─
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const dateSumFrom = dateFrom || today;
   const dateSumTo = dateTo || today;
 
   function getUserDateSum(u: UserStats): number {
-    return u.bookings
-      .filter(b => b.status !== 'cancelled' && b.date >= dateSumFrom && b.date <= dateSumTo)
-      .reduce((sum, b) => sum + (Number(b.total_price) || 0), 0);
+    return u.userPayments
+      .filter(p => {
+        const pDate = (p.created_at || '').slice(0, 10);
+        return pDate >= dateSumFrom && pDate <= dateSumTo;
+      })
+      .reduce((sum, p) => sum + Number(p.amount) / 100, 0);
   }
 
   // ─── Filtered + Sorted + Paginated ──────────────────────
@@ -737,7 +753,7 @@ function UsersPage() {
                   <th style={thStyle} onClick={() => handleSort('bookingsCount')}>Rez. <SortIcon col="bookingsCount" /></th>
                   <th style={{ ...thStyle }}>Status</th>
                   <th style={thStyle} onClick={() => handleSort('bookingsSum')}>Suma <SortIcon col="bookingsSum" /></th>
-                  <th style={thStyle} onClick={() => handleSort('dateSum')}>{dateFrom || dateTo ? 'Okres' : 'Dzis'} <SortIcon col="dateSum" /></th>
+                  <th style={thStyle} onClick={() => handleSort('dateSum')}>{dateFrom || dateTo ? 'Opl. okres' : 'Dzis opl.'} <SortIcon col="dateSum" /></th>
                   <th style={{ ...thStyle }}>Zrodlo</th>
                   <th style={thStyle} onClick={() => handleSort('lastActivityDate')}>Aktywnosc <SortIcon col="lastActivityDate" /></th>
                 </tr>
@@ -841,6 +857,7 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
   const paidCount = user.bookings.filter(b => b.status === 'paid').length;
   const depositCount = user.bookings.filter(b => b.status === 'deposit').length;
   const pendingCount = user.bookings.filter(b => b.status === 'pending').length;
+  const cancelledCount = user.bookings.filter(b => b.status === 'cancelled').length;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -891,12 +908,15 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
             {paidCount > 0 && <span style={{ background: '#1b5e20', color: '#a5d6a7', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{paidCount} opl.</span>}
             {depositCount > 0 && <span style={{ background: '#e65100', color: '#ffcc80', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{depositCount} zal.</span>}
             {pendingCount > 0 && <span style={{ background: '#f9a825', color: '#fff8e1', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{pendingCount} ocz.</span>}
-            {paidCount === 0 && depositCount === 0 && pendingCount === 0 && <span style={{ color: '#555', fontSize: 11 }}>-</span>}
+            {cancelledCount > 0 && <span style={{ background: '#b71c1c', color: '#ef9a9a', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{cancelledCount} anul.</span>}
+            {paidCount === 0 && depositCount === 0 && pendingCount === 0 && cancelledCount === 0 && <span style={{ color: '#555', fontSize: 11 }}>-</span>}
           </div>
         </td>
         <td style={{ ...tdStyle, fontWeight: 700, color: '#4caf50' }}>{user.bookingsSum.toFixed(0)} zl</td>
         <td style={{ ...tdStyle, fontWeight: 700, color: '#ff9f58' }}>{(() => {
-          const ds = user.bookings.filter(b => b.status !== 'cancelled' && b.date >= dateSumFrom && b.date <= dateSumTo).reduce((sum, b) => sum + (Number(b.total_price) || 0), 0);
+          const ds = user.userPayments
+            .filter(p => { const d = (p.created_at || '').slice(0, 10); return d >= dateSumFrom && d <= dateSumTo; })
+            .reduce((sum, p) => sum + Number(p.amount) / 100, 0);
           return ds > 0 ? `${ds.toFixed(0)} zl` : <span style={{ color: '#555' }}>0</span>;
         })()}</td>
         <td style={tdStyle}>

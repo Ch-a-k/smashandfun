@@ -59,7 +59,7 @@ interface UserStats extends User {
   lastBookingDate: string | null;
   lastActivityDate: string; // max(latest booking created_at, user created_at)
   mainStatus: string;
-  segment: 'b2b' | 'b2c' | 'none';
+  segment: 'b2b' | 'b2c';
   isLastBookingVoucher: boolean; // last booking had total_price = 0
 }
 
@@ -116,29 +116,23 @@ function getUserMainStatus(bookings: BookingRow[]): string {
   return 'none';
 }
 
-function getUserSegment(bookings: BookingRow[], manualSegment?: string | null): 'b2b' | 'b2c' | 'none' {
+function getUserSegment(bookings: BookingRow[], manualSegment?: string | null): 'b2b' | 'b2c' {
   // Manual override takes priority
   if (manualSegment === 'b2b') return 'b2b';
-  if (manualSegment === 'b2c') return 'b2c';
   // Auto-detect from UTM
   for (const b of bookings) {
     const fields = [b.utm_source, b.utm_medium, b.utm_campaign].map(f => (f || '').toLowerCase());
     if (fields.some(f => f.includes('b2b'))) return 'b2b';
   }
-  for (const b of bookings) {
-    const fields = [b.utm_source, b.utm_medium, b.utm_campaign].map(f => (f || '').toLowerCase());
-    if (fields.some(f => f.includes('b2c'))) return 'b2c';
-  }
-  return 'none';
+  return 'b2c';
 }
 
-function getSegmentBadge(segment: 'b2b' | 'b2c' | 'none', isVoucher?: boolean) {
+function getSegmentBadge(segment: 'b2b' | 'b2c', isVoucher?: boolean) {
   const base: React.CSSProperties = { display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5 };
   const voucherTag = isVoucher ? <span style={{ ...base, background: '#4a148c', color: '#ce93d8', marginLeft: 4 }}>Voucher</span> : null;
   switch (segment) {
     case 'b2b': return <>{<span style={{ ...base, background: '#1a237e', color: '#90caf9' }}>B2B</span>}{voucherTag}</>;
-    case 'b2c': return <>{<span style={{ ...base, background: '#004d40', color: '#80cbc4' }}>B2C</span>}{voucherTag}</>;
-    default: return <>{<span style={{ ...base, background: '#333', color: '#777' }}>—</span>}{voucherTag}</>;
+    default: return <>{<span style={{ ...base, background: '#004d40', color: '#80cbc4' }}>B2C</span>}{voucherTag}</>;
   }
 }
 
@@ -691,7 +685,6 @@ function UsersPage() {
           <option value="all">B2B / B2C</option>
           <option value="b2b">B2B</option>
           <option value="b2c">B2C</option>
-          <option value="none">Bez oznaczenia</option>
         </select>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <label style={{ fontSize: 12, color: '#aaa' }}>Od:</label>
@@ -886,9 +879,8 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
               onClick={e => e.stopPropagation()}
               style={{ background: '#18171c', color: '#fff', border: '2px solid #5c6bc0', borderRadius: 6, padding: '2px 6px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
             >
-              <option value="none">—</option>
-              <option value="b2b">B2B</option>
               <option value="b2c">B2C</option>
+              <option value="b2b">B2B</option>
             </select>
           ) : getSegmentBadge(user.segment, user.isLastBookingVoucher)}
         </td>

@@ -57,11 +57,12 @@ interface UserStats extends User {
   utmSources: string[];
   displaySource: string | null; // manual_source override or first UTM source
   lastBookingDate: string | null;
+  lastActivityDate: string; // max(latest booking created_at, user created_at)
   mainStatus: string;
   segment: 'b2b' | 'b2c' | 'none';
 }
 
-type SortKey = 'name' | 'email' | 'created_at' | 'bookingsCount' | 'bookingsSum' | 'lastBookingDate';
+type SortKey = 'name' | 'email' | 'created_at' | 'bookingsCount' | 'bookingsSum' | 'lastBookingDate' | 'lastActivityDate';
 type SortDir = 'asc' | 'desc';
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -158,7 +159,7 @@ function UsersPage() {
   const [segmentFilter, setSegmentFilter] = useState<string>("all");
 
   // Sort
-  const [sortKey, setSortKey] = useState<SortKey>('created_at');
+  const [sortKey, setSortKey] = useState<SortKey>('lastActivityDate');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
   // Pagination
@@ -308,6 +309,10 @@ function UsersPage() {
         if (b.status === 'deposit') depositSum += price;
       }
       const sortedDates = userBookings.map(b => b.date).filter(Boolean).sort();
+      // Latest booking created_at (when the booking/payment was actually made)
+      const bookingCreatedDates = userBookings.map(b => b.created_at || '').filter(Boolean).sort();
+      const latestBookingCreated = bookingCreatedDates.length > 0 ? bookingCreatedDates[bookingCreatedDates.length - 1] : '';
+      const lastActivityDate = latestBookingCreated > (u.created_at || '') ? latestBookingCreated : (u.created_at || '');
       return {
         ...u,
         bookingsCount: userBookings.length,
@@ -318,6 +323,7 @@ function UsersPage() {
         utmSources: Array.from(utmSet),
         displaySource: u.manual_source || (utmSet.size > 0 ? Array.from(utmSet)[0] : null),
         lastBookingDate: sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null,
+        lastActivityDate,
         mainStatus: getUserMainStatus(userBookings),
         segment: getUserSegment(userBookings, u.segment),
       };
@@ -429,6 +435,7 @@ function UsersPage() {
         case 'bookingsCount': aVal = a.bookingsCount; bVal = b.bookingsCount; break;
         case 'bookingsSum': aVal = a.bookingsSum; bVal = b.bookingsSum; break;
         case 'lastBookingDate': aVal = a.lastBookingDate || ''; bVal = b.lastBookingDate || ''; break;
+        case 'lastActivityDate': aVal = a.lastActivityDate; bVal = b.lastActivityDate; break;
       }
       if (aVal < bVal) return sortDir === 'asc' ? -1 : 1;
       if (aVal > bVal) return sortDir === 'asc' ? 1 : -1;
@@ -458,12 +465,12 @@ function UsersPage() {
   // ─── CSV Export ──────────────────────────────────────────
   function exportCSV() {
     const BOM = '\uFEFF';
-    let csv = BOM + 'Email;Imie;Telefon;Segment;Data rejestracji;Rezerwacje;Oplacone;Zaliczki;Suma (PLN);Zrodla UTM;Ostatnia rezerwacja\n';
+    let csv = BOM + 'Email;Imie;Telefon;Segment;Data rejestracji;Rezerwacje;Oplacone;Zaliczki;Suma (PLN);Zrodla UTM;Ostatnia aktywnosc\n';
     sorted.forEach(u => {
       const paid = u.bookings.filter(b => b.status === 'paid').length;
       const dep = u.bookings.filter(b => b.status === 'deposit').length;
       const seg = u.segment === 'b2b' ? 'B2B' : u.segment === 'b2c' ? 'B2C' : '';
-      csv += `${u.email};${u.name || ''};${u.phone || ''};${seg};${u.created_at ? u.created_at.slice(0, 10) : ''};${u.bookingsCount};${paid};${dep};${u.bookingsSum.toFixed(2)};${u.utmSources.join(', ') || 'direct'};${u.lastBookingDate || ''}\n`;
+      csv += `${u.email};${u.name || ''};${u.phone || ''};${seg};${u.created_at ? u.created_at.slice(0, 10) : ''};${u.bookingsCount};${paid};${dep};${u.bookingsSum.toFixed(2)};${u.utmSources.join(', ') || 'direct'};${u.lastActivityDate ? u.lastActivityDate.slice(0, 10) : ''}\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -716,7 +723,7 @@ function UsersPage() {
                   <th style={{ ...thStyle }}>Status</th>
                   <th style={thStyle} onClick={() => handleSort('bookingsSum')}>Suma <SortIcon col="bookingsSum" /></th>
                   <th style={{ ...thStyle }}>Zrodlo</th>
-                  <th style={thStyle} onClick={() => handleSort('lastBookingDate')}>Ost. rez. <SortIcon col="lastBookingDate" /></th>
+                  <th style={thStyle} onClick={() => handleSort('lastActivityDate')}>Aktywnosc <SortIcon col="lastActivityDate" /></th>
                 </tr>
               </thead>
               <tbody>
@@ -882,7 +889,7 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
             </div>
           )}
         </td>
-        <td style={{ ...tdStyle, color: '#aaa', fontSize: 12 }}>{user.lastBookingDate || '-'}</td>
+        <td style={{ ...tdStyle, color: '#aaa', fontSize: 12 }}>{user.lastActivityDate ? user.lastActivityDate.slice(0, 10) : '-'}</td>
       </tr>
 
       {isExpanded && (

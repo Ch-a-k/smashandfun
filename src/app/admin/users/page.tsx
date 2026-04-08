@@ -130,11 +130,13 @@ function getUserSegment(bookings: BookingRow[], manualSegment?: string | null): 
 
 function getSegmentBadge(segment: 'b2b' | 'b2c', isVoucher?: boolean) {
   const base: React.CSSProperties = { display: 'inline-block', padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.5 };
-  const voucherTag = isVoucher ? <span style={{ ...base, background: '#4a148c', color: '#ce93d8', marginLeft: 4 }}>Voucher</span> : null;
-  switch (segment) {
-    case 'b2b': return <>{<span style={{ ...base, background: '#1a237e', color: '#90caf9' }}>B2B</span>}{voucherTag}</>;
-    default: return <>{<span style={{ ...base, background: '#004d40', color: '#80cbc4' }}>B2C</span>}{voucherTag}</>;
+  const label = segment === 'b2b' ? 'B2B' : 'B2C';
+  const bg = segment === 'b2b' ? '#e65100' : '#1565c0';
+  const color = segment === 'b2b' ? '#fff' : '#fff';
+  if (isVoucher) {
+    return <span style={{ ...base, background: bg, color }}>{label} <span style={{ opacity: 0.7, fontWeight: 500 }}>V</span></span>;
   }
+  return <span style={{ ...base, background: bg, color }}>{label}</span>;
 }
 
 // ─── Main Component ──────────────────────────────────────────
@@ -596,13 +598,13 @@ function UsersPage() {
           <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaTimesCircle size={12} color="#ef5350" /> Anulowane</span>
           <span style={{ ...valueStyle, color: '#ef5350' }}>{analytics.cancelledCount}</span>
         </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #5c6bc0' }}>
-          <span style={{ ...labelStyle, color: '#90caf9' }}>B2B</span>
-          <span style={{ ...valueStyle, color: '#5c6bc0' }}>{users.filter(u => u.segment === 'b2b').length}</span>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #e65100' }}>
+          <span style={{ ...labelStyle, color: '#ff9800' }}>B2B</span>
+          <span style={{ ...valueStyle, color: '#e65100' }}>{users.filter(u => u.segment === 'b2b').length}</span>
         </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #26a69a' }}>
-          <span style={{ ...labelStyle, color: '#80cbc4' }}>B2C</span>
-          <span style={{ ...valueStyle, color: '#26a69a' }}>{users.filter(u => u.segment === 'b2c').length}</span>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #1565c0' }}>
+          <span style={{ ...labelStyle, color: '#64b5f6' }}>B2C</span>
+          <span style={{ ...valueStyle, color: '#1565c0' }}>{users.filter(u => u.segment === 'b2c').length}</span>
         </div>
       </div>
 
@@ -904,11 +906,11 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
         <td style={{ ...tdStyle, color: '#aaa', fontSize: 12 }}>{user.created_at ? user.created_at.slice(0, 10) : '-'}</td>
         <td style={{ ...tdStyle, fontWeight: 700 }}>{user.bookingsCount}</td>
         <td style={tdStyle}>
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-            {paidCount > 0 && <span style={{ background: '#1b5e20', color: '#a5d6a7', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{paidCount} opl.</span>}
-            {depositCount > 0 && <span style={{ background: '#e65100', color: '#ffcc80', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{depositCount} zal.</span>}
-            {pendingCount > 0 && <span style={{ background: '#f9a825', color: '#fff8e1', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{pendingCount} ocz.</span>}
-            {cancelledCount > 0 && <span style={{ background: '#b71c1c', color: '#ef9a9a', padding: '1px 6px', borderRadius: 4, fontSize: 11, fontWeight: 700 }}>{cancelledCount} anul.</span>}
+          <div style={{ display: 'flex', gap: 3, flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+            {paidCount > 0 && <span style={{ background: '#1b5e20', color: '#a5d6a7', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{paidCount}o</span>}
+            {depositCount > 0 && <span style={{ background: '#e65100', color: '#ffcc80', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{depositCount}z</span>}
+            {pendingCount > 0 && <span style={{ background: '#f9a825', color: '#fff8e1', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{pendingCount}p</span>}
+            {cancelledCount > 0 && <span style={{ background: '#b71c1c', color: '#ef9a9a', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{cancelledCount}a</span>}
             {paidCount === 0 && depositCount === 0 && pendingCount === 0 && cancelledCount === 0 && <span style={{ color: '#555', fontSize: 11 }}>-</span>}
           </div>
         </td>

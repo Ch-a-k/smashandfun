@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import { usePathname } from 'next/navigation';
-import Script from 'next/script';
-import { useEffect, useRef } from 'react';
+import { usePathname } from "next/navigation";
+import Script from "next/script";
+import { useEffect, useRef } from "react";
 
-const FB_PIXEL_ID = '2294482037707761';
+// const FB_PIXEL_ID = '2294482037707761'; Fb account Smash&Fun
+const FB_PIXEL_ID = "936001329413711"; // Instagram account Smash&Fun
 
 export default function MetaPixel() {
   const pathname = usePathname();
@@ -12,9 +13,9 @@ export default function MetaPixel() {
 
   // PageView при смене страницы (первый PageView стреляет в inline-скрипте)
   useEffect(() => {
-    if (pathname && typeof window !== 'undefined' && window.fbq) {
+    if (pathname && typeof window !== "undefined" && window.fbq) {
       if (hasTrackedInitialPageView.current) {
-        window.fbq('track', 'PageView');
+        window.fbq("track", "PageView");
       } else {
         hasTrackedInitialPageView.current = true;
       }
@@ -22,7 +23,7 @@ export default function MetaPixel() {
   }, [pathname]);
 
   // Не трекаем в админке
-  if (typeof window !== 'undefined' && pathname?.startsWith('/admin')) {
+  if (typeof window !== "undefined" && pathname?.startsWith("/admin")) {
     return null;
   }
 
@@ -51,7 +52,7 @@ fbq('track', 'PageView');
         <img
           height="1"
           width="1"
-          style={{ display: 'none' }}
+          style={{ display: "none" }}
           src={`https://www.facebook.com/tr?id=${FB_PIXEL_ID}&ev=PageView&noscript=1`}
           alt=""
         />

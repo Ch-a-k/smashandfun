@@ -606,6 +606,16 @@ function UsersPage() {
           <span style={{ ...labelStyle, color: '#64b5f6' }}>B2C</span>
           <span style={{ ...valueStyle, color: '#1565c0' }}>{users.filter(u => u.segment === 'b2c').length}</span>
         </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #4caf50' }}>
+          <span style={{ ...labelStyle, color: '#a5d6a7' }}>Suma (filtered)</span>
+          <span style={{ ...valueStyle, color: '#4caf50' }}>{filtered.reduce((s, u) => s + u.bookingsSum, 0).toFixed(0)}</span>
+          <span style={{ fontSize: 11, color: '#a5d6a7' }}>PLN</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #ff9800' }}>
+          <span style={{ ...labelStyle, color: '#ffcc80' }}>{dateFrom ? 'Opl. okres' : 'Dzis opl.'}</span>
+          <span style={{ ...valueStyle, color: '#ff9800' }}>{filtered.reduce((s, u) => s + getUserDateSum(u), 0).toFixed(0)}</span>
+          <span style={{ fontSize: 11, color: '#ffcc80' }}>PLN</span>
+        </div>
       </div>
 
       {/* ══════ Ad Platform Breakdown (3 columns) ══════ */}

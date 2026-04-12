@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const PACKAGE_NAMES_PL: Record<string, string> = {
   easy: 'BUŁKA Z MASŁEM',
@@ -9,12 +10,37 @@ const PACKAGE_NAMES_PL: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
-  const { name, email, phone, package: pkg, message } = await req.json();
+  const {
+    name, email, phone, package: pkg, message,
+    utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+    referrer, landing_page,
+  } = await req.json();
 
-  // Получаем название пакета на польском
+  // 1. Save to database (authoritative)
+  const { error: dbError } = await supabaseAdmin.from('voucher_requests').insert([{
+    name,
+    email,
+    phone,
+    package: pkg,
+    message: message || null,
+    status: 'new',
+    utm_source: utm_source || null,
+    utm_medium: utm_medium || null,
+    utm_campaign: utm_campaign || null,
+    utm_term: utm_term || null,
+    utm_content: utm_content || null,
+    referrer: referrer || null,
+    landing_page: landing_page || null,
+  }]);
+
+  if (dbError) {
+    console.error('Voucher request DB error:', dbError);
+    return NextResponse.json({ ok: false, error: 'Database error' }, { status: 500 });
+  }
+
+  // 2. Send email (non-blocking — DB save is source of truth)
   const packageName = PACKAGE_NAMES_PL[pkg] || pkg;
 
-  // Настройка транспорта (Zoho SMTP, как в sendBookingEmail)
   const transporter = nodemailer.createTransport({
     host: process.env.ZOHO_HOST,
     port: Number(process.env.ZOHO_PORT),
@@ -35,8 +61,9 @@ export async function POST(req: NextRequest) {
 
   try {
     await transporter.sendMail(mailOptions);
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json({ ok: false, error: 'Email send error' }, { status: 500 });
+  } catch (emailErr) {
+    console.error('Voucher email send error (non-fatal):', emailErr);
   }
-} 
+
+  return NextResponse.json({ ok: true });
+}

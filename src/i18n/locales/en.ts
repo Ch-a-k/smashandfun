@@ -850,7 +850,10 @@ export const en = {
       },
       service: {
         label: 'Service Type',
-        placeholder: 'Select service type'
+        placeholder: 'Select service type',
+        teamBuilding: 'Team Building',
+        corporateEvents: 'Corporate Events',
+        integration: 'Team Integration'
       },
       people: {
         label: 'Number of People',
@@ -859,6 +862,18 @@ export const en = {
       date: {
         label: 'Preferred Date',
         placeholder: 'Select preferred date'
+      },
+      dateFrom: {
+        label: 'Date',
+        placeholder: 'Pick a date or range'
+      },
+      dateTo: {
+        label: 'Date to (optional)',
+        placeholder: 'Select end date'
+      },
+      extraItems: {
+        label: 'Additional items',
+        subtitle: 'Select additional items for your event'
       },
       message: {
         label: 'Additional Information',
@@ -874,8 +889,24 @@ export const en = {
         phone: 'Phone number must be at least 9 characters long',
         service: 'Please select a service type',
         people: 'Please enter number of participants',
-        date: 'Please select a date'
-      }
+        date: 'Please select a date',
+        dateFrom: 'Please select a start date'
+      },
+    },
+    trust: {
+      title: 'Documentation & Formalities',
+      subtitle: 'Professional service from A to Z',
+      description: 'We provide full documentation compliant with Polish law and European Union regulations. We issue VAT invoices, assist with corporate paperwork, and ensure smooth and hassle-free cooperation.',
+      items: [
+        'VAT invoice for every service',
+        'Documentation compliant with Polish and EU law',
+        'Assistance with corporate paperwork',
+        'Contract for event execution'
+      ]
+    },
+    clients: {
+      title: 'Trusted by',
+      subtitle: 'Our clients include'
     }
   },
   booking: {

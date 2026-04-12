@@ -18,8 +18,8 @@ export function EventsSection() {
   const { t } = useI18n();
   const router = useRouter();
 
-  const navigateToContactForm = () => {
-    router.push('/kontakt#contact-form');
+  const navigateToBooking = () => {
+    router.push('/rezerwacja');
   };
 
   return (
@@ -67,7 +67,7 @@ export function EventsSection() {
                   variants={fadeInUp}
                 >
                   <button
-                    onClick={navigateToContactForm}
+                    onClick={navigateToBooking}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-[#f36e21] text-white font-semibold rounded-lg
                       transform transition-all duration-200 hover:bg-[#ff7b2e] hover:scale-105
                       focus:outline-none focus:ring-2 focus:ring-[#f36e21] focus:ring-opacity-50"

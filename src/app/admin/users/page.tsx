@@ -3,6 +3,10 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from '@/lib/supabaseClient';
 import { withAdminAuth } from '../components/withAdminAuth';
+import DatePicker, { registerLocale } from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import { pl } from 'date-fns/locale/pl';
+registerLocale('pl', pl);
 import { FaChevronDown, FaChevronUp, FaSort, FaSortUp, FaSortDown, FaGoogle, FaTiktok, FaFacebook, FaGlobe, FaSearch, FaFileExport, FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaMoneyBillWave, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa';
 
 // ─── Types ───────────────────────────────────────────────────
@@ -48,6 +52,53 @@ interface PaymentRow {
   created_at?: string;
 }
 
+interface B2BRequest {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  service: string;
+  people: number;
+  date_from: string;
+  date_to: string | null;
+  extra_items: { id: string; count: number }[];
+  message: string | null;
+  status: string;
+  estimated_revenue: number;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_term: string | null;
+  utm_content: string | null;
+  referrer: string | null;
+  landing_page: string | null;
+  created_at: string;
+}
+
+interface VoucherRequest {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  package: string;
+  message: string | null;
+  status: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_term: string | null;
+  utm_content: string | null;
+  referrer: string | null;
+  landing_page: string | null;
+  created_at: string;
+}
+
+interface ExtraItemInfo {
+  id: string;
+  name: string;
+  price: number;
+}
+
 interface UserStats extends User {
   bookingsCount: number;
   bookingsSum: number;
@@ -62,6 +113,8 @@ interface UserStats extends User {
   mainStatus: string;
   segment: 'b2b' | 'b2c';
   isLastBookingVoucher: boolean;
+  b2bRequests: B2BRequest[];
+  voucherRequests: VoucherRequest[];
 }
 
 type SortKey = 'name' | 'email' | 'created_at' | 'bookingsCount' | 'bookingsSum' | 'lastBookingDate' | 'lastActivityDate' | 'dateSum';
@@ -145,6 +198,7 @@ function UsersPage() {
   const [users, setUsers] = useState<UserStats[]>([]);
   const [packages, setPackages] = useState<Record<string, string>>({});
   const [paymentsByBooking, setPaymentsByBooking] = useState<Record<string, PaymentRow>>({});
+  const [extraItemMap, setExtraItemMap] = useState<Record<string, ExtraItemInfo>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [hasUtmColumns, setHasUtmColumns] = useState(false);
@@ -155,6 +209,8 @@ function UsersPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [dateRange, setDateRange] = useState<[Date | null, Date | null]>([null, null]);
+  const [dateMode, setDateMode] = useState<string>("all");
   const [segmentFilter, setSegmentFilter] = useState<string>("all");
 
   // Sort
@@ -261,7 +317,7 @@ function UsersPage() {
     setHasUtmColumns(useUtm);
     const bookingsFields = useUtm ? BOOKINGS_FIELDS_WITH_UTM : BOOKINGS_FIELDS_BASE;
 
-    const [usersResult, bookingsResult, packagesRes, paymentsResult] = await Promise.all([
+    const [usersResult, bookingsResult, packagesRes, paymentsResult, b2bResult, extraItemsRes, voucherResult] = await Promise.all([
       fetchAllRows<User>((from, to) =>
         supabase.from('users').select('*').order('created_at', { ascending: true }).range(from, to)
       ),
@@ -272,6 +328,9 @@ function UsersPage() {
       fetchAllRows<PaymentRow>((from, to) =>
         supabase.from('payments').select('id, booking_id, status, amount, created_at').order('created_at', { ascending: true }).range(from, to)
       ),
+      supabase.from('b2b_requests').select('*').order('created_at', { ascending: false }),
+      supabase.from('extra_items').select('id, name, price'),
+      supabase.from('voucher_requests').select('*').order('created_at', { ascending: false }),
     ]);
 
     if (usersResult.error) { setError("Blad ladowania uzytkownikow"); setLoading(false); return; }
@@ -280,6 +339,31 @@ function UsersPage() {
     const pkgMap: Record<string, string> = {};
     (packagesRes.data || []).forEach(p => { pkgMap[p.id] = p.name; });
     setPackages(pkgMap);
+
+    // Build extra items lookup
+    const eiMap: Record<string, ExtraItemInfo> = {};
+    for (const i of (extraItemsRes.data ?? []) as { id: string; name: string; price: number }[]) {
+      eiMap[i.id] = { id: i.id, name: i.name, price: Number(i.price) };
+    }
+    setExtraItemMap(eiMap);
+
+    // Group B2B requests by email
+    const b2bByEmail: Record<string, B2BRequest[]> = {};
+    for (const r of (b2bResult.data ?? []) as unknown as B2BRequest[]) {
+      const email = r.email?.toLowerCase();
+      if (!email) continue;
+      if (!b2bByEmail[email]) b2bByEmail[email] = [];
+      b2bByEmail[email].push(r);
+    }
+
+    // Group voucher requests by email
+    const voucherByEmail: Record<string, VoucherRequest[]> = {};
+    for (const r of (voucherResult.data ?? []) as unknown as VoucherRequest[]) {
+      const email = r.email?.toLowerCase();
+      if (!email) continue;
+      if (!voucherByEmail[email]) voucherByEmail[email] = [];
+      voucherByEmail[email].push(r);
+    }
 
     // Map payments by booking_id (latest payment per booking)
     const pmtMap: Record<string, PaymentRow> = {};
@@ -322,7 +406,16 @@ function UsersPage() {
       // Latest booking created_at (when the booking/payment was actually made)
       const bookingCreatedDates = userBookings.map(b => b.created_at || '').filter(Boolean).sort();
       const latestBookingCreated = bookingCreatedDates.length > 0 ? bookingCreatedDates[bookingCreatedDates.length - 1] : '';
-      const lastActivityDate = latestBookingCreated > (u.created_at || '') ? latestBookingCreated : (u.created_at || '');
+      // Include B2B requests in activity date
+      const userB2bReqs = b2bByEmail[u.email.toLowerCase()] || [];
+      const latestB2b = userB2bReqs.length > 0 ? userB2bReqs[0].created_at : '';
+      // Include voucher requests in activity date
+      const userVoucherReqs = voucherByEmail[u.email.toLowerCase()] || [];
+      const latestVoucher = userVoucherReqs.length > 0 ? userVoucherReqs[0].created_at : '';
+      let lastActivityDate = u.created_at || '';
+      if (latestBookingCreated > lastActivityDate) lastActivityDate = latestBookingCreated;
+      if (latestB2b > lastActivityDate) lastActivityDate = latestB2b;
+      if (latestVoucher > lastActivityDate) lastActivityDate = latestVoucher;
       // Check if the most recent booking (by created_at) was free (voucher)
       const sortedByCreated = [...userBookings].sort((a, b) => ((b.created_at || '') > (a.created_at || '') ? 1 : -1));
       const lastBooking = sortedByCreated[0];
@@ -341,9 +434,72 @@ function UsersPage() {
         lastActivityDate,
         isLastBookingVoucher,
         mainStatus: getUserMainStatus(userBookings),
-        segment: getUserSegment(userBookings, u.segment),
+        segment: b2bByEmail[u.email.toLowerCase()]?.length ? 'b2b' as const : getUserSegment(userBookings, u.segment),
+        b2bRequests: b2bByEmail[u.email.toLowerCase()] || [],
+        voucherRequests: voucherByEmail[u.email.toLowerCase()] || [],
       };
     });
+
+    // Add B2B-only leads (people who submitted B2B form but have no user record)
+    const existingEmails = new Set(usersResult.data.map(u => u.email.toLowerCase()));
+    for (const [email, reqs] of Object.entries(b2bByEmail)) {
+      if (existingEmails.has(email)) continue;
+      const firstReq = reqs[0];
+      stats.push({
+        id: `b2b-${firstReq.id}`,
+        email: firstReq.email,
+        name: firstReq.name,
+        phone: firstReq.phone,
+        created_at: firstReq.created_at,
+        segment: 'b2b' as const,
+        manual_source: null,
+        bookingsCount: 0,
+        bookingsSum: 0,
+        paidSum: 0,
+        depositSum: 0,
+        bookings: [],
+        userPayments: [],
+        utmSources: [],
+        displaySource: 'b2b',
+        lastBookingDate: null,
+        lastActivityDate: firstReq.created_at,
+        isLastBookingVoucher: false,
+        mainStatus: 'b2b_lead',
+        b2bRequests: reqs,
+        voucherRequests: voucherByEmail[email] || [],
+      });
+    }
+
+    // Add voucher-only leads (submitted voucher form but no user record and no B2B)
+    const coveredEmails = new Set([...Array.from(existingEmails), ...Object.keys(b2bByEmail)]);
+    for (const [email, reqs] of Object.entries(voucherByEmail)) {
+      if (coveredEmails.has(email)) continue;
+      const firstReq = reqs[0];
+      stats.push({
+        id: `voucher-${firstReq.id}`,
+        email: firstReq.email,
+        name: firstReq.name,
+        phone: firstReq.phone,
+        created_at: firstReq.created_at,
+        segment: 'b2c' as const,
+        manual_source: null,
+        bookingsCount: 0,
+        bookingsSum: 0,
+        paidSum: 0,
+        depositSum: 0,
+        bookings: [],
+        userPayments: [],
+        utmSources: [],
+        displaySource: firstReq.utm_source || null,
+        lastBookingDate: null,
+        lastActivityDate: firstReq.created_at,
+        isLastBookingVoucher: false,
+        mainStatus: 'voucher_lead',
+        b2bRequests: [],
+        voucherRequests: reqs,
+      });
+    }
+
     setUsers(stats);
     setLoading(false);
   }, []);
@@ -447,14 +603,78 @@ function UsersPage() {
     if (statusFilter !== 'all') result = result.filter(u => u.bookings.some(b => b.status === statusFilter));
     if (segmentFilter !== 'all') result = result.filter(u => u.segment === segmentFilter);
     if (dateFrom || dateTo) {
-      result = result.filter(u => u.bookings.some(b => {
-        if (dateFrom && b.date < dateFrom) return false;
-        if (dateTo && b.date > dateTo) return false;
-        return true;
-      }));
+      result = result.filter(u => {
+        if (dateMode === 'all') {
+          const hasBooking = u.bookings.some(b => {
+            if (dateFrom && b.date < dateFrom) return false;
+            if (dateTo && b.date > dateTo) return false;
+            return true;
+          });
+          const hasB2b = u.b2bRequests.some(r => {
+            if (dateFrom && r.date_from < dateFrom) return false;
+            if (dateTo && r.date_from > dateTo) return false;
+            return true;
+          });
+          const hasPaid = u.userPayments.some(p => {
+            const d = (p.created_at || '').slice(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+          const hasB2bCreated = u.b2bRequests.some(r => {
+            const d = (r.created_at || '').slice(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+          const hasVoucherCreated = u.voucherRequests.some(r => {
+            const d = (r.created_at || '').slice(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+          return hasBooking || hasB2b || hasPaid || hasB2bCreated || hasVoucherCreated;
+        } else if (dateMode === 'booking') {
+          // Booking date OR B2B requested date range
+          const hasBooking = u.bookings.some(b => {
+            if (dateFrom && b.date < dateFrom) return false;
+            if (dateTo && b.date > dateTo) return false;
+            return true;
+          });
+          const hasB2b = u.b2bRequests.some(r => {
+            if (dateFrom && r.date_from < dateFrom) return false;
+            if (dateTo && r.date_from > dateTo) return false;
+            return true;
+          });
+          return hasBooking || hasB2b;
+        } else if (dateMode === 'paid') {
+          return u.userPayments.some(p => {
+            const d = (p.created_at || '').slice(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+        } else if (dateMode === 'b2b_created') {
+          // b2b_created — when B2B form was submitted
+          return u.b2bRequests.some(r => {
+            const d = (r.created_at || '').slice(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+        } else {
+          // voucher_created — when voucher form was submitted
+          return u.voucherRequests.some(r => {
+            const d = (r.created_at || '').slice(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+        }
+      });
     }
     return result;
-  }, [users, search, utmFilter, statusFilter, segmentFilter, dateFrom, dateTo]);
+  }, [users, search, utmFilter, statusFilter, segmentFilter, dateFrom, dateTo, dateMode]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -525,7 +745,23 @@ function UsersPage() {
     <div style={{ color: '#fff', maxWidth: 1400, margin: '0 auto', padding: '24px 0' }}>
       <style>{`
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
+        .admin-dp .react-datepicker-wrapper { width: 100%; }
+        .admin-dp-input { background: #18171c; color: #fff; border: 2px solid #333; border-radius: 8px; padding: 7px 12px; font-size: 14px; font-weight: 500; outline: none; width: 100%; transition: border-color 0.15s; }
+        .admin-dp-input:focus { border-color: #f36e21; }
+        .admin-dp .react-datepicker { background: #18171c; border-color: #f36e21; color: #fff; font-family: inherit; }
+        .admin-dp .react-datepicker__header { background: #23222a; border-color: #3a3840; }
+        .admin-dp .react-datepicker__current-month,
+        .admin-dp .react-datepicker__day-name { color: #ff9f58; }
+        .admin-dp .react-datepicker__day { color: #fff; }
+        .admin-dp .react-datepicker__day:hover { background: #f36e21aa; color: #fff; }
+        .admin-dp .react-datepicker__day--selected,
+        .admin-dp .react-datepicker__day--in-selecting-range,
+        .admin-dp .react-datepicker__day--in-range { background: #f36e21 !important; color: #fff !important; }
+        .admin-dp .react-datepicker__day--keyboard-selected { background: rgba(243,110,33,0.4); }
+        .admin-dp .react-datepicker__day--disabled { color: #555 !important; }
+        .admin-dp .react-datepicker__navigation-icon::before { border-color: #ff9f58; }
+        .admin-dp .react-datepicker__close-icon::after { background-color: #f36e21; }
+        .admin-dp .react-datepicker__triangle { display: none; }
       `}</style>
 
       {/* Header */}
@@ -714,16 +950,32 @@ function UsersPage() {
           <option value="b2b">B2B</option>
           <option value="b2c">B2C</option>
         </select>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <label style={{ fontSize: 12, color: '#aaa' }}>Od:</label>
-          <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ ...inputStyle, width: 140 }} />
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <label style={{ fontSize: 12, color: '#aaa' }}>Do:</label>
-          <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ ...inputStyle, width: 140 }} />
+        <select value={dateMode} onChange={e => setDateMode(e.target.value)} style={{ ...inputStyle, minWidth: 150 }}>
+          <option value="all">Wszystkie daty</option>
+          <option value="booking">Rezerwacja / B2B na</option>
+          <option value="paid">Oplacono w</option>
+          <option value="b2b_created">Zapytanie B2B w</option>
+          <option value="voucher_created">Zapytanie voucher w</option>
+        </select>
+        <div className="admin-dp" style={{ minWidth: 200 }}>
+          <DatePicker
+            selectsRange
+            startDate={dateRange[0]}
+            endDate={dateRange[1]}
+            onChange={(update: [Date | null, Date | null]) => {
+              setDateRange(update);
+              setDateFrom(update[0] ? update[0].toISOString().slice(0, 10) : '');
+              setDateTo(update[1] ? update[1].toISOString().slice(0, 10) : '');
+            }}
+            isClearable
+            placeholderText="Wybierz daty..."
+            dateFormat="dd.MM.yyyy"
+            locale="pl"
+            className="admin-dp-input"
+          />
         </div>
         {(search || utmFilter !== 'all' || statusFilter !== 'all' || segmentFilter !== 'all' || dateFrom || dateTo) && (
-          <button onClick={() => { setSearch(''); setUtmFilter('all'); setStatusFilter('all'); setSegmentFilter('all'); setDateFrom(''); setDateTo(''); }} style={{ background: 'transparent', color: '#f36e21', border: '1px solid #f36e21', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
+          <button onClick={() => { setSearch(''); setUtmFilter('all'); setStatusFilter('all'); setSegmentFilter('all'); setDateFrom(''); setDateTo(''); setDateRange([null, null]); setDateMode('all'); }} style={{ background: 'transparent', color: '#f36e21', border: '1px solid #f36e21', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
             Wyczysc filtry
           </button>
         )}
@@ -772,7 +1024,7 @@ function UsersPage() {
               </thead>
               <tbody>
                 {paginated.map(u => (
-                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} paymentsByBooking={paymentsByBooking} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} onDelete={handleDeleteUser} dateSumFrom={dateSumFrom} dateSumTo={dateSumTo} />
+                  <UserRow key={u.id} user={u} isExpanded={expandedIds.has(u.id)} onToggle={() => toggleExpand(u.id)} packages={packages} paymentsByBooking={paymentsByBooking} extraItemMap={extraItemMap} segmentEditMode={segmentEditMode} segmentEditValue={segmentEdits[u.id]} onSegmentChange={(val) => setSegmentEdit(u.id, val)} sourceEditValue={sourceEdits[u.id]} onSourceChange={(val) => setSourceEdit(u.id, val)} onDelete={handleDeleteUser} dateSumFrom={dateSumFrom} dateSumTo={dateSumTo} setUsers={setUsers} />
                 ))}
               </tbody>
             </table>
@@ -864,7 +1116,34 @@ function SourceEditCell({ currentValue, onChange }: { currentValue: string; onCh
 }
 
 // ─── User Row ──────────────────────────────────────────────
-function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange, onDelete, dateSumFrom, dateSumTo }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; paymentsByBooking: Record<string, PaymentRow>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void; onDelete: (userId: string, email: string) => Promise<void>; dateSumFrom: string; dateSumTo: string }) {
+const B2B_SERVICE_LABELS: Record<string, string> = {
+  team_building: 'Team Building',
+  corporate_events: 'Imprezy Firmowe',
+  integration: 'Integracja Zespołu',
+};
+
+const B2B_STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
+  new: { label: 'Nowe', bg: '#1565c0', color: '#90caf9' },
+  in_progress: { label: 'W toku', bg: '#e65100', color: '#ffcc80' },
+  completed: { label: 'Zakończone', bg: '#1b5e20', color: '#a5d6a7' },
+  rejected: { label: 'Odrzucone', bg: '#b71c1c', color: '#ef9a9a' },
+};
+
+const VOUCHER_PACKAGE_LABELS: Record<string, string> = {
+  easy: 'BUŁKA Z MASŁEM',
+  medium: 'ŁATWY',
+  hard: 'ŚREDNI',
+  extreme: 'TRUDNY',
+};
+
+const VOUCHER_STATUS_LABELS: Record<string, { label: string; bg: string; color: string }> = {
+  new: { label: 'Nowe', bg: '#1565c0', color: '#90caf9' },
+  in_progress: { label: 'W toku', bg: '#e65100', color: '#ffcc80' },
+  completed: { label: 'Zakończone', bg: '#1b5e20', color: '#a5d6a7' },
+  rejected: { label: 'Odrzucone', bg: '#b71c1c', color: '#ef9a9a' },
+};
+
+function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, extraItemMap, segmentEditMode, segmentEditValue, onSegmentChange, sourceEditValue, onSourceChange, onDelete, dateSumFrom, dateSumTo, setUsers }: { user: UserStats; isExpanded: boolean; onToggle: () => void; packages: Record<string, string>; paymentsByBooking: Record<string, PaymentRow>; extraItemMap: Record<string, ExtraItemInfo>; segmentEditMode: boolean; segmentEditValue?: string; onSegmentChange: (val: string) => void; sourceEditValue?: string; onSourceChange: (val: string) => void; onDelete: (userId: string, email: string) => Promise<void>; dateSumFrom: string; dateSumTo: string; setUsers: React.Dispatch<React.SetStateAction<UserStats[]>> }) {
   const tdStyle: React.CSSProperties = { padding: '10px 12px', fontSize: 13 };
   const paidCount = user.bookings.filter(b => b.status === 'paid').length;
   const depositCount = user.bookings.filter(b => b.status === 'deposit').length;
@@ -921,7 +1200,11 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
             {depositCount > 0 && <span style={{ background: '#e65100', color: '#ffcc80', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{depositCount}z</span>}
             {pendingCount > 0 && <span style={{ background: '#f9a825', color: '#fff8e1', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{pendingCount}p</span>}
             {cancelledCount > 0 && <span style={{ background: '#b71c1c', color: '#ef9a9a', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{cancelledCount}a</span>}
-            {paidCount === 0 && depositCount === 0 && pendingCount === 0 && cancelledCount === 0 && <span style={{ color: '#555', fontSize: 11 }}>-</span>}
+            {user.b2bRequests.length > 0 && <span style={{ background: '#6a1b9a', color: '#ce93d8', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>B2B</span>}
+            {user.voucherRequests.length > 0 && <span style={{ background: '#0d47a1', color: '#90caf9', padding: '1px 5px', borderRadius: 4, fontSize: 10, fontWeight: 700 }}>{user.voucherRequests.length}V</span>}
+            {paidCount === 0 && depositCount === 0 && pendingCount === 0 && cancelledCount === 0 && user.b2bRequests.length === 0 && user.voucherRequests.length === 0 && (
+              <span style={{ color: '#555', fontSize: 11 }}>-</span>
+            )}
           </div>
         </td>
         <td style={{ ...tdStyle, fontWeight: 700, color: '#4caf50' }}>{user.bookingsSum.toFixed(0)} zl</td>
@@ -1021,6 +1304,164 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, segm
                     </tbody>
                   </table>
                 </div>
+              )}
+
+              {/* ── B2B Requests ── */}
+              {user.b2bRequests.length > 0 && (
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9f58', marginTop: 16, marginBottom: 8 }}>
+                    Zapytania B2B: <span style={{ color: '#e65100' }}>{user.b2bRequests.length}</span>
+                  </div>
+                  {user.b2bRequests.map(req => {
+                    const st = B2B_STATUS_LABELS[req.status] || { label: req.status, bg: '#333', color: '#aaa' };
+                    const extrasText = (req.extra_items || [])
+                      .filter(ei => ei.count > 0)
+                      .map(ei => `${extraItemMap[ei.id]?.name ?? ei.id} ×${ei.count}`)
+                      .join(', ');
+                    return (
+                      <div key={req.id} style={{ background: '#23222a', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #2a2a2f' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: '#aaa' }}>{req.created_at ? req.created_at.slice(0, 16).replace('T', ' ') : '-'}</span>
+                          <select
+                            value={req.status}
+                            onClick={e => e.stopPropagation()}
+                            onChange={async e => {
+                              e.stopPropagation();
+                              const newStatus = e.target.value;
+                              const { error } = await supabase.from('b2b_requests').update({ status: newStatus }).eq('id', req.id);
+                              if (!error) {
+                                req.status = newStatus;
+                                setUsers(prev => [...prev]);
+                              }
+                            }}
+                            style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color, border: 'none', cursor: 'pointer', outline: 'none' }}
+                          >
+                            {Object.entries(B2B_STATUS_LABELS).map(([val, s]) => (
+                              <option key={val} value={val} style={{ background: '#23222a', color: '#fff' }}>{s.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '4px 16px', fontSize: 12 }}>
+                          <div><span style={{ color: '#888' }}>Imię:</span> <span style={{ color: '#ccc' }}>{req.name}</span></div>
+                          <div><span style={{ color: '#888' }}>Telefon:</span> <span style={{ color: '#ccc' }}>{req.phone}</span></div>
+                          <div><span style={{ color: '#888' }}>Usługa:</span> <span style={{ color: '#ccc' }}>{B2B_SERVICE_LABELS[req.service] ?? req.service}</span></div>
+                          <div><span style={{ color: '#888' }}>Osoby:</span> <span style={{ color: '#ccc' }}>{req.people}</span></div>
+                          <div><span style={{ color: '#888' }}>Termin:</span> <span style={{ color: '#ccc' }}>{req.date_from}{req.date_to ? ` — ${req.date_to}` : ''}</span></div>
+                          <div><span style={{ color: '#888' }}>Przychód:</span> <span style={{ color: '#4caf50', fontWeight: 700 }}>{req.estimated_revenue} PLN</span></div>
+                          {extrasText && <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#888' }}>Dodatki:</span> <span style={{ color: '#ccc' }}>{extrasText}</span></div>}
+                          {req.message && <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#888' }}>Wiadomość:</span> <span style={{ color: '#ccc' }}>{req.message}</span></div>}
+                          <div><span style={{ color: '#888' }}>Źródło:</span> {req.utm_source ? getUtmBadge(req.utm_source) : <span style={{ color: '#555' }}>-</span>}</div>
+                          <div><span style={{ color: '#888' }}>Medium:</span> <span style={{ color: '#aaa' }}>{req.utm_medium || '-'}</span></div>
+                          <div><span style={{ color: '#888' }}>Kampania:</span> <span style={{ color: '#aaa', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block', verticalAlign: 'bottom' }}>{req.utm_campaign || '-'}</span></div>
+                          <div><span style={{ color: '#888' }}>Utworzono:</span> <span style={{ color: '#666', fontSize: 11 }}>{req.created_at ? req.created_at.slice(0, 16).replace('T', ' ') : '-'}</span></div>
+                          {(() => {
+                            const utmParts: string[] = [];
+                            if (req.utm_source) utmParts.push(`utm_source=${req.utm_source}`);
+                            if (req.utm_medium) utmParts.push(`utm_medium=${req.utm_medium}`);
+                            if (req.utm_campaign) utmParts.push(`utm_campaign=${req.utm_campaign}`);
+                            if (req.utm_term) utmParts.push(`utm_term=${req.utm_term}`);
+                            if (req.utm_content) utmParts.push(`utm_content=${req.utm_content}`);
+                            const landingUrl = req.landing_page
+                              ? `${req.landing_page}${utmParts.length > 0 ? '?' + utmParts.join('&') : ''}`
+                              : utmParts.length > 0 ? `/?${utmParts.join('&')}` : null;
+                            if (!landingUrl && !req.referrer) return null;
+                            return (
+                              <div style={{ gridColumn: '1 / -1', marginTop: 4 }}>
+                                {landingUrl && (
+                                  <div>
+                                    <span style={{ color: '#777', marginRight: 6, borderBottom: '1px dotted #555', cursor: 'help', fontSize: 11 }} title="Podgląd atrybucji: landing + UTM z bazy">Podgląd atrybucji:</span>
+                                    <code style={{ color: '#7986cb', background: '#1a1a2e', padding: '1px 6px', borderRadius: 4, fontSize: 10, wordBreak: 'break-all' }}>{landingUrl}</code>
+                                  </div>
+                                )}
+                                {req.referrer && (
+                                  <div style={{ marginTop: 2, fontSize: 10, color: '#666' }}>
+                                    <span style={{ color: '#555' }}>Referrer: </span>
+                                    <span style={{ wordBreak: 'break-all' }}>{req.referrer}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {/* ── Voucher Requests ── */}
+              {user.voucherRequests.length > 0 && (
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9f58', marginTop: 16, marginBottom: 8 }}>
+                    Zamówienia vouchera: <span style={{ color: '#1565c0' }}>{user.voucherRequests.length}</span>
+                  </div>
+                  {user.voucherRequests.map(req => {
+                    const st = VOUCHER_STATUS_LABELS[req.status] || { label: req.status, bg: '#333', color: '#aaa' };
+                    return (
+                      <div key={req.id} style={{ background: '#23222a', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #2a2a2f' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+                          <span style={{ fontSize: 12, color: '#aaa' }}>{req.created_at ? req.created_at.slice(0, 16).replace('T', ' ') : '-'}</span>
+                          <select
+                            value={req.status}
+                            onClick={e => e.stopPropagation()}
+                            onChange={async e => {
+                              e.stopPropagation();
+                              const newStatus = e.target.value;
+                              const { error } = await supabase.from('voucher_requests').update({ status: newStatus }).eq('id', req.id);
+                              if (!error) {
+                                req.status = newStatus;
+                                setUsers(prev => [...prev]);
+                              }
+                            }}
+                            style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color, border: 'none', cursor: 'pointer', outline: 'none' }}
+                          >
+                            {Object.entries(VOUCHER_STATUS_LABELS).map(([val, s]) => (
+                              <option key={val} value={val} style={{ background: '#23222a', color: '#fff' }}>{s.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '4px 16px', fontSize: 12 }}>
+                          <div><span style={{ color: '#888' }}>Imię:</span> <span style={{ color: '#ccc' }}>{req.name}</span></div>
+                          <div><span style={{ color: '#888' }}>Telefon:</span> <span style={{ color: '#ccc' }}>{req.phone}</span></div>
+                          <div><span style={{ color: '#888' }}>Pakiet:</span> <span style={{ color: '#ccc' }}>{VOUCHER_PACKAGE_LABELS[req.package] ?? req.package}</span></div>
+                          {req.message && <div style={{ gridColumn: '1 / -1' }}><span style={{ color: '#888' }}>Wiadomość:</span> <span style={{ color: '#ccc' }}>{req.message}</span></div>}
+                          <div><span style={{ color: '#888' }}>Źródło:</span> {req.utm_source ? getUtmBadge(req.utm_source) : <span style={{ color: '#555' }}>-</span>}</div>
+                          <div><span style={{ color: '#888' }}>Medium:</span> <span style={{ color: '#aaa' }}>{req.utm_medium || '-'}</span></div>
+                          <div><span style={{ color: '#888' }}>Kampania:</span> <span style={{ color: '#aaa', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'inline-block', verticalAlign: 'bottom' }}>{req.utm_campaign || '-'}</span></div>
+                          <div><span style={{ color: '#888' }}>Utworzono:</span> <span style={{ color: '#666', fontSize: 11 }}>{req.created_at ? req.created_at.slice(0, 16).replace('T', ' ') : '-'}</span></div>
+                          {(() => {
+                            const utmParts: string[] = [];
+                            if (req.utm_source) utmParts.push(`utm_source=${req.utm_source}`);
+                            if (req.utm_medium) utmParts.push(`utm_medium=${req.utm_medium}`);
+                            if (req.utm_campaign) utmParts.push(`utm_campaign=${req.utm_campaign}`);
+                            if (req.utm_term) utmParts.push(`utm_term=${req.utm_term}`);
+                            if (req.utm_content) utmParts.push(`utm_content=${req.utm_content}`);
+                            const landingUrl = req.landing_page
+                              ? `${req.landing_page}${utmParts.length > 0 ? '?' + utmParts.join('&') : ''}`
+                              : utmParts.length > 0 ? `/?${utmParts.join('&')}` : null;
+                            if (!landingUrl && !req.referrer) return null;
+                            return (
+                              <div style={{ gridColumn: '1 / -1', marginTop: 4 }}>
+                                {landingUrl && (
+                                  <div>
+                                    <span style={{ color: '#777', marginRight: 6, borderBottom: '1px dotted #555', cursor: 'help', fontSize: 11 }} title="Podgląd atrybucji: landing + UTM z bazy">Podgląd atrybucji:</span>
+                                    <code style={{ color: '#7986cb', background: '#1a1a2e', padding: '1px 6px', borderRadius: 4, fontSize: 10, wordBreak: 'break-all' }}>{landingUrl}</code>
+                                  </div>
+                                )}
+                                {req.referrer && (
+                                  <div style={{ marginTop: 2, fontSize: 10, color: '#666' }}>
+                                    <span style={{ color: '#555' }}>Referrer: </span>
+                                    <span style={{ wordBreak: 'break-all' }}>{req.referrer}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
               )}
             </div>
           </td>

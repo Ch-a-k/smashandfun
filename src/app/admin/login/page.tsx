@@ -51,7 +51,7 @@ export default function AdminLogin() {
     }
     setLoading(false);
     if (adminData.role === 'superadmin') {
-      window.location.replace('/admin/admins');
+      window.location.replace('/admin/users');
     } else {
       window.location.replace('/admin/bookings');
     }

@@ -26,7 +26,7 @@ export function CTASection() {
             {t('organizeParty.cta.description')}
           </p>
           <Link
-            href="/kontakt#contact-form"
+            href="/rezerwacja"
             className="inline-block px-12 py-6 bg-[#f36e21] text-white font-bold rounded-lg
               transform transition-all duration-200 hover:scale-105 hover:bg-[#ff7b2e]
               focus:outline-none focus:ring-2 focus:ring-[#f36e21] focus:ring-opacity-50

@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { trackEvent, trackFBLead } from '@/lib/analytics';
+import { getUtmParams } from '@/lib/bookingUtm';
 
 const PACKAGE_KEYS = [
   "easy",
@@ -54,7 +55,7 @@ export default function VoucheryPage() {
       const res = await fetch("/api/sendVoucherForm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form)
+        body: JSON.stringify({ ...form, ...getUtmParams() })
       });
       if (res.ok) {
         setSuccess(true);

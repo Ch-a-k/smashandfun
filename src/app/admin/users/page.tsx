@@ -573,18 +573,27 @@ function UsersPage() {
     return { bySource, byMedium, byCampaign, directCount, directRevenue, totalBookings, totalRevenue, paidCount, paidRevenue, depositCount, depositRevenue, pendingCount, pendingRevenue, cancelledCount };
   }, [users]);
 
-  // ─── Date-filtered paid sum per user (today if no filter) ─
+  // ─── Date-filtered paid sum per user (last payment if no filter) ─
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const dateSumFrom = dateFrom || today;
-  const dateSumTo = dateTo || today;
+  const dateSumFrom = dateFrom || '';
+  const dateSumTo = dateTo || '';
+  const hasDateFilter = !!(dateFrom || dateTo);
 
   function getUserDateSum(u: UserStats): number {
-    return u.userPayments
-      .filter(p => {
-        const pDate = (p.created_at || '').slice(0, 10);
-        return pDate >= dateSumFrom && pDate <= dateSumTo;
-      })
-      .reduce((sum, p) => sum + Number(p.amount) / 100, 0);
+    if (hasDateFilter) {
+      return u.userPayments
+        .filter(p => {
+          const pDate = (p.created_at || '').slice(0, 10);
+          if (dateSumFrom && pDate < dateSumFrom) return false;
+          if (dateSumTo && pDate > dateSumTo) return false;
+          return true;
+        })
+        .reduce((sum, p) => sum + Number(p.amount) / 100, 0);
+    }
+    // No date filter — show last payment amount
+    if (u.userPayments.length === 0) return 0;
+    const sorted = [...u.userPayments].sort((a, b) => ((b.created_at || '') > (a.created_at || '') ? 1 : -1));
+    return Number(sorted[0].amount) / 100;
   }
 
   // ─── Filtered + Sorted + Paginated ──────────────────────
@@ -848,7 +857,7 @@ function UsersPage() {
           <span style={{ fontSize: 11, color: '#a5d6a7' }}>PLN</span>
         </div>
         <div style={{ ...cardStyle, borderLeft: '3px solid #ff9800' }}>
-          <span style={{ ...labelStyle, color: '#ffcc80' }}>{dateFrom ? 'Opl. okres' : 'Dzis opl.'}</span>
+          <span style={{ ...labelStyle, color: '#ffcc80' }}>{hasDateFilter ? 'Opl. okres' : 'Ost. opl.'}</span>
           <span style={{ ...valueStyle, color: '#ff9800' }}>{filtered.reduce((s, u) => s + getUserDateSum(u), 0).toFixed(0)}</span>
           <span style={{ fontSize: 11, color: '#ffcc80' }}>PLN</span>
         </div>
@@ -1017,7 +1026,7 @@ function UsersPage() {
                   <th style={thStyle} onClick={() => handleSort('bookingsCount')}>Rez. <SortIcon col="bookingsCount" /></th>
                   <th style={{ ...thStyle }}>Status</th>
                   <th style={thStyle} onClick={() => handleSort('bookingsSum')}>Suma <SortIcon col="bookingsSum" /></th>
-                  <th style={thStyle} onClick={() => handleSort('dateSum')}>{dateFrom || dateTo ? 'Opl. okres' : 'Dzis opl.'} <SortIcon col="dateSum" /></th>
+                  <th style={thStyle} onClick={() => handleSort('dateSum')}>{hasDateFilter ? 'Opl. okres' : 'Ost. opl.'} <SortIcon col="dateSum" /></th>
                   <th style={{ ...thStyle }}>Zrodlo</th>
                   <th style={thStyle} onClick={() => handleSort('lastActivityDate')}>Aktywnosc <SortIcon col="lastActivityDate" /></th>
                 </tr>

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
+import { createEmailTransport, getEmailConfig } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -7,21 +7,15 @@ export async function POST(request: Request) {
     const { name, email, phone, service, people, date, message, subject } = body;
 
     // Создаем транспорт для отправки почты
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
-      },
-    });
+    const transporter = createEmailTransport();
+    const emailConfig = getEmailConfig();
 
     // Формируем содержимое письма
     const mailOptions = {
-      from: process.env.EMAIL_FROM,
-      to: process.env.EMAIL_TO,
-      cc: process.env.EMAIL_CC,
+      from: emailConfig.from,
+      to: emailConfig.notificationTo,
+      cc: emailConfig.cc,
+      replyTo: email,
       subject: `Nowa aplikacja: ${subject || 'Formularz kontaktowy'}`,
       html: `
         <h2>Nowa aplikacja ze strony</h2>

@@ -63,13 +63,30 @@ npm start
 
 ## 5. Дополнительные настройки (опционально)
 
-### Email (для уведомлений о бронированиях)
+### Email (для уведомлений о бронированиях, контактной формы и B2B)
 
 ```bash
-EMAIL_USER=ваш-email@gmail.com
-EMAIL_PASS=пароль-приложения
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=twoj-email@gmail.com
+SMTP_PASSWORD=haslo-aplikacji
+SMTP_SECURE=false
+
+# Куда приходят уведомления с форм
+EMAIL_FROM=hello@twojadomena.pl
+EMAIL_TO=hello@twojadomena.pl
+
+# Необязательные алиасы для совместимости со старой конфигурацией
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
+EMAIL_USER=twoj-email@gmail.com
+EMAIL_PASS=haslo-aplikacji
+ZOHO_HOST=
+ZOHO_PORT=
+ZOHO_USER=
+ZOHO_PASS=
+EMAIL_RECEIVER=
+EMAIL_CC=
 ```
 
 ### PayU (для приема платежей)
@@ -81,13 +98,16 @@ PAYU_POS_ID=
 PAYU_MD5_KEY=
 ```
 
-## 6. Интегрированные аналитические инструменты
+## 6. Аналитика (через переменные окружения)
 
-Проект уже настроен с:
+Все трекинг-скрипты загружаются **только если соответствующая переменная установлена**. Добавьте нужные ID в Vercel → Settings → Environment Variables:
 
-- ✅ **Google Tag Manager** (GTM)
-- ✅ **TikTok Pixel**
-- ✅ **Vercel Analytics**
+| Переменная | Сервис |
+|---|---|
+| `NEXT_PUBLIC_GTM_ID` | Google Tag Manager |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Analytics 4 |
+| `NEXT_PUBLIC_FB_PIXEL_ID` | Meta (Facebook) Pixel |
+| `NEXT_PUBLIC_TIKTOK_PIXEL_ID` | TikTok Pixel |
 
 Все аналитические инструменты работают с системой Cookie Consent и загружаются только после согласия пользователя.
 

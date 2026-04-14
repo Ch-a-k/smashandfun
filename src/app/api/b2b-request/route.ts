@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import nodemailer from 'nodemailer';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { createEmailTransport, getEmailConfig } from '@/lib/email';
 
 const SERVICE_LABELS: Record<string, string> = {
   team_building: 'Team Building',
@@ -70,23 +70,38 @@ export async function POST(request: Request) {
 
     // Send email notification (non-blocking — DB save is the priority)
     try {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASSWORD,
-        },
-      });
-
+      const transporter = createEmailTransport();
+      const emailConfig = getEmailConfig();
       const dateText = dateTo ? `${dateFrom} — ${dateTo}` : dateFrom;
+      const extraItemsText = (extraItems ?? [])
+        .filter((ei: { id: string; count: number }) => ei.count > 0)
+        .map((ei: { id: string; count: number }) => {
+          const info = priceMap[ei.id];
+          return `${info?.name ?? ei.id} x ${ei.count} (${(info?.price ?? 0) * ei.count} zl)`;
+        })
+        .join('\n');
 
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
-        to: process.env.EMAIL_TO,
-        cc: process.env.EMAIL_CC,
+        from: emailConfig.from,
+        to: emailConfig.notificationTo,
+        cc: emailConfig.cc,
+        replyTo: email,
         subject: `Nowe zapytanie B2B — ${SERVICE_LABELS[service] ?? service}`,
+        text: [
+          'Nowe zapytanie B2B',
+          `Usluga: ${SERVICE_LABELS[service] ?? service}`,
+          `Imie: ${name}`,
+          `Email: ${email}`,
+          `Telefon: ${phone}`,
+          `Liczba osob: ${people}`,
+          `Termin: ${dateText}`,
+          extraItemsText ? `Dodatki:\n${extraItemsText}` : '',
+          message ? `Wiadomosc: ${message}` : '',
+          `Szacowany przychod: ${estimatedRevenue} PLN`,
+          `Baza: ${people} os. x ${people < 7 ? 200 : 150} zl = ${base} zl${extras > 0 ? ` + dodatki ${extras} zl` : ''}`,
+        ]
+          .filter(Boolean)
+          .join('\n\n'),
         html: `
           <h2>Nowe zapytanie B2B</h2>
           <p><strong>Usługa:</strong> ${SERVICE_LABELS[service] ?? service}</p>

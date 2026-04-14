@@ -4,8 +4,7 @@ import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useEffect, useRef } from "react";
 
-// const FB_PIXEL_ID = '2294482037707761'; Fb account Smash&Fun
-const FB_PIXEL_ID = "936001329413711"; // Instagram account Smash&Fun
+const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID;
 
 export default function MetaPixel() {
   const pathname = usePathname();
@@ -22,7 +21,11 @@ export default function MetaPixel() {
     }
   }, [pathname]);
 
-  // Не трекаем в админке
+  // Не рендерим без ID или в админке
+  if (!FB_PIXEL_ID) {
+    return null;
+  }
+
   if (typeof window !== "undefined" && pathname?.startsWith("/admin")) {
     return null;
   }

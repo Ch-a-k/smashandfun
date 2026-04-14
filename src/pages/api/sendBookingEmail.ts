@@ -1,20 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import nodemailer from 'nodemailer';
+import { createEmailTransport, getEmailConfig } from '@/lib/email';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const { to, booking, type } = req.body;
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.ZOHO_HOST,
-    port: Number(process.env.ZOHO_PORT),
-    secure: Number(process.env.ZOHO_PORT) === 465, // true для 465, false для 587
-    auth: {
-      user: process.env.ZOHO_USER,
-      pass: process.env.ZOHO_PASS
-    }
-  });
+  const transporter = createEmailTransport();
+  const emailConfig = getEmailConfig();
 
   let subject = '';
   let text = '';
@@ -97,7 +90,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     await transporter.sendMail({
-      from: `"Smash&Fun" <${process.env.ZOHO_USER}>`,
+      from: `"Smash&Fun" <${emailConfig.from}>`,
       to,
       subject,
       text,

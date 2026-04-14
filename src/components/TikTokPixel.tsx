@@ -7,7 +7,7 @@ import { isMarketingAllowed } from '@/lib/analytics';
 
 export default function TikTokPixel() {
   const pathname = usePathname();
-  const pixelId = 'D6276P3C77U6LCNG39R0';
+  const pixelId = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
   const [isMounted, setIsMounted] = useState(false);
   const [marketingAllowed, setMarketingAllowed] = useState(false);
   const hasTrackedInitialPageView = useRef(false);
@@ -31,7 +31,7 @@ export default function TikTokPixel() {
   }, [pathname, isMounted, marketingAllowed]);
 
   // Во время первого рендера на сервере или до монтирования возвращаем пустой фрагмент
-  if (!isMounted) {
+  if (!isMounted || !pixelId) {
     return null;
   }
 

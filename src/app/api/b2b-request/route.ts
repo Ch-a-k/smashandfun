@@ -68,58 +68,54 @@ export async function POST(request: Request) {
       })
       .join('<br/>');
 
-    // Send email notification (non-blocking — DB save is the priority)
-    try {
-      const transporter = createEmailTransport();
-      const emailConfig = getEmailConfig();
-      const dateText = dateTo ? `${dateFrom} — ${dateTo}` : dateFrom;
-      const extraItemsText = (extraItems ?? [])
-        .filter((ei: { id: string; count: number }) => ei.count > 0)
-        .map((ei: { id: string; count: number }) => {
-          const info = priceMap[ei.id];
-          return `${info?.name ?? ei.id} x ${ei.count} (${(info?.price ?? 0) * ei.count} zl)`;
-        })
-        .join('\n');
+    // Send email notification
+    const transporter = createEmailTransport();
+    const emailConfig = getEmailConfig();
+    const dateText = dateTo ? `${dateFrom} — ${dateTo}` : dateFrom;
+    const extraItemsText = (extraItems ?? [])
+      .filter((ei: { id: string; count: number }) => ei.count > 0)
+      .map((ei: { id: string; count: number }) => {
+        const info = priceMap[ei.id];
+        return `${info?.name ?? ei.id} x ${ei.count} (${(info?.price ?? 0) * ei.count} zl)`;
+      })
+      .join('\n');
 
-      await transporter.sendMail({
-        from: emailConfig.from,
-        to: emailConfig.notificationTo,
-        cc: emailConfig.cc,
-        replyTo: email,
-        subject: `Nowe zapytanie B2B — ${SERVICE_LABELS[service] ?? service}`,
-        text: [
-          'Nowe zapytanie B2B',
-          `Usluga: ${SERVICE_LABELS[service] ?? service}`,
-          `Imie: ${name}`,
-          `Email: ${email}`,
-          `Telefon: ${phone}`,
-          `Liczba osob: ${people}`,
-          `Termin: ${dateText}`,
-          extraItemsText ? `Dodatki:\n${extraItemsText}` : '',
-          message ? `Wiadomosc: ${message}` : '',
-          `Szacowany przychod: ${estimatedRevenue} PLN`,
-          `Baza: ${people} os. x ${people < 7 ? 200 : 150} zl = ${base} zl${extras > 0 ? ` + dodatki ${extras} zl` : ''}`,
-        ]
-          .filter(Boolean)
-          .join('\n\n'),
-        html: `
-          <h2>Nowe zapytanie B2B</h2>
-          <p><strong>Usługa:</strong> ${SERVICE_LABELS[service] ?? service}</p>
-          <p><strong>Imię:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Telefon:</strong> ${phone}</p>
-          <p><strong>Liczba osób:</strong> ${people}</p>
-          <p><strong>Termin:</strong> ${dateText}</p>
-          ${extraItemsHtml ? `<p><strong>Dodatki:</strong><br/>${extraItemsHtml}</p>` : ''}
-          ${message ? `<p><strong>Wiadomość:</strong> ${message}</p>` : ''}
-          <hr/>
-          <p><strong>Szacowany przychód:</strong> ${estimatedRevenue} PLN</p>
-          <p style="color:#888;font-size:12px">Baza: ${people} os. × ${people < 7 ? 200 : 150} zł = ${base} zł${extras > 0 ? ` + dodatki ${extras} zł` : ''}</p>
-        `,
-      });
-    } catch (emailError) {
-      console.error('B2B email send failed (request saved):', emailError);
-    }
+    await transporter.sendMail({
+      from: emailConfig.from,
+      to: emailConfig.notificationTo,
+      cc: emailConfig.cc,
+      replyTo: email,
+      subject: `Nowe zapytanie B2B — ${SERVICE_LABELS[service] ?? service}`,
+      text: [
+        'Nowe zapytanie B2B',
+        `Usluga: ${SERVICE_LABELS[service] ?? service}`,
+        `Imie: ${name}`,
+        `Email: ${email}`,
+        `Telefon: ${phone}`,
+        `Liczba osob: ${people}`,
+        `Termin: ${dateText}`,
+        extraItemsText ? `Dodatki:\n${extraItemsText}` : '',
+        message ? `Wiadomosc: ${message}` : '',
+        `Szacowany przychod: ${estimatedRevenue} PLN`,
+        `Baza: ${people} os. x ${people < 7 ? 200 : 150} zl = ${base} zl${extras > 0 ? ` + dodatki ${extras} zl` : ''}`,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+      html: `
+        <h2>Nowe zapytanie B2B</h2>
+        <p><strong>Usługa:</strong> ${SERVICE_LABELS[service] ?? service}</p>
+        <p><strong>Imię:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Telefon:</strong> ${phone}</p>
+        <p><strong>Liczba osób:</strong> ${people}</p>
+        <p><strong>Termin:</strong> ${dateText}</p>
+        ${extraItemsHtml ? `<p><strong>Dodatki:</strong><br/>${extraItemsHtml}</p>` : ''}
+        ${message ? `<p><strong>Wiadomość:</strong> ${message}</p>` : ''}
+        <hr/>
+        <p><strong>Szacowany przychód:</strong> ${estimatedRevenue} PLN</p>
+        <p style="color:#888;font-size:12px">Baza: ${people} os. × ${people < 7 ? 200 : 150} zł = ${base} zł${extras > 0 ? ` + dodatki ${extras} zł` : ''}</p>
+      `,
+    });
 
     return NextResponse.json({ message: 'Success' }, { status: 200 });
   } catch (error) {

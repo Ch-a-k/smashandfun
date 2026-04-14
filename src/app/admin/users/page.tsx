@@ -8,6 +8,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { pl } from 'date-fns/locale/pl';
 registerLocale('pl', pl);
 import { FaChevronDown, FaChevronUp, FaSort, FaSortUp, FaSortDown, FaGoogle, FaTiktok, FaFacebook, FaGlobe, FaSearch, FaFileExport, FaChevronLeft, FaChevronRight, FaCheckCircle, FaClock, FaMoneyBillWave, FaTimesCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, ComposedChart, Area, Line, Legend } from 'recharts';
 
 // ─── Types ───────────────────────────────────────────────────
 interface User {
@@ -573,6 +574,53 @@ function UsersPage() {
     return { bySource, byMedium, byCampaign, directCount, directRevenue, totalBookings, totalRevenue, paidCount, paidRevenue, depositCount, depositRevenue, pendingCount, pendingRevenue, cancelledCount };
   }, [users]);
 
+  // ─── Monthly Financials (accrual + cash flow + stats) ──────
+  const monthlyFinancials = useMemo(() => {
+    const accrualMap: Record<string, number> = {};
+    const cashFlowMap: Record<string, number> = {};
+    const seenTxn = new Set<string>();
+    let paidFull = 0;
+    let paidDeposit = 0;
+    let totalNonCancelled = 0;
+
+    for (const u of users) {
+      for (const b of u.bookings) {
+        if (b.status === 'cancelled') continue;
+        totalNonCancelled++;
+        const month = (b.created_at || '').slice(0, 7);
+        if (!month) continue;
+        accrualMap[month] = (accrualMap[month] || 0) + (Number(b.total_price) || 0);
+        if (b.status === 'paid') paidFull++;
+        else if (b.status === 'deposit') paidDeposit++;
+      }
+      for (const p of u.userPayments) {
+        // Deduplicate by payment id to avoid double-counted rows
+        if (seenTxn.has(p.id)) continue;
+        seenTxn.add(p.id);
+        const month = (p.created_at || '').slice(0, 7);
+        if (!month) continue;
+        cashFlowMap[month] = (cashFlowMap[month] || 0) + Number(p.amount) / 100;
+      }
+    }
+
+    const allMonths = Array.from(new Set([...Object.keys(accrualMap), ...Object.keys(cashFlowMap)])).sort();
+    const chartData = allMonths.map(m => ({
+      month: m,
+      monthLabel: m.slice(5, 7) + '.' + m.slice(0, 4),
+      accrual: Math.round(accrualMap[m] || 0),
+      cashFlow: Math.round(cashFlowMap[m] || 0),
+    }));
+
+    return {
+      chartData,
+      paidFull,
+      paidDeposit,
+      totalNonCancelled,
+      paidFullPercent: totalNonCancelled ? ((paidFull / totalNonCancelled) * 100).toFixed(1) : '0',
+      paidDepositPercent: totalNonCancelled ? ((paidDeposit / totalNonCancelled) * 100).toFixed(1) : '0',
+    };
+  }, [users]);
+
   // ─── Date-filtered paid sum per user (last payment if no filter) ─
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const dateSumFrom = dateFrom || '';
@@ -813,55 +861,34 @@ function UsersPage() {
         </div>
       )}
 
-      {/* ══════ Payment Analytics Cards ══════ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginBottom: 16 }}>
-        <div style={cardStyle}>
-          <span style={labelStyle}>Klienci</span>
-          <span style={valueStyle}>{users.length}</span>
+      {/* ══════ Monthly Revenue & Cash Flow Chart ══════ */}
+      <div style={{ background: '#23222a', borderRadius: 14, padding: '24px 28px', marginBottom: 16, border: '1px solid #2a2a2f' }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#f36e21', marginBottom: 20 }}>
+          Przychody vs Cash Flow (miesięcznie)
         </div>
-        <div style={cardStyle}>
-          <span style={labelStyle}>Rezerwacje</span>
-          <span style={valueStyle}>{analytics.totalBookings}</span>
-          <span style={{ fontSize: 11, color: '#aaa' }}>{analytics.totalRevenue.toFixed(0)} PLN</span>
+        <div style={{ fontSize: 11, color: '#666', marginBottom: 12 }}>
+          Zielony — przychody (metoda memoriałowa, pełna wartość w dniu zapisu) · Pomarańczowy — cash flow (faktyczne wpłaty wg daty wpływu)
         </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #4caf50' }}>
-          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaCheckCircle size={12} color="#4caf50" /> Oplacone</span>
-          <span style={{ ...valueStyle, color: '#4caf50' }}>{analytics.paidCount}</span>
-          <span style={{ fontSize: 11, color: '#a5d6a7' }}>{analytics.paidRevenue.toFixed(0)} PLN</span>
-        </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #ff9800' }}>
-          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaMoneyBillWave size={12} color="#ff9800" /> Zaliczki</span>
-          <span style={{ ...valueStyle, color: '#ff9800' }}>{analytics.depositCount}</span>
-          <span style={{ fontSize: 11, color: '#ffcc80' }}>{analytics.depositRevenue.toFixed(0)} PLN</span>
-        </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #f9a825' }}>
-          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaClock size={12} color="#f9a825" /> Oczekujace</span>
-          <span style={{ ...valueStyle, color: '#f9a825' }}>{analytics.pendingCount}</span>
-          <span style={{ fontSize: 11, color: '#fff8e1' }}>{analytics.pendingRevenue.toFixed(0)} PLN</span>
-        </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #ef5350' }}>
-          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaTimesCircle size={12} color="#ef5350" /> Anulowane</span>
-          <span style={{ ...valueStyle, color: '#ef5350' }}>{analytics.cancelledCount}</span>
-        </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #e65100' }}>
-          <span style={{ ...labelStyle, color: '#ff9800' }}>B2B</span>
-          <span style={{ ...valueStyle, color: '#e65100' }}>{users.filter(u => u.segment === 'b2b').length}</span>
-        </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #1565c0' }}>
-          <span style={{ ...labelStyle, color: '#64b5f6' }}>B2C</span>
-          <span style={{ ...valueStyle, color: '#1565c0' }}>{users.filter(u => u.segment === 'b2c').length}</span>
-        </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #4caf50' }}>
-          <span style={{ ...labelStyle, color: '#a5d6a7' }}>Suma (filtered)</span>
-          <span style={{ ...valueStyle, color: '#4caf50' }}>{filtered.reduce((s, u) => s + u.bookingsSum, 0).toFixed(0)}</span>
-          <span style={{ fontSize: 11, color: '#a5d6a7' }}>PLN</span>
-        </div>
-        <div style={{ ...cardStyle, borderLeft: '3px solid #ff9800' }}>
-          <span style={{ ...labelStyle, color: '#ffcc80' }}>{hasDateFilter ? 'Opl. okres' : 'Ost. opl.'}</span>
-          <span style={{ ...valueStyle, color: '#ff9800' }}>{filtered.reduce((s, u) => s + getUserDateSum(u), 0).toFixed(0)}</span>
-          <span style={{ fontSize: 11, color: '#ffcc80' }}>PLN</span>
-        </div>
+        {monthlyFinancials.chartData.length > 0 ? (
+          <ResponsiveContainer width="100%" height={350}>
+            <ComposedChart data={monthlyFinancials.chartData} margin={{ top: 4, right: 16, left: 0, bottom: 4 }}>
+              <XAxis dataKey="monthLabel" tick={{ fill: '#888', fontSize: 10 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fill: '#888', fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v: number) => `${v} zł`} />
+              <RechartsTooltip
+                contentStyle={{ background: '#23222a', border: '1px solid #444', borderRadius: 8, fontSize: 12, color: '#fff' }}
+                labelStyle={{ color: '#aaa' }}
+                formatter={(value: number) => `${value.toLocaleString()} zł`}
+              />
+              <Legend wrapperStyle={{ fontSize: 12, color: '#aaa', paddingTop: 8 }} />
+              <Area type="monotone" dataKey="accrual" name="Przychody" fill="#4caf5040" stroke="#4caf50" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="cashFlow" name="Cash Flow" stroke="#f36e21" strokeWidth={2} dot={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        ) : (
+          <div style={{ height: 350, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#555', fontSize: 14 }}>Brak danych</div>
+        )}
       </div>
+
 
       {/* ══════ Ad Platform Breakdown (3 columns) ══════ */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 12, marginBottom: 16 }}>
@@ -936,6 +963,24 @@ function UsersPage() {
         </div>
       </div>
 
+      {/* ══════ Payment Type Stats ══════ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 16 }}>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #4caf50' }}>
+          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaCheckCircle size={12} color="#4caf50" /> Pełna opłata</span>
+          <span style={{ ...valueStyle, color: '#4caf50' }}>{monthlyFinancials.paidFull}</span>
+          <span style={{ fontSize: 11, color: '#a5d6a7' }}>{monthlyFinancials.paidFullPercent}% klientów</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #ff9800' }}>
+          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaMoneyBillWave size={12} color="#ff9800" /> Tylko zaliczka</span>
+          <span style={{ ...valueStyle, color: '#ff9800' }}>{monthlyFinancials.paidDeposit}</span>
+          <span style={{ fontSize: 11, color: '#ffcc80' }}>{monthlyFinancials.paidDepositPercent}% klientów</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #64b5f6' }}>
+          <span style={{ ...labelStyle, color: '#64b5f6' }}>Razem (bez anulowanych)</span>
+          <span style={valueStyle}>{monthlyFinancials.totalNonCancelled}</span>
+        </div>
+      </div>
+
       {/* ══════ Filters ══════ */}
       <div style={{ background: '#23222a', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ position: 'relative', flex: '1 1 220px' }}>
@@ -1002,6 +1047,56 @@ function UsersPage() {
       </div>
 
       {error && <div style={{ color: '#ff4d4f', marginBottom: 12, padding: '8px 12px', background: '#2a1515', borderRadius: 8 }}>{error}</div>}
+
+      {/* ══════ Payment Analytics Cards ══════ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginBottom: 16 }}>
+        <div style={cardStyle}>
+          <span style={labelStyle}>Klienci</span>
+          <span style={valueStyle}>{users.length}</span>
+        </div>
+        <div style={cardStyle}>
+          <span style={labelStyle}>Rezerwacje</span>
+          <span style={valueStyle}>{analytics.totalBookings}</span>
+          <span style={{ fontSize: 11, color: '#aaa' }}>{analytics.totalRevenue.toFixed(0)} PLN</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #4caf50' }}>
+          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaCheckCircle size={12} color="#4caf50" /> Oplacone</span>
+          <span style={{ ...valueStyle, color: '#4caf50' }}>{analytics.paidCount}</span>
+          <span style={{ fontSize: 11, color: '#a5d6a7' }}>{analytics.paidRevenue.toFixed(0)} PLN</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #ff9800' }}>
+          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaMoneyBillWave size={12} color="#ff9800" /> Zaliczki</span>
+          <span style={{ ...valueStyle, color: '#ff9800' }}>{analytics.depositCount}</span>
+          <span style={{ fontSize: 11, color: '#ffcc80' }}>{analytics.depositRevenue.toFixed(0)} PLN</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #f9a825' }}>
+          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaClock size={12} color="#f9a825" /> Oczekujace</span>
+          <span style={{ ...valueStyle, color: '#f9a825' }}>{analytics.pendingCount}</span>
+          <span style={{ fontSize: 11, color: '#fff8e1' }}>{analytics.pendingRevenue.toFixed(0)} PLN</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #ef5350' }}>
+          <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaTimesCircle size={12} color="#ef5350" /> Anulowane</span>
+          <span style={{ ...valueStyle, color: '#ef5350' }}>{analytics.cancelledCount}</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #e65100' }}>
+          <span style={{ ...labelStyle, color: '#ff9800' }}>B2B</span>
+          <span style={{ ...valueStyle, color: '#e65100' }}>{users.filter(u => u.segment === 'b2b').length}</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #1565c0' }}>
+          <span style={{ ...labelStyle, color: '#64b5f6' }}>B2C</span>
+          <span style={{ ...valueStyle, color: '#1565c0' }}>{users.filter(u => u.segment === 'b2c').length}</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #4caf50' }}>
+          <span style={{ ...labelStyle, color: '#a5d6a7' }}>Suma (filtered)</span>
+          <span style={{ ...valueStyle, color: '#4caf50' }}>{filtered.reduce((s, u) => s + u.bookingsSum, 0).toFixed(0)}</span>
+          <span style={{ fontSize: 11, color: '#a5d6a7' }}>PLN</span>
+        </div>
+        <div style={{ ...cardStyle, borderLeft: '3px solid #ff9800' }}>
+          <span style={{ ...labelStyle, color: '#ffcc80' }}>{hasDateFilter ? 'Opl. okres' : 'Ost. opl.'}</span>
+          <span style={{ ...valueStyle, color: '#ff9800' }}>{filtered.reduce((s, u) => s + getUserDateSum(u), 0).toFixed(0)}</span>
+          <span style={{ fontSize: 11, color: '#ffcc80' }}>PLN</span>
+        </div>
+      </div>
 
       {/* ══════ Main Table ══════ */}
       <div style={{ background: '#23222a', borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 16px #0003' }}>

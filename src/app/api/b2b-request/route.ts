@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     // Compute estimated revenue
-    const base = people < 7 ? 200 * people : 150 * people;
+    const base = 185 * people;
     const extras = (extraItems ?? []).reduce(
       (sum: number, ei: { id: string; count: number }) =>
         sum + (priceMap[ei.id]?.price ?? 0) * ei.count,

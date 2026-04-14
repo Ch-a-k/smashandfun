@@ -755,6 +755,30 @@ function UsersPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, sortKey, sortDir, dateSumFrom, dateSumTo]);
 
+  // ─── Filtered Analytics (respects date/search/utm/status/segment filters) ──
+  const filteredAnalytics = useMemo(() => {
+    let totalBookings = 0; let totalRevenue = 0;
+    let paidCount = 0; let paidRevenue = 0;
+    let depositCount = 0; let depositRevenue = 0;
+    let pendingCount = 0; let pendingRevenue = 0;
+    let cancelledCount = 0;
+
+    for (const u of filtered) {
+      for (const b of u.bookings) {
+        const price = Number(b.total_price) || 0;
+        const isCancelled = b.status === 'cancelled';
+        const revenuePrice = isCancelled ? 0 : price;
+        totalBookings++; totalRevenue += revenuePrice;
+
+        if (b.status === 'paid') { paidCount++; paidRevenue += price; }
+        else if (b.status === 'deposit') { depositCount++; depositRevenue += price; }
+        else if (b.status === 'pending') { pendingCount++; pendingRevenue += price; }
+        else if (isCancelled) { cancelledCount++; }
+      }
+    }
+    return { totalBookings, totalRevenue, paidCount, paidRevenue, depositCount, depositRevenue, pendingCount, pendingRevenue, cancelledCount };
+  }, [filtered]);
+
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize);
   useEffect(() => { setPage(1); }, [search, utmFilter, statusFilter, segmentFilter, dateFrom, dateTo, pageSize]);
@@ -1052,39 +1076,39 @@ function UsersPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 10, marginBottom: 16 }}>
         <div style={cardStyle}>
           <span style={labelStyle}>Klienci</span>
-          <span style={valueStyle}>{users.length}</span>
+          <span style={valueStyle}>{filtered.length}</span>
         </div>
         <div style={cardStyle}>
           <span style={labelStyle}>Rezerwacje</span>
-          <span style={valueStyle}>{analytics.totalBookings}</span>
-          <span style={{ fontSize: 11, color: '#aaa' }}>{analytics.totalRevenue.toFixed(0)} PLN</span>
+          <span style={valueStyle}>{filteredAnalytics.totalBookings}</span>
+          <span style={{ fontSize: 11, color: '#aaa' }}>{filteredAnalytics.totalRevenue.toFixed(0)} PLN</span>
         </div>
         <div style={{ ...cardStyle, borderLeft: '3px solid #4caf50' }}>
           <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaCheckCircle size={12} color="#4caf50" /> Oplacone</span>
-          <span style={{ ...valueStyle, color: '#4caf50' }}>{analytics.paidCount}</span>
-          <span style={{ fontSize: 11, color: '#a5d6a7' }}>{analytics.paidRevenue.toFixed(0)} PLN</span>
+          <span style={{ ...valueStyle, color: '#4caf50' }}>{filteredAnalytics.paidCount}</span>
+          <span style={{ fontSize: 11, color: '#a5d6a7' }}>{filteredAnalytics.paidRevenue.toFixed(0)} PLN</span>
         </div>
         <div style={{ ...cardStyle, borderLeft: '3px solid #ff9800' }}>
           <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaMoneyBillWave size={12} color="#ff9800" /> Zaliczki</span>
-          <span style={{ ...valueStyle, color: '#ff9800' }}>{analytics.depositCount}</span>
-          <span style={{ fontSize: 11, color: '#ffcc80' }}>{analytics.depositRevenue.toFixed(0)} PLN</span>
+          <span style={{ ...valueStyle, color: '#ff9800' }}>{filteredAnalytics.depositCount}</span>
+          <span style={{ fontSize: 11, color: '#ffcc80' }}>{filteredAnalytics.depositRevenue.toFixed(0)} PLN</span>
         </div>
         <div style={{ ...cardStyle, borderLeft: '3px solid #f9a825' }}>
           <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaClock size={12} color="#f9a825" /> Oczekujace</span>
-          <span style={{ ...valueStyle, color: '#f9a825' }}>{analytics.pendingCount}</span>
-          <span style={{ fontSize: 11, color: '#fff8e1' }}>{analytics.pendingRevenue.toFixed(0)} PLN</span>
+          <span style={{ ...valueStyle, color: '#f9a825' }}>{filteredAnalytics.pendingCount}</span>
+          <span style={{ fontSize: 11, color: '#fff8e1' }}>{filteredAnalytics.pendingRevenue.toFixed(0)} PLN</span>
         </div>
         <div style={{ ...cardStyle, borderLeft: '3px solid #ef5350' }}>
           <span style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: 4 }}><FaTimesCircle size={12} color="#ef5350" /> Anulowane</span>
-          <span style={{ ...valueStyle, color: '#ef5350' }}>{analytics.cancelledCount}</span>
+          <span style={{ ...valueStyle, color: '#ef5350' }}>{filteredAnalytics.cancelledCount}</span>
         </div>
         <div style={{ ...cardStyle, borderLeft: '3px solid #e65100' }}>
           <span style={{ ...labelStyle, color: '#ff9800' }}>B2B</span>
-          <span style={{ ...valueStyle, color: '#e65100' }}>{users.filter(u => u.segment === 'b2b').length}</span>
+          <span style={{ ...valueStyle, color: '#e65100' }}>{filtered.filter(u => u.segment === 'b2b').length}</span>
         </div>
         <div style={{ ...cardStyle, borderLeft: '3px solid #1565c0' }}>
           <span style={{ ...labelStyle, color: '#64b5f6' }}>B2C</span>
-          <span style={{ ...valueStyle, color: '#1565c0' }}>{users.filter(u => u.segment === 'b2c').length}</span>
+          <span style={{ ...valueStyle, color: '#1565c0' }}>{filtered.filter(u => u.segment === 'b2c').length}</span>
         </div>
         <div style={{ ...cardStyle, borderLeft: '3px solid #4caf50' }}>
           <span style={{ ...labelStyle, color: '#a5d6a7' }}>Suma (filtered)</span>

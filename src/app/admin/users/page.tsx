@@ -1331,24 +1331,40 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, extr
                       <div key={req.id} style={{ background: '#23222a', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #2a2a2f' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
                           <span style={{ fontSize: 12, color: '#aaa' }}>{req.created_at ? req.created_at.slice(0, 16).replace('T', ' ') : '-'}</span>
-                          <select
-                            value={req.status}
-                            onClick={e => e.stopPropagation()}
-                            onChange={async e => {
-                              e.stopPropagation();
-                              const newStatus = e.target.value;
-                              const { error } = await supabase.from('b2b_requests').update({ status: newStatus }).eq('id', req.id);
-                              if (!error) {
-                                req.status = newStatus;
-                                setUsers(prev => [...prev]);
-                              }
-                            }}
-                            style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color, border: 'none', cursor: 'pointer', outline: 'none' }}
-                          >
-                            {Object.entries(B2B_STATUS_LABELS).map(([val, s]) => (
-                              <option key={val} value={val} style={{ background: '#23222a', color: '#fff' }}>{s.label}</option>
-                            ))}
-                          </select>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <select
+                              value={req.status}
+                              onClick={e => e.stopPropagation()}
+                              onChange={async e => {
+                                e.stopPropagation();
+                                const newStatus = e.target.value;
+                                const { error } = await supabase.from('b2b_requests').update({ status: newStatus }).eq('id', req.id);
+                                if (!error) {
+                                  req.status = newStatus;
+                                  setUsers(prev => [...prev]);
+                                }
+                              }}
+                              style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color, border: 'none', cursor: 'pointer', outline: 'none' }}
+                            >
+                              {Object.entries(B2B_STATUS_LABELS).map(([val, s]) => (
+                                <option key={val} value={val} style={{ background: '#23222a', color: '#fff' }}>{s.label}</option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={async e => {
+                                e.stopPropagation();
+                                if (!window.confirm(`Usunąć zapytanie B2B od ${req.name}?`)) return;
+                                const { error } = await supabase.from('b2b_requests').delete().eq('id', req.id);
+                                if (!error) {
+                                  setUsers(prev => prev.map(u => ({
+                                    ...u,
+                                    b2bRequests: u.b2bRequests.filter(r => r.id !== req.id),
+                                  })));
+                                }
+                              }}
+                              style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: '#4a1111', color: '#ff4d4f', border: 'none', cursor: 'pointer' }}
+                            >Usuń</button>
+                          </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '4px 16px', fontSize: 12 }}>
                           <div><span style={{ color: '#888' }}>Imię:</span> <span style={{ color: '#ccc' }}>{req.name}</span></div>
@@ -1410,24 +1426,40 @@ function UserRow({ user, isExpanded, onToggle, packages, paymentsByBooking, extr
                       <div key={req.id} style={{ background: '#23222a', borderRadius: 8, padding: '10px 14px', marginBottom: 8, border: '1px solid #2a2a2f' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
                           <span style={{ fontSize: 12, color: '#aaa' }}>{req.created_at ? req.created_at.slice(0, 16).replace('T', ' ') : '-'}</span>
-                          <select
-                            value={req.status}
-                            onClick={e => e.stopPropagation()}
-                            onChange={async e => {
-                              e.stopPropagation();
-                              const newStatus = e.target.value;
-                              const { error } = await supabase.from('voucher_requests').update({ status: newStatus }).eq('id', req.id);
-                              if (!error) {
-                                req.status = newStatus;
-                                setUsers(prev => [...prev]);
-                              }
-                            }}
-                            style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color, border: 'none', cursor: 'pointer', outline: 'none' }}
-                          >
-                            {Object.entries(VOUCHER_STATUS_LABELS).map(([val, s]) => (
-                              <option key={val} value={val} style={{ background: '#23222a', color: '#fff' }}>{s.label}</option>
-                            ))}
-                          </select>
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <select
+                              value={req.status}
+                              onClick={e => e.stopPropagation()}
+                              onChange={async e => {
+                                e.stopPropagation();
+                                const newStatus = e.target.value;
+                                const { error } = await supabase.from('voucher_requests').update({ status: newStatus }).eq('id', req.id);
+                                if (!error) {
+                                  req.status = newStatus;
+                                  setUsers(prev => [...prev]);
+                                }
+                              }}
+                              style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: st.bg, color: st.color, border: 'none', cursor: 'pointer', outline: 'none' }}
+                            >
+                              {Object.entries(VOUCHER_STATUS_LABELS).map(([val, s]) => (
+                                <option key={val} value={val} style={{ background: '#23222a', color: '#fff' }}>{s.label}</option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={async e => {
+                                e.stopPropagation();
+                                if (!window.confirm(`Usunąć zamówienie vouchera od ${req.name}?`)) return;
+                                const { error } = await supabase.from('voucher_requests').delete().eq('id', req.id);
+                                if (!error) {
+                                  setUsers(prev => prev.map(u => ({
+                                    ...u,
+                                    voucherRequests: u.voucherRequests.filter(r => r.id !== req.id),
+                                  })));
+                                }
+                              }}
+                              style={{ padding: '2px 8px', borderRadius: 6, fontSize: 11, fontWeight: 700, background: '#4a1111', color: '#ff4d4f', border: 'none', cursor: 'pointer' }}
+                            >Usuń</button>
+                          </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '4px 16px', fontSize: 12 }}>
                           <div><span style={{ color: '#888' }}>Imię:</span> <span style={{ color: '#ccc' }}>{req.name}</span></div>

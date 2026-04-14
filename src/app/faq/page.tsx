@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useI18n } from '@/i18n/I18nContext';
+import { refundPolicyContent } from '@/content/refundPolicy';
 
 export default function FAQ() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const toggleExpand = (index: number) => {
@@ -31,7 +33,18 @@ export default function FAQ() {
     },
     {
       question: t('faq.items.booking.questions.1'),
-      answer: t('faq.items.booking.answers.1')
+      answer: (
+        <span>
+          {refundPolicyContent[locale].faqIntro}{' '}
+          <Link
+            href="/polityka-zwrotow"
+            className="text-[#f36e21] hover:text-[#ff8b45] underline underline-offset-4 transition-colors"
+          >
+            {refundPolicyContent[locale].faqLinkLabel}
+          </Link>
+          .
+        </span>
+      )
     },
     {
       question: t('faq.items.safety.questions.0'),

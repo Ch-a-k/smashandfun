@@ -290,7 +290,7 @@ export const en = {
         ],
         answers: [
           'You can make a reservation online through our booking system or by calling us directly. We recommend booking in advance to ensure availability for your preferred time slot.',
-          'Cancellations made at least 24 hours before your scheduled session will receive a full refund. For cancellations within 24 hours, a 30% fee applies.'
+          'Please review our Refund Policy.'
         ]
       },
       safety: {
@@ -482,9 +482,12 @@ export const en = {
     title: "Terms and Conditions",
     lastUpdated: "Last updated:",
     companyInfo: {
-      name: "Smashandfun",
+      name: "SMASH&FUN sp. z o.o.",
       address: "ul. Postępu 19/4",
       city: "02-676 Warsaw",
+      nip: "NIP: 521 407 2287",
+      regon: "REGON: 528804913",
+      krs: "KRS: 0001108915",
       validFrom: "Valid from:"
     },
     footer: "© 2025 Smashandfun. All rights reserved.",
@@ -584,30 +587,12 @@ export const en = {
       cancellation: {
         title: "5. Cancellation Policy",
         content: [
-          "5.1. Reservation cancellation rules:",
-          "a) More than 24 hours before appointment:",
-          "- 100% refund of paid amount",
-          "- Free date change possible",
-          "b) 12-24 hours before appointment:",
-          "- 50% refund of paid amount",
-          "- Date change possible with 50 PLN fee",
-          "c) Less than 12 hours before appointment:",
-          "- No refund",
-          "- No date change possible",
-          "5.2. Cancellation procedure:",
-          "a) Through online system - automatic cancellation and refund",
-          "b) By phone - during working hours",
-          "c) By email - with reservation number",
-          "5.3. Refund payments:",
-          "a) Using the same method as original payment",
-          "b) Within 14 business days",
-          "5.4. Special cases:",
-          "a) Force majeure - individual consideration",
-          "b) Technical failure on Service Provider's side - full refund or free date change",
-          "c) Illness - 80% refund with medical certificate",
-          "5.5. Vouchers:",
-          "a) Non-refundable",
-          "b) One-time date change possible"
+          "5.1. The reservation concerns an entertainment and leisure service performed on a specified date or within a specified period. For that reason, under Article 38(1)(12) of the Polish Consumer Rights Act, the consumer generally does not have the statutory 14-day withdrawal right for a distance contract.",
+          "5.2. If the customer cancels a booked slot, the payment is generally non-refundable because the reservation blocks availability in the system, requires staffing and operational preparation and limits our ability to accept other customers for the same time.",
+          "5.3. Instead of a refund, we may, subject to availability and operational possibilities, offer a one-time change of the booking date or time. The customer should submit such a request as early as reasonably possible.",
+          "5.4. If the service cannot be performed for reasons attributable to the Service Provider, or if mandatory law grants the customer a specific remedy, we apply the appropriate lawful solution, including rescheduling or a refund where required.",
+          "5.5. These rules do not exclude or limit the customer's right to submit a complaint where the service has not been performed or has been performed improperly.",
+          "5.6. Detailed rules are described in the Refund Policy published on the website."
         ]
       },
       rules: {

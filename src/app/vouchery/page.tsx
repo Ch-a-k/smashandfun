@@ -35,9 +35,9 @@ export default function VoucheryPage() {
   };
 
   const validatePhone = (phone: string) => {
-    // Разрешаем только +48 XXX XXX XXX (пробелы не обязательны, но +48 обязательно)
-    const regex = /^\+48 ?\d{3} ?\d{3} ?\d{3}$/;
-    return regex.test(phone.trim());
+    // Международный формат: + и минимум 7 цифр
+    const digits = phone.replace(/\D/g, '');
+    return phone.trim().startsWith('+') && digits.length >= 7 && digits.length <= 15;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -140,7 +140,8 @@ export default function VoucheryPage() {
                   required
                   value={form.package}
                   onChange={handleChange}
-                  className="w-full rounded-lg px-4 py-2 bg-white/10 text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-[#f36e21]"
+                  className="w-full rounded-lg px-4 py-2 bg-white/10 text-white border border-white/10 focus:outline-none focus:ring-2 focus:ring-[#f36e21] appearance-none"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                 >
                   {PACKAGE_KEYS.map((key) => (
                     <option key={key} value={key} style={{ backgroundColor: 'rgb(35, 31, 32)' }}>{t(`home.pricing.packages.${key}.name`)}</option>

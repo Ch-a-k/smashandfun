@@ -622,7 +622,7 @@ function UsersPage() {
   }, [users]);
 
   // ─── Date-filtered paid sum per user (last payment if no filter) ─
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const today = useMemo(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }, []);
   const dateSumFrom = dateFrom || '';
   const dateSumTo = dateTo || '';
   const hasDateFilter = !!(dateFrom || dateTo);
@@ -763,8 +763,16 @@ function UsersPage() {
     let pendingCount = 0; let pendingRevenue = 0;
     let cancelledCount = 0;
 
+    const hasDate = !!(dateFrom || dateTo);
+
     for (const u of filtered) {
       for (const b of u.bookings) {
+        // If date filter is active, only count bookings within the range
+        if (hasDate) {
+          const bd = b.date || (b.created_at || '').slice(0, 10);
+          if (dateFrom && bd < dateFrom) continue;
+          if (dateTo && bd > dateTo) continue;
+        }
         const price = Number(b.total_price) || 0;
         const isCancelled = b.status === 'cancelled';
         const revenuePrice = isCancelled ? 0 : price;
@@ -777,7 +785,7 @@ function UsersPage() {
       }
     }
     return { totalBookings, totalRevenue, paidCount, paidRevenue, depositCount, depositRevenue, pendingCount, pendingRevenue, cancelledCount };
-  }, [filtered]);
+  }, [filtered, dateFrom, dateTo]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize);
@@ -1042,8 +1050,9 @@ function UsersPage() {
             endDate={dateRange[1]}
             onChange={(update: [Date | null, Date | null]) => {
               setDateRange(update);
-              setDateFrom(update[0] ? update[0].toISOString().slice(0, 10) : '');
-              setDateTo(update[1] ? update[1].toISOString().slice(0, 10) : '');
+              const fmt = (d: Date | null) => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : '';
+              setDateFrom(fmt(update[0]));
+              setDateTo(fmt(update[1]));
             }}
             isClearable
             placeholderText="Wybierz daty..."

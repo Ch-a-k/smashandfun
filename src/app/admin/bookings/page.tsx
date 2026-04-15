@@ -272,8 +272,9 @@ function BookingsPage() {
   const [loadingTimes, setLoadingTimes] = useState(false);
   const [promoError, setPromoError] = useState(false);
   const [isHoliday, setHoliday] = useState(false);
-  const [reconcileFrom, setReconcileFrom] = useState<Date | null>(null);
-  const [reconcileTo, setReconcileTo] = useState<Date | null>(null);
+  const [reconcileRange, setReconcileRange] = useState<[Date | null, Date | null]>([null, null]);
+  const reconcileFrom = reconcileRange[0];
+  const reconcileTo = reconcileRange[1];
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [reconcileStatus, setReconcileStatus] = useState<string | null>(null);
 
@@ -375,7 +376,7 @@ function BookingsPage() {
   }
 
   function openNewModal() {
-    setEditForm({ ...emptyBooking, date: new Date().toISOString().slice(0,10) });
+    setEditForm({ ...emptyBooking, date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })() });
     setIsNew(true);
     setModalOpen(true);
     setError(null);
@@ -412,8 +413,9 @@ function BookingsPage() {
     }
     setLoadingDates(true);
     const today = new Date();
-    const startDate = today.toISOString().slice(0,10);
-    const endDate = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate()).toISOString().slice(0,10);
+    const startDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const end = new Date(today.getFullYear(), today.getMonth() + 2, today.getDate());
+    const endDate = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
     const res = await fetch('/api/booking/available-dates', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -586,7 +588,7 @@ function BookingsPage() {
       } else {
         closeModal();
         setIsNew(false);
-        const dateStr = (editForm.date || new Date().toISOString().slice(0,10));
+        const dateStr = (editForm.date || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })());
         const { data: bookingsData } = await supabase
           .from('bookings')
           .select(`
@@ -886,24 +888,17 @@ function BookingsPage() {
         <h1 className="text-2xl font-bold text-gray-100">Kalendarz rezerwacji</h1>
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-gray-700">Sprawdź płatności:</span>
-          <div className="relative z-20">
+          <div className="relative z-30">
           <DatePicker
-            selected={reconcileFrom}
-            onChange={d => setReconcileFrom(d)}
-            dateFormat="yyyy-MM-dd"
-            className="border rounded px-2 py-1 bg-white text-gray-900"
+            selectsRange
+            startDate={reconcileFrom}
+            endDate={reconcileTo}
+            onChange={(update: [Date | null, Date | null]) => setReconcileRange(update)}
+            dateFormat="dd.MM.yyyy"
+            className="border rounded px-2 py-1 bg-white text-gray-900 w-[210px]"
             locale="pl"
-            placeholderText="Od"
-          />
-          </div>
-          <div className="relative z-20">
-          <DatePicker
-            selected={reconcileTo}
-            onChange={d => setReconcileTo(d)}
-            dateFormat="yyyy-MM-dd"
-            className="border rounded px-2 py-1 bg-white text-gray-900"
-            locale="pl"
-            placeholderText="Do"
+            placeholderText="Wybierz daty..."
+            isClearable
           />
           </div>
           <button
@@ -926,13 +921,13 @@ function BookingsPage() {
       {reconcileStatus && (
         <div className="mb-3 text-sm text-gray-700">{reconcileStatus}</div>
       )}
-      <div className="mb-4 flex flex-wrap items-center gap-4">
+      <div className="mb-4 flex flex-wrap items-center gap-4 relative z-20">
         <span className="text-gray-700 relative">Data
           {loading && (
             <span className="absolute -right-5 top-1/2 -translate-y-1/2 animate-spin inline-block w-4 h-4 border-2 border-t-transparent border-gray-500 rounded-full ml-2"></span>
           )}
         :</span>
-        <div className="relative z-20">
+        <div className="relative">
         <DatePicker
           selected={date}
           onChange={d => d && setDate(d)}

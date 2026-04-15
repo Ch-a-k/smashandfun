@@ -38,9 +38,12 @@ function AdsPage() {
   // Date range — default last 30 days
   const [dateFrom, setDateFrom] = useState(() => {
     const d = new Date(); d.setDate(d.getDate() - 30);
-    return d.toISOString().slice(0, 10);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
-  const [dateTo, setDateTo] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dateTo, setDateTo] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
 
   // Data
   const [bookings, setBookings] = useState<BookingFull[]>([]);
@@ -118,8 +121,8 @@ function AdsPage() {
     supabase
       .from("bookings")
       .select("id, total_price, status, utm_source, date, created_at")
-      .gte("created_at", prevFrom.toISOString().slice(0, 10))
-      .lte("created_at", prevTo.toISOString().slice(0, 10) + "T23:59:59")
+      .gte("created_at", `${prevFrom.getFullYear()}-${String(prevFrom.getMonth() + 1).padStart(2, '0')}-${String(prevFrom.getDate()).padStart(2, '0')}`)
+      .lte("created_at", `${prevTo.getFullYear()}-${String(prevTo.getMonth() + 1).padStart(2, '0')}-${String(prevTo.getDate()).padStart(2, '0')}` + "T23:59:59")
       .then(({ data }) => {
         setPrevBookings((data as BookingFull[]) || []);
         setPrevLoading(false);

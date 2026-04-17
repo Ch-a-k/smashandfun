@@ -11,6 +11,7 @@ const SUPERADMIN_MENU = [
   { href: "/admin/promo-codes", label: "Promocje" },
   { href: "/admin/users", label: "Klienci" },
   { href: "/admin/ads", label: "IF. ADS" },
+  { href: "/admin/email", label: "Email Marketing" },
   { href: "/admin/admins", label: "Administratory" },
 ];
 

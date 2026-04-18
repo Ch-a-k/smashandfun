@@ -320,7 +320,9 @@ export default function EmailDashboard() {
         primary_color: brand.primary_color || undefined,
         cta_url: ctaUrl || undefined,
         track_clicks: trackClicks,
-        scheduled_at: scheduledAt || null,
+        // Преобразуем "YYYY-MM-DDTHH:mm" (локальное время браузера) в ISO UTC,
+        // чтобы сервер в UTC не интерпретировал как UTC-время.
+        scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
         filters,
         dispatchNow: dispatchNow && !scheduledAt,
       }),

@@ -633,32 +633,61 @@ export default function EmailDashboard() {
                 </div>
                 <div>
                   <label className={label}>Zaplanuj wysyłkę (24h, Europe/Warsaw)</label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
                     <input
                       className={input}
                       type="date"
-                      lang="pl-PL"
+                      style={{ width: 160 }}
                       value={scheduledAt.split("T")[0] || ""}
                       onChange={(e) => {
                         const date = e.target.value;
-                        const time = scheduledAt.split("T")[1] || "";
-                        setScheduledAt(date ? `${date}T${time || "12:00"}` : "");
+                        const time = scheduledAt.split("T")[1] || "12:00";
+                        setScheduledAt(date ? `${date}T${time}` : "");
                       }}
                     />
-                    <input
+                    <select
                       className={input}
-                      type="time"
-                      lang="pl-PL"
-                      step={60}
-                      value={scheduledAt.split("T")[1] || ""}
+                      style={{ width: 80 }}
+                      value={(scheduledAt.split("T")[1] || "").split(":")[0] || ""}
                       onChange={(e) => {
-                        const time = e.target.value;
+                        const hh = e.target.value;
+                        const mm =
+                          (scheduledAt.split("T")[1] || "").split(":")[1] || "00";
                         const date =
                           scheduledAt.split("T")[0] ||
                           new Date().toISOString().slice(0, 10);
-                        setScheduledAt(time ? `${date}T${time}` : "");
+                        setScheduledAt(hh ? `${date}T${hh}:${mm}` : "");
                       }}
-                    />
+                    >
+                      <option value="">HH</option>
+                      {Array.from({ length: 24 }).map((_, h) => (
+                        <option key={h} value={String(h).padStart(2, "0")}>
+                          {String(h).padStart(2, "0")}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="self-center text-gray-400">:</span>
+                    <select
+                      className={input}
+                      style={{ width: 80 }}
+                      value={(scheduledAt.split("T")[1] || "").split(":")[1] || ""}
+                      onChange={(e) => {
+                        const mm = e.target.value;
+                        const hh =
+                          (scheduledAt.split("T")[1] || "").split(":")[0] || "12";
+                        const date =
+                          scheduledAt.split("T")[0] ||
+                          new Date().toISOString().slice(0, 10);
+                        setScheduledAt(mm ? `${date}T${hh}:${mm}` : "");
+                      }}
+                    >
+                      <option value="">MM</option>
+                      {Array.from({ length: 60 }).map((_, m) => (
+                        <option key={m} value={String(m).padStart(2, "0")}>
+                          {String(m).padStart(2, "0")}
+                        </option>
+                      ))}
+                    </select>
                     {scheduledAt && (
                       <button
                         type="button"

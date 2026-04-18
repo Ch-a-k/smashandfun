@@ -15,6 +15,27 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const BATCH = 40;
+const DAILY_LIMIT = Number(process.env.EMAIL_DAILY_LIMIT || '100');
+
+// Начало текущих суток в UTC (Resend сбрасывает квоту в 00:00 UTC)
+function startOfTodayUtcIso(): string {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+async function getRemainingDailyQuota(
+  sb: ReturnType<typeof getSupabaseAdmin>
+): Promise<number> {
+  const since = startOfTodayUtcIso();
+  const { count } = await sb
+    .from('email_logs')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'sent')
+    .gte('sent_at', since);
+  const sentToday = count || 0;
+  return Math.max(0, DAILY_LIMIT - sentToday);
+}
 
 type Campaign = {
   id: string;
@@ -72,10 +93,23 @@ export async function GET(req: NextRequest) {
   const { data: campaigns } = await q;
 
   const now = new Date();
-  const results: Array<{ id: string; sent: number; failed: number; done: boolean }> = [];
+  const results: Array<{
+    id: string;
+    sent: number;
+    failed: number;
+    done: boolean;
+    quotaExhausted?: boolean;
+  }> = [];
+
+  let remainingQuota = await getRemainingDailyQuota(sb);
 
   for (const raw of (campaigns || []) as unknown as Campaign[]) {
     if (raw.scheduled_at && new Date(raw.scheduled_at) > now) continue;
+    if (remainingQuota <= 0) {
+      // Дневной лимит исчерпан — оставляем кампанию 'sending', докатим завтра
+      results.push({ id: raw.id, sent: 0, failed: 0, done: false, quotaExhausted: true });
+      continue;
+    }
     if (raw.status === 'queued') {
       await sb
         .from('email_campaigns')
@@ -83,12 +117,13 @@ export async function GET(req: NextRequest) {
         .eq('id', raw.id);
     }
 
+    const takeLimit = Math.min(BATCH, remainingQuota);
     const { data: pending } = await sb
       .from('email_logs')
       .select('id,to_email,subject,personalization')
       .eq('campaign_id', raw.id)
       .eq('status', 'pending')
-      .limit(BATCH);
+      .limit(takeLimit);
 
     let sent = 0;
     let failed = 0;
@@ -134,6 +169,8 @@ export async function GET(req: NextRequest) {
           })
           .eq('id', log.id);
         sent++;
+        remainingQuota--;
+        if (remainingQuota <= 0) break;
       } catch (e) {
         const msg = e instanceof Error ? e.message : 'send error';
         await sb

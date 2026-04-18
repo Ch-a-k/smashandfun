@@ -1,9 +1,11 @@
 import crypto from 'crypto';
+import { Resend } from 'resend';
 import { getSupabaseAdmin } from './supabaseAdmin';
 import { createEmailTransport, getEmailConfig } from './email';
 
 export type SegmentFilters = {
   createdSince?: 'week' | 'month' | 'all';
+  inactiveSince?: 'any' | '2weeks' | 'month' | '3months' | '6months';
   minOrderValue?: number;
   minGuests?: number;
   paymentStatus?: 'full' | 'partial' | 'unpaid' | 'any';
@@ -90,29 +92,51 @@ export async function fetchContacts(filters: SegmentFilters): Promise<Contact[]>
     return data ? [data as unknown as Contact] : [syntheticContact(e)];
   }
 
-  let q = sb.from('email_contacts').select('*');
+  const inactiveDays: Record<NonNullable<SegmentFilters['inactiveSince']>, number> = {
+    any: 0,
+    '2weeks': 14,
+    month: 30,
+    '3months': 90,
+    '6months': 180,
+  };
 
-  if (filters.createdSince === 'week') {
-    const d = new Date(Date.now() - 7 * 864e5).toISOString();
-    q = q.gte('first_booking_at', d);
-  } else if (filters.createdSince === 'month') {
-    const d = new Date(Date.now() - 30 * 864e5).toISOString();
-    q = q.gte('first_booking_at', d);
-  }
-  if (typeof filters.minOrderValue === 'number' && filters.minOrderValue > 0) {
-    q = q.gte('total_order_value', filters.minOrderValue);
-  }
-  if (typeof filters.minGuests === 'number' && filters.minGuests > 0) {
-    q = q.gte('guests_count', filters.minGuests);
-  }
-  if (filters.paymentStatus === 'full') q = q.eq('has_paid', true);
-  else if (filters.paymentStatus === 'partial') q = q.eq('has_deposit', true);
-  else if (filters.paymentStatus === 'unpaid')
-    q = q.eq('has_pending', true).eq('has_paid', false).eq('has_deposit', false);
+  // Пагинация: Supabase PostgREST по умолчанию режет по 1000 строк
+  const PAGE = 1000;
+  const MAX_TOTAL = 50000;
+  const all: Contact[] = [];
+  for (let from = 0; from < MAX_TOTAL; from += PAGE) {
+    let q = sb.from('email_contacts').select('*');
 
-  const { data, error } = await q.order('last_booking_at', { ascending: false }).limit(5000);
-  if (error) throw new Error(error.message);
-  return (data || []) as unknown as Contact[];
+    if (filters.createdSince === 'week') {
+      q = q.gte('first_booking_at', new Date(Date.now() - 7 * 864e5).toISOString());
+    } else if (filters.createdSince === 'month') {
+      q = q.gte('first_booking_at', new Date(Date.now() - 30 * 864e5).toISOString());
+    }
+    if (filters.inactiveSince && filters.inactiveSince !== 'any') {
+      const days = inactiveDays[filters.inactiveSince];
+      const cutoff = new Date(Date.now() - days * 864e5).toISOString();
+      q = q.lt('last_booking_at', cutoff).not('last_booking_at', 'is', null);
+    }
+    if (typeof filters.minOrderValue === 'number' && filters.minOrderValue > 0) {
+      q = q.gte('total_order_value', filters.minOrderValue);
+    }
+    if (typeof filters.minGuests === 'number' && filters.minGuests > 0) {
+      q = q.gte('guests_count', filters.minGuests);
+    }
+    if (filters.paymentStatus === 'full') q = q.eq('has_paid', true);
+    else if (filters.paymentStatus === 'partial') q = q.eq('has_deposit', true);
+    else if (filters.paymentStatus === 'unpaid')
+      q = q.eq('has_pending', true).eq('has_paid', false).eq('has_deposit', false);
+
+    const { data, error } = await q
+      .order('last_booking_at', { ascending: false })
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error(error.message);
+    const rows = (data || []) as unknown as Contact[];
+    all.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return all;
 }
 
 function syntheticContact(email: string): Contact {
@@ -277,6 +301,17 @@ export function htmlToPlain(html: string): string {
     .trim();
 }
 
+function resolveCampaignFrom(opts: { fromName?: string; fromEmail?: string }): string {
+  const envFrom = process.env.EMAIL_FROM_CAMPAIGNS?.trim();
+  if (opts.fromEmail) {
+    return opts.fromName ? `${opts.fromName} <${opts.fromEmail}>` : opts.fromEmail;
+  }
+  if (envFrom) return envFrom;
+  // Fallback на SMTP-конфиг (чтобы не падать в dev без RESEND)
+  const cfg = getEmailConfig();
+  return opts.fromName ? `${opts.fromName} <${cfg.from}>` : cfg.from;
+}
+
 export async function sendOne(opts: {
   to: string;
   subject: string;
@@ -286,28 +321,41 @@ export async function sendOne(opts: {
   replyTo?: string;
   unsubscribeUrl?: string;
 }): Promise<string> {
-  const cfg = getEmailConfig();
-  const transport = createEmailTransport();
-  const from = opts.fromEmail
-    ? opts.fromName
-      ? `"${opts.fromName}" <${opts.fromEmail}>`
-      : opts.fromEmail
-    : opts.fromName
-    ? `"${opts.fromName}" <${cfg.from}>`
-    : cfg.from;
-
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  const from = resolveCampaignFrom(opts);
+  const text = htmlToPlain(opts.html);
   const headers: Record<string, string> = {};
   if (opts.unsubscribeUrl) {
-    headers['List-Unsubscribe'] = `<${opts.unsubscribeUrl}>, <mailto:${cfg.from}?subject=unsubscribe>`;
+    const mailtoAddr = process.env.EMAIL_UNSUBSCRIBE_MAILTO || 'unsubscribe@smashandfun.pl';
+    headers['List-Unsubscribe'] = `<${opts.unsubscribeUrl}>, <mailto:${mailtoAddr}?subject=unsubscribe>`;
     headers['List-Unsubscribe-Post'] = 'List-Unsubscribe=One-Click';
   }
 
+  if (apiKey) {
+    const resend = new Resend(apiKey);
+    const { data, error } = await resend.emails.send({
+      from,
+      to: [opts.to],
+      subject: opts.subject,
+      html: opts.html,
+      text,
+      replyTo: opts.replyTo,
+      headers,
+    });
+    if (error) {
+      throw new Error(`Resend: ${error.message || JSON.stringify(error)}`);
+    }
+    return data?.id || '';
+  }
+
+  // Fallback: SMTP (для dev без RESEND_API_KEY)
+  const transport = createEmailTransport();
   const info = await transport.sendMail({
     from,
     to: opts.to,
     subject: opts.subject,
     html: opts.html,
-    text: htmlToPlain(opts.html),
+    text,
     replyTo: opts.replyTo,
     headers,
   });

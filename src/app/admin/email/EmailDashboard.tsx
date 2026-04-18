@@ -1,10 +1,16 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { TEMPLATES, type TemplateKey } from "./templates";
+import {
+  TEMPLATES,
+  TEMPLATE_DEFAULTS,
+  buildTemplate,
+  type TemplateKey,
+} from "./templates";
 
 type Mode = "all" | "filtered" | "single" | "test";
 type Payment = "any" | "full" | "partial" | "unpaid";
 type CreatedSince = "all" | "week" | "month";
+type InactiveSince = "any" | "2weeks" | "month" | "3months" | "6months";
 
 type Brand = {
   logo_url: string | null;
@@ -15,6 +21,7 @@ type Brand = {
 type Filters = {
   mode: Mode;
   createdSince: CreatedSince;
+  inactiveSince: InactiveSince;
   minOrderValue: number;
   minGuests: number;
   paymentStatus: Payment;
@@ -95,13 +102,31 @@ export default function EmailDashboard() {
   const [trackClicks, setTrackClicks] = useState(true);
   const [scheduledAt, setScheduledAt] = useState("");
   const [templateKey, setTemplateKey] = useState<TemplateKey>("minimal");
-  const [html, setHtml] = useState<string>(TEMPLATES.minimal.html);
+  const [heading, setHeading] = useState<string>(
+    TEMPLATE_DEFAULTS.minimal.defaults.heading
+  );
+  const [bodyText, setBodyText] = useState<string>(
+    TEMPLATE_DEFAULTS.minimal.defaults.bodyText
+  );
+  const [ctaText, setCtaText] = useState<string>(
+    TEMPLATE_DEFAULTS.minimal.defaults.ctaText
+  );
+  const [advancedMode, setAdvancedMode] = useState(false);
+  const [advancedHtml, setAdvancedHtml] = useState<string>(TEMPLATES.minimal.html);
+  const [activeField, setActiveField] = useState<"heading" | "body" | null>(null);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [previewVars, setPreviewVars] = useState<Record<string, string>>({});
+
+  // Финальный HTML: либо собранный из блоков, либо raw из advanced mode
+  const html = useMemo(() => {
+    if (advancedMode) return advancedHtml;
+    return buildTemplate(templateKey, { heading, bodyText, ctaText });
+  }, [advancedMode, advancedHtml, templateKey, heading, bodyText, ctaText]);
 
   const [filters, setFilters] = useState<Filters>({
     mode: "all",
     createdSince: "all",
+    inactiveSince: "any",
     minOrderValue: 0,
     minGuests: 0,
     paymentStatus: "any",
@@ -206,7 +231,11 @@ export default function EmailDashboard() {
 
   function applyTemplate(k: TemplateKey) {
     setTemplateKey(k);
-    setHtml(TEMPLATES[k].html);
+    const d = TEMPLATE_DEFAULTS[k].defaults;
+    setHeading(d.heading);
+    setBodyText(d.bodyText);
+    setCtaText(d.ctaText);
+    setAdvancedHtml(TEMPLATES[k].html);
   }
 
   async function saveBrandColor(color: string) {
@@ -232,8 +261,26 @@ export default function EmailDashboard() {
     });
   }, [html, previewVars, subject, brand, ctaUrl]);
 
+  function insertToken(token: string) {
+    if (advancedMode) {
+      setAdvancedHtml((h) => h + token);
+      return;
+    }
+    if (activeField === "heading") {
+      setHeading((s) => s + token);
+    } else {
+      setBodyText((s) => s + token);
+    }
+  }
+
   function insertVar(key: string) {
-    setHtml((h) => h + `{{${key}}}`);
+    insertToken(`{{${key}}}`);
+  }
+
+  function insertInlinePromo() {
+    const code = window.prompt("Wpisz kod promocyjny (np. SMASH20):", "SMASH20");
+    if (!code) return;
+    insertToken(`{{promo:${code.trim()}}}`);
   }
 
   async function launch(dispatchNow: boolean) {
@@ -392,7 +439,7 @@ export default function EmailDashboard() {
                 {(filters.mode === "all" || filters.mode === "filtered") && (
                   <>
                     <div>
-                      <label className={label}>Utworzony</label>
+                      <label className={label}>Nowi klienci (pierwsza rezerwacja)</label>
                       <select
                         className={input}
                         value={filters.createdSince}
@@ -403,6 +450,25 @@ export default function EmailDashboard() {
                         <option value="all">Wszyscy</option>
                         <option value="week">Ostatni tydzień</option>
                         <option value="month">Ostatni miesiąc</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className={label}>Dawno nie był (ostatnia wizyta)</label>
+                      <select
+                        className={input}
+                        value={filters.inactiveSince}
+                        onChange={(e) =>
+                          setFilters({
+                            ...filters,
+                            inactiveSince: e.target.value as InactiveSince,
+                          })
+                        }
+                      >
+                        <option value="any">Bez filtru</option>
+                        <option value="2weeks">Ponad 2 tygodnie temu</option>
+                        <option value="month">Ponad miesiąc temu</option>
+                        <option value="3months">Ponad 3 miesiące temu</option>
+                        <option value="6months">Ponad 6 miesięcy temu</option>
                       </select>
                     </div>
                     <div>
@@ -636,15 +702,117 @@ export default function EmailDashboard() {
                   ))}
                 </div>
               </div>
-              <textarea
-                className={`${input} font-mono text-xs`}
-                style={{ minHeight: 360 }}
-                spellCheck={false}
-                value={html}
-                onChange={(e) => setHtml(e.target.value)}
-              />
-              <div className="text-xs text-gray-500 mt-1">
-                HTML/CSS · dostępne zmienne: {"{{first_name}}"}, {"{{last_order}}"}, {"{{logo_url}}"}, {"{{primary_color}}"} …
+
+              <div className="text-xs text-gray-400 mb-2">
+                Nagłówek i stopka (logo, kolor, link do wypisania) są ustawione w szablonie i nie wymagają edycji.
+                Uzupełnij pola poniżej.
+              </div>
+
+              {!advancedMode && (
+                <div className="space-y-3">
+                  <div>
+                    <label className={label}>Tytuł (nagłówek w treści)</label>
+                    <input
+                      className={input}
+                      value={heading}
+                      onChange={(e) => setHeading(e.target.value)}
+                      onFocus={() => setActiveField("heading")}
+                      placeholder="np. Cześć {{first_name}}!"
+                    />
+                  </div>
+
+                  <div>
+                    <label className={label}>Treść wiadomości</label>
+                    <textarea
+                      className={input}
+                      style={{ minHeight: 200 }}
+                      value={bodyText}
+                      onChange={(e) => setBodyText(e.target.value)}
+                      onFocus={() => setActiveField("body")}
+                      placeholder="Wpisz treść. Pusta linia = nowy akapit. Możesz używać zmiennych jak {{first_name}}."
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      Pusta linia = nowy akapit. Pojedynczy Enter = nowa linia w akapicie.
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className={label}>Tekst przycisku (CTA)</label>
+                    <input
+                      className={input}
+                      value={ctaText}
+                      onChange={(e) => setCtaText(e.target.value)}
+                      placeholder="np. Zarezerwuj"
+                    />
+                    <div className="text-xs text-gray-500 mt-1">
+                      Link przycisku ustawiasz niżej w polu „Link CTA".
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {advancedMode && (
+                <div>
+                  <textarea
+                    className={`${input} font-mono text-xs`}
+                    style={{ minHeight: 360 }}
+                    spellCheck={false}
+                    value={advancedHtml}
+                    onChange={(e) => setAdvancedHtml(e.target.value)}
+                  />
+                  <div className="text-xs text-gray-500 mt-1">
+                    Edytujesz pełny HTML. Zmiany w blokach wyżej są ignorowane dopóki ten tryb jest włączony.
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={advancedMode}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      if (on) {
+                        // При включении advanced — сохраняем текущий собранный HTML
+                        setAdvancedHtml(
+                          buildTemplate(templateKey, { heading, bodyText, ctaText })
+                        );
+                      }
+                      setAdvancedMode(on);
+                    }}
+                  />
+                  Tryb zaawansowany (edycja surowego HTML)
+                </label>
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-white/10">
+                <div className="text-xs font-semibold text-gray-400 mb-2">
+                  Zmienne — kliknij, aby wstawić do {activeField === "heading" ? "tytułu" : "treści"}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={insertInlinePromo}
+                    className="text-xs px-2 py-1 rounded border-2 border-dashed border-[#f36e21] bg-[#2a2930] hover:bg-[#34333b] text-gray-200"
+                    title="Wstawia kod z pomarańczową ramką bezpośrednio w tekście. Możesz użyć wielu różnych kodów w jednym mailu."
+                  >
+                    <span className="text-[#f36e21] font-bold">{"{{promo:KOD}}"}</span>
+                    <span className="text-gray-400 ml-1">— Kod promo (inline, w ramce)</span>
+                  </button>
+                  {PERSONALIZATION.map((p) => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => insertVar(p.key)}
+                      className="text-xs px-2 py-1 rounded border border-white/10 bg-[#2a2930] hover:bg-[#34333b] text-gray-200"
+                      title={`Przykład: ${p.sample}`}
+                    >
+                      <span className="text-[#f36e21]">{`{{${p.key}}}`}</span>
+                      <span className="text-gray-400 ml-1">— {p.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 

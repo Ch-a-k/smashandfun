@@ -632,13 +632,43 @@ export default function EmailDashboard() {
                   />
                 </div>
                 <div>
-                  <label className={label}>Zaplanuj wysyłkę</label>
-                  <input
-                    className={input}
-                    type="datetime-local"
-                    value={scheduledAt}
-                    onChange={(e) => setScheduledAt(e.target.value)}
-                  />
+                  <label className={label}>Zaplanuj wysyłkę (24h, Europe/Warsaw)</label>
+                  <div className="flex gap-2">
+                    <input
+                      className={input}
+                      type="date"
+                      lang="pl-PL"
+                      value={scheduledAt.split("T")[0] || ""}
+                      onChange={(e) => {
+                        const date = e.target.value;
+                        const time = scheduledAt.split("T")[1] || "";
+                        setScheduledAt(date ? `${date}T${time || "12:00"}` : "");
+                      }}
+                    />
+                    <input
+                      className={input}
+                      type="time"
+                      lang="pl-PL"
+                      step={60}
+                      value={scheduledAt.split("T")[1] || ""}
+                      onChange={(e) => {
+                        const time = e.target.value;
+                        const date =
+                          scheduledAt.split("T")[0] ||
+                          new Date().toISOString().slice(0, 10);
+                        setScheduledAt(time ? `${date}T${time}` : "");
+                      }}
+                    />
+                    {scheduledAt && (
+                      <button
+                        type="button"
+                        className={btnGhost}
+                        onClick={() => setScheduledAt("")}
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className={label}>UTM source</label>

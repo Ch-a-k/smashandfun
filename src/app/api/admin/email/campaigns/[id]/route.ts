@@ -20,8 +20,8 @@ export async function GET(
       .from('email_logs')
       .select('id,to_email,variant,subject,status,error,sent_at,opened_at,first_click_at,opens,clicks')
       .eq('campaign_id', id)
-      .order('created_at', { ascending: false })
-      .limit(500),
+      .order('sent_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false }),
   ]);
   if (!campaign) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ campaign, logs: logs || [] });

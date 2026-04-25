@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { useI18n } from '@/i18n/I18nContext';
 import InFomoFooterButton from './InFomoFooterButton';
+import { withQuestRoomUtm } from '@/lib/questRoomUtm';
 
 const fadeInUpAnimation = {
   initial: { opacity: 0, y: 20 },
@@ -14,12 +16,16 @@ const fadeInUpAnimation = {
 
 export default function Footer() {
   const { t } = useI18n();
+  const pathname = usePathname();
+  const bookingHref =
+    pathname === '/quest-room' ? withQuestRoomUtm('/rezerwacja') : '/rezerwacja';
 
   const footerLinks = [
     {
       title: t('footer.navigation.title'),
       links: [
-        { name: t('nav.booking'), href: '/rezerwacja' },
+        { name: t('footer.navigation.links.booking'), href: bookingHref },
+        { name: t('footer.navigation.links.questRoom'), href: '/quest-room' },
         { name: t('footer.navigation.links.organizeParty'), href: '/organizacja-imprez' },
         { name: t('footer.navigation.links.blog'), href: '/blog' },
         { name: t('footer.navigation.links.faq'), href: '/faq' },
@@ -77,9 +83,9 @@ export default function Footer() {
                 whileTap={{ scale: 0.95 }}
                 className="w-full sm:w-auto"
               >
-                <Link 
-                  href="/rezerwacja"
-                  className="inline-block px-6 py-3 bg-[#f36e21] text-white font-bold rounded-lg 
+                <Link
+                  href={bookingHref}
+                  className="inline-block px-6 py-3 bg-[#f36e21] text-white font-bold rounded-lg
                     transform transition-all duration-200 hover:bg-[#ff7b2e] 
                     focus:outline-none focus:ring-2 focus:ring-[#f36e21] focus:ring-opacity-50
                     shadow-lg shadow-[#f36e21]/20 hover:shadow-xl hover:shadow-[#f36e21]/30

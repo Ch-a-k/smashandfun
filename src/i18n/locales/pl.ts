@@ -52,6 +52,8 @@ export const pl = {
     organizeParty: "Organizacja imprez",
     blog: "Blog",
     faq: "FAQ",
+    questRoom: "Quest Room",
+    helpAndInfo: "Pomoc i info",
     contact: "Kontakt",
     b2c: "Klienci indywidualni (B2C)",
     b2b: "Klienci korporacyjni (B2B)",
@@ -751,8 +753,10 @@ export const pl = {
     navigation: {
       title: "Nawigacja",
       links: {
+        booking: "REZERWACJA",
         organizeParty: "ZORGANIZUJ IMPREZĘ",
         blog: "BLOG",
+        questRoom: "QUEST ROOM",
         faq: "FAQ",
         contact: "KONTAKT",
       },
@@ -967,5 +971,320 @@ export const pl = {
     subtitle:
       "Twoja rezerwacja została przyjęta. Potwierdzenie wysłaliśmy na Twój e-mail.",
     homeBtn: "Powrót na stronę główną",
+  },
+  questRoom: {
+    meta: {
+      title:
+        "Quest Room Warszawa? Sprawdź Rage Room Smash&Fun — coś lepszego niż escape room",
+      description:
+        "Szukasz quest room w Warszawie? Smash&Fun to rage room — alternatywa dla escape roomu. Zamiast szukać kluczy, rozbijasz wszystko młotem. Sesje 30–150 min, do 6 osób, rezerwacja online.",
+      keywords:
+        "quest room warszawa, quest room, escape room warszawa, pokój zagadek warszawa, alternatywa dla quest room, rage room warszawa, demolka warszawa",
+    },
+    hero: {
+      eyebrow: "ALTERNATYWA DLA QUEST ROOM W WARSZAWIE",
+      titlePre: "SZUKASZ",
+      mainKeyword: "QUEST ROOM",
+      titlePost: "W WARSZAWIE?",
+      alternativeKeywords: ["ESCAPE ROOM", "POKÓJ ZAGADEK", "POKÓJ ZADAŃ"],
+      titleAccent: "MAMY COŚ LEPSZEGO — RAGE ROOM",
+      subtitle:
+        "Smash&Fun to rage room w samym sercu Warszawy — alternatywa dla klasycznego quest roomu, escape roomu i pokoju zagadek dla tych, którzy mają dość siedzenia z notesem. Zamiast szukać kluczy pod dywanem, rozbijasz, niszczysz i demolujesz w pełnym wyposażeniu ochronnym.",
+      primaryCta: "ZAREZERWUJ SESJĘ",
+      secondaryCta: "Zobacz porównanie",
+    },
+    stats: {
+      eyebrow: "CZASEM ŻYCIE ROBI TO ZA NAS",
+      title: "KIEDY LUDZIE TRAFIAJĄ DO NAS",
+      subtitle:
+        "Sześć sytuacji, przez które najczęściej dzwoni do nas telefon — i przez które quest room po prostu nie wystarcza.",
+      items: [
+        {
+          icon: "phone",
+          title: "Po wkurzającym tygodniu w pracy",
+          description:
+            "Klikasz w piątek, rezerwujesz na sobotę. W niedzielę masz już zresetowaną głowę i historię na poniedziałkową kawę.",
+        },
+        {
+          icon: "sparkles",
+          title: "Wieczór panieński lub kawalerski",
+          description:
+            "Zamiast kolejnego pubu — sesja, której gościom nikt nie zapomni. Plus filmik z GoPro do udostępniania.",
+        },
+        {
+          icon: "heart-crack",
+          title: "Po rozstaniu",
+          description:
+            "Tańsze niż terapia, szybsze niż siłownia, bardziej satysfakcjonujące niż wiadomość, której i tak byś nie wysłał.",
+        },
+        {
+          icon: "briefcase",
+          title: "Integracja firmowa",
+          description:
+            "Szefowie też dostają młot. Hierarchia w firmie pęka razem ze szklanymi butelkami — zostają tylko ludzie i adrenalina.",
+        },
+        {
+          icon: "cake",
+          title: "Urodziny od 12 lat",
+          description:
+            "Dla dzieciaka, któremu sale zabaw się znudziły, a do escape roomu jeszcze za wcześnie. Bezpieczny scenariusz, dorosły opiekun.",
+        },
+        {
+          icon: "lock",
+          title: "Po trzecim quest roomie",
+          description:
+            "Kiedy zagadki przestają robić wrażenie, a kursor sam wpisuje 'pokój zadań Warszawa' — zatrzymaj się i sprawdź nas.",
+        },
+      ],
+    },
+    comparison: {
+      eyebrow: "QUEST ROOM VS RAGE ROOM",
+      title: "CO WYBIERZESZ?",
+      subtitle:
+        "Klasyczny quest room w Warszawie i nasz rage room dzielą jedno: limit czasu, drużynę i adrenalinę. Różnica jest w tym, co właściwie robisz w środku.",
+      tabs: {
+        questRoom: "KLASYCZNY QUEST ROOM",
+        rageRoom: "RAGE ROOM SMASH&FUN",
+      },
+      winnerBadge: "NASZ WYBÓR",
+      questRoom: {
+        title: "Pokój zagadek",
+        intro:
+          "Wchodzisz do zamkniętego pomieszczenia, szukasz kluczy, rozwiązujesz logiczne łamigłówki i próbujesz uciec przed czasem.",
+        points: [
+          "Logika i obserwacja — głównie głową",
+          "Statyczne zagadki, kody i kłódki",
+          "Niski poziom aktywności fizycznej",
+          "Nie pomaga rozładować stresu po pracy",
+          "Po jednym przejściu już znasz scenariusz",
+        ],
+      },
+      rageRoom: {
+        title: "Rage Room — to robimy my",
+        intro:
+          "Wchodzisz do specjalnie zabezpieczonej strefy, dostajesz młot, kij baseballowy i listę celów do zniszczenia. Stoper rusza, adrenalina rośnie.",
+        points: [
+          "Fizyczna akcja — całym ciałem, nie tylko głową",
+          "Realne przedmioty: szkło, meble, elektronika",
+          "Najlepsza terapia antystresowa w mieście",
+          "100% adrenaliny, 0% pasywnego siedzenia",
+          "Każda sesja inna — niszczysz inne rzeczy",
+          "Pełne wyposażenie ochronne wliczone w cenę",
+          "Rezerwacja online w 60 sekund, 7 dni w tygodniu",
+          "Nagranie z GoPro jako dopłata — film na social media",
+        ],
+      },
+      verdict:
+        "Jeśli wpisałeś w Google 'quest room Warszawa', a marzysz o czymś, co naprawdę poczujesz — to my.",
+    },
+    reasons: {
+      eyebrow: "DLACZEGO RAGE ROOM ZAMIAST QUEST ROOM",
+      title: "5 POWODÓW, BY WEJŚĆ DO NAS",
+      items: [
+        {
+          icon: "zap",
+          title: "Adrenalina od pierwszej sekundy",
+          description:
+            "W klasycznym quest room rozkręcasz się w połowie sesji. U nas — pierwsze uderzenie młotem i serce już bije jak szalone.",
+        },
+        {
+          icon: "shield",
+          title: "100% bezpieczeństwa",
+          description:
+            "Kombinezon, kask z przyłbicą, rękawice ochronne. Pełne wyposażenie wliczone w cenę. Nasi pracownicy szkolą Cię przed startem.",
+        },
+        {
+          icon: "users",
+          title: "Drużynowa zabawa od 1 do 6 osób",
+          description:
+            "Idealne na wieczór z przyjaciółmi, urodziny, wieczór panieński/kawalerski. Dla firm większych niż 6 osób organizujemy osobne sloty.",
+        },
+        {
+          icon: "brain",
+          title: "Realna terapia antystresowa",
+          description:
+            "Quest room rozwija logikę. Rage room rozładowuje napięcie z całego tygodnia w 30 minut. Sprawdzony sposób na reset głowy.",
+        },
+        {
+          icon: "video",
+          title: "Pamiątka, nie tylko wspomnienie",
+          description:
+            "Możesz dokupić nagranie z GoPro. Wracasz do domu z filmem, którym pochwalisz się w mediach społecznościowych.",
+        },
+      ],
+    },
+    picker: {
+      eyebrow: "WYBIERZ INTENSYWNOŚĆ",
+      title: "CZTERY POZIOMY DEMOLKI — WYBIERZ SWÓJ",
+      subtitle:
+        "Zamiast czterech poziomów trudności jak w quest roomie, mamy cztery poziomy demolki. Im wyżej, tym więcej rzeczy do zniszczenia.",
+      durationLabel: "Czas",
+      peopleLabel: "Osoby",
+      includesLabel: "W pakiecie",
+      cta: "ZAREZERWUJ TEN PAKIET",
+      popularBadge: "NAJPOPULARNIEJSZY",
+      levels: [
+        {
+          name: "BUŁKA Z MASŁEM",
+          duration: "do 30 min",
+          people: "1–2 osoby",
+          difficulty: "ROZGRZEWKA",
+          description:
+            "Idealny start. Krótka sesja, łagodne wejście w świat rage roomu, dla osób, które boją się że to za dużo.",
+          items: [
+            "25 szklanych przedmiotów",
+            "Pełne wyposażenie ochronne",
+            "Briefing pracownika",
+          ],
+        },
+        {
+          name: "ŁATWY",
+          duration: "do 45 min",
+          people: "1–4 osoby",
+          difficulty: "WIECZÓR ZE ZNAJOMYMI",
+          description:
+            "Najpopularniejszy wybór. Dłuższa sesja, więcej obiektów, idealny na imprezę w gronie znajomych.",
+          items: [
+            "25 szklanych przedmiotów",
+            "2 meble",
+            "3 urządzenia elektroniczne",
+          ],
+        },
+        {
+          name: "ŚREDNI",
+          duration: "do 90 min",
+          people: "1–6 osób",
+          difficulty: "DLA FIRM",
+          description:
+            "Sesja dla większych grup i firm szukających teambuildingu z kopem mocniejszym niż klasyczny escape room.",
+          items: [
+            "30 szklanych przedmiotów",
+            "3 meble",
+            "5 urządzeń elektronicznych",
+          ],
+        },
+        {
+          name: "TRUDNY",
+          duration: "do 150 min",
+          people: "1–6 osób",
+          difficulty: "EKSTREMALNY",
+          description:
+            "Pełnometrażowa demolka. Maksymalna ilość przedmiotów, maksymalna adrenalina, zero kompromisów.",
+          items: [
+            "50 szklanych przedmiotów",
+            "5 mebli",
+            "10 urządzeń elektronicznych",
+          ],
+        },
+      ],
+    },
+    process: {
+      eyebrow: "JAK TO DZIAŁA",
+      title: "OD KLIKNIĘCIA DO PIERWSZEGO UDERZENIA",
+      steps: [
+        {
+          title: "Wybierasz pakiet i datę",
+          description:
+            "Online, w 60 sekund. BLIK, karta lub przelew. Potwierdzenie ląduje w mailu od razu.",
+        },
+        {
+          title: "Przychodzisz do nas",
+          description:
+            "ul. Postępu 19/4, Mokotów. Witają Cię nasi pracownicy, dostajesz kombinezon, kask i rękawice.",
+        },
+        {
+          title: "Briefing bezpieczeństwa",
+          description:
+            "5 minut zasad, technika trzymania narzędzi, zasady demolki. Bez tego nie zaczynamy.",
+        },
+        {
+          title: "Sesja demolki",
+          description:
+            "Stoper rusza. Rozbijasz wszystko z listy. Personel patrzy z monitoringu i jest dostępny w razie potrzeby.",
+        },
+        {
+          title: "Strefa relaksu",
+          description:
+            "Po sesji chłodne napoje, wygodne sofy i czas na fotkę z młotem. Zostajesz tak długo, jak chcesz.",
+        },
+      ],
+    },
+    trust: {
+      eyebrow: "DLACZEGO MOŻESZ NAM ZAUFAĆ",
+      title: "TWARDE FAKTY",
+      items: {
+        rating: {
+          title: "4.5/5 w Google",
+          description:
+            "Ponad 320 opinii od prawdziwych klientów. Wszystkie publiczne — sprawdź sam, zanim zarezerwujesz.",
+        },
+        safety: {
+          title: "Sprzęt ochronny w cenie",
+          description:
+            "Kombinezon, kask z przyłbicą, rękawice. Plus pełen briefing przed sesją i pracownik na podglądzie.",
+        },
+        location: {
+          title: "ul. Postępu 19/4, Mokotów",
+          description:
+            "Centrum Warszawy, parking obok, łatwy dojazd z każdej dzielnicy. Otwarte 7 dni w tygodniu.",
+        },
+        instant: {
+          title: "Rezerwacja online 24/7",
+          description:
+            "BLIK, karta, przelew. Potwierdzenie w 60 sekund. Anulujesz lub zmieniasz termin zgodnie z regulaminem.",
+        },
+        company: {
+          title: "Zarejestrowana firma",
+          description:
+            "SMASH&FUN sp. z o.o., NIP 521 407 2287, KRS 0001108915. Faktura VAT na życzenie.",
+        },
+        groups: {
+          title: "Firmy, urodziny, wieczory",
+          description:
+            "Robimy imprezy firmowe, integracje, urodziny dla dzieci 10+, wieczory panieńskie i kawalerskie.",
+        },
+      },
+    },
+    faq: {
+      eyebrow: "FAQ",
+      title: "NAJCZĘŚCIEJ ZADAWANE PYTANIA",
+      items: [
+        {
+          q: "Czy Smash&Fun to quest room?",
+          a: "Nie, jesteśmy rage roomem — i jesteśmy z tego dumni. Klienci, którzy szukają quest roomu w Warszawie, często trafiają do nas i wracają, bo zamiast łamać głowę nad zagadkami, rozładowują napięcie fizycznie. Te same elementy (limit czasu, drużyna, briefing) — zupełnie inne emocje.",
+        },
+        {
+          q: "Czym rage room różni się od quest roomu?",
+          a: "W quest roomie szukasz wskazówek i rozwiązujesz zagadki. U nas dostajesz młot, kij baseballowy lub łom i niszczysz prawdziwe przedmioty: szkło, meble, elektronikę. Bez kombinacji, bez pułapek logicznych — tylko Ty, narzędzia i lista celów.",
+        },
+        {
+          q: "Dla ilu osób są wasze sesje?",
+          a: "Standardowe pakiety obsługują 1–6 osób. Dla większych grup (firmy, urodziny, wieczory panieńskie/kawalerskie) organizujemy osobne sloty — wystarczy się z nami skontaktować.",
+        },
+        {
+          q: "Czy to jest bezpieczne?",
+          a: "Bardziej niż większość escape roomów. Każdy uczestnik dostaje kombinezon ochronny, kask z przyłbicą i wytrzymałe rękawice. Personel przeprowadza pełen briefing i obserwuje sesję z podglądu. Zero przypadkowych skaleczeń od trzech lat.",
+        },
+        {
+          q: "Ile to kosztuje?",
+          a: "Cena zależy od pakietu i czasu trwania. W każdej cenie masz wyposażenie ochronne, briefing i opiekę pracownika — pełny cennik znajdziesz w systemie rezerwacji online.",
+        },
+        {
+          q: "Czy mogę przyjść z dziećmi?",
+          a: "Tak, od 12 roku życia z opiekunem prawnym. Dla młodszych grup polecamy kontakt mailowy — przygotujemy bezpieczny scenariusz urodzinowy.",
+        },
+        {
+          q: "Czy organizujecie imprezy firmowe?",
+          a: "Tak. Mamy osobne pakiety B2B, faktury VAT, możliwość wynajmu całego obiektu na zamknięte wydarzenie i pomoc w organizacji od A do Z.",
+        },
+      ],
+    },
+    cta: {
+      title: "GOTOWY NA COŚ MOCNIEJSZEGO NIŻ QUEST ROOM?",
+      description:
+        "Wybierz pakiet, godzinę i przyjdź. Potwierdzenie rezerwacji w 60 sekund. Płatność BLIK, kartą lub przelewem.",
+      button: "ZAREZERWUJ TERAZ",
+      phoneHint: "Wolisz porozmawiać? Zadzwoń: +48 881 281 313",
+    },
   },
 };

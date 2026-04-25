@@ -40,11 +40,9 @@ export function CTASection() {
             transition={{ duration: 0.6, delay: 0.4 }}
           >
             <motion.a
-              href="https://smashandfun.simplybook.it/v2/#book/count/1/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block px-8 py-4 bg-[#f36e21] text-white font-bold rounded-lg 
-                transform transition-all duration-200 hover:bg-[#ff7b2e] 
+              href="/rezerwacja"
+              className="inline-block px-8 py-4 bg-[#f36e21] text-white font-bold rounded-lg
+                transform transition-all duration-200 hover:bg-[#ff7b2e]
                 focus:outline-none focus:ring-2 focus:ring-[#f36e21] focus:ring-opacity-50
                 shadow-lg shadow-[#f36e21]/20 hover:shadow-xl hover:shadow-[#f36e21]/30"
               whileHover={{ scale: 1.05 }}

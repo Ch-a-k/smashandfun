@@ -134,9 +134,7 @@ export default function BlogPostPopup({ post, onClose }: BlogPostPopupProps) {
                     {t('blog.ctaSection.subtitle')}
                   </p>
                   <a
-                    href="https://smashandfun.simplybook.it/v2/#book/count/1/"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/rezerwacja"
                     className="inline-block px-5 py-2 sm:px-6 sm:py-3 bg-[#f36e21] text-white font-bold rounded-lg
                       transform transition-all duration-200 hover:scale-105 hover:bg-[#ff7b2e]
                       focus:outline-none focus:ring-2 focus:ring-[#f36e21] focus:ring-opacity-50"

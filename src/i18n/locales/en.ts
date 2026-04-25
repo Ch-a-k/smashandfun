@@ -1,482 +1,500 @@
 export const en = {
   common: {
-    readMore: 'Read more',
-    bookNow: 'BOOK NOW',
-    minutes: 'min',
-    learnMore: 'Book now',
-    close: 'Close',
-    save: 'Save',
-    cancel: 'Cancel',
-    accept: 'Accept',
-    reject: 'Reject',
-    settings: 'Settings'
+    readMore: "Read more",
+    bookNow: "BOOK NOW",
+    minutes: "min",
+    learnMore: "Book now",
+    close: "Close",
+    save: "Save",
+    cancel: "Cancel",
+    accept: "Accept",
+    reject: "Reject",
+    settings: "Settings",
   },
   nav: {
-    home: 'Home',
-    booking: 'Booking',
-    organizeParty: 'Organize Party',
-    blog: 'Blog',
-    faq: 'FAQ',
-    contact: 'Contact',
-    b2c: 'Private Clients (B2C)',
-    b2b: 'Corporate Clients (B2B)',
-    vouchers: 'Vouchers',
+    home: "Home",
+    booking: "Booking",
+    organizeParty: "Organize Party",
+    blog: "Blog",
+    faq: "FAQ",
+    questRoom: "Quest Room",
+    helpAndInfo: "Help & Info",
+    contact: "Contact",
+    b2c: "Private Clients (B2C)",
+    b2b: "Corporate Clients (B2B)",
+    vouchers: "Vouchers",
   },
   home: {
     hero: {
-      title: 'RAGE ROOM #1 IN WARSAW',
-      subtitle: 'Release stress and emotions in the most exciting way!',
-      description: 'Break, smash, and destroy in a safe environment. Experience the ultimate stress relief therapy in our specially designed rage room.',
-      cta: 'BOOK NOW!'
+      title: "RAGE ROOM #1 IN WARSAW",
+      subtitle: "Release stress and emotions in the most exciting way!",
+      description:
+        "Break, smash, and destroy in a safe environment. Experience the ultimate stress relief therapy in our specially designed rage room.",
+      cta: "BOOK NOW!",
     },
     pricing: {
-      title: 'CHOOSE YOUR PACKAGE',
-      toDestroy: 'TO DESTROY',
-      tools: 'TOOLS',
-      bestSeller: 'BESTSELLER',
-      more: 'more',
-      bookNow: 'BOOK NOW',
+      title: "CHOOSE YOUR PACKAGE",
+      toDestroy: "TO DESTROY",
+      tools: "TOOLS",
+      bestSeller: "BESTSELLER",
+      more: "more",
+      bookNow: "BOOK NOW",
       additionalItems: {
-        title: 'Additional Items',
-        subtitle: 'You can add additional items to your package',
+        title: "Additional Items",
+        subtitle: "You can add additional items to your package",
         items: {
-          glass: 'Glass (10 pcs)',
-          furniture: 'Furniture (1 pc)',
-          electronic: 'Electronic Device (1 pc)',
-          gloves: 'Safety gloves'
-        }
+          glass: "Glass (10 pcs)",
+          furniture: "Furniture (1 pc)",
+          electronic: "Electronic Device (1 pc)",
+          gloves: "Safety gloves",
+        },
       },
       extraItems: {
-        title: 'Extra Items',
-        subtitle: 'Additionally to your selected package you can purchase items from the list:',
+        title: "Extra Items",
+        subtitle:
+          "Additionally to your selected package you can purchase items from the list:",
         items: {
-          glass: '10 glass items - 50 PLN',
-          keyboard: 'Keyboard - 20 PLN',
-          tvMonitor: 'TV/monitor - 100 PLN',
-          furniture: 'Furniture - 120 PLN',
-          printer: 'Printer - 50 PLN',
-          mouse: 'Computer mouse - 10 PLN',
-          phone: 'Phone - 30 PLN',
-          goProRecording: 'GoPro recording - 50 PLN'
-        }
+          glass: "10 glass items - 50 PLN",
+          keyboard: "Keyboard - 20 PLN",
+          tvMonitor: "TV/monitor - 100 PLN",
+          furniture: "Furniture - 120 PLN",
+          printer: "Printer - 50 PLN",
+          mouse: "Computer mouse - 10 PLN",
+          phone: "Phone - 30 PLN",
+          goProRecording: "GoPro recording - 50 PLN",
+        },
       },
       packages: {
         easy: {
-          name: 'PIECE OF CAKE',
+          name: "PIECE OF CAKE",
           items: [
-            '25 glass items',
-            '0 piece of furniture',
-            '0 electronic devices'
+            "25 glass items",
+            "0 piece of furniture",
+            "0 electronic devices",
           ],
-          difficulty: 'EASY'
+          difficulty: "EASY",
         },
         medium: {
-          name: 'EASY',
+          name: "EASY",
           items: [
-            '25 glass items',
-            '2 pieces of furniture',
-            '3 electronic devices'
+            "25 glass items",
+            "2 pieces of furniture",
+            "3 electronic devices",
           ],
-          difficulty: 'MEDIUM'
+          difficulty: "MEDIUM",
         },
         hard: {
-          name: 'MEDIUM',
+          name: "MEDIUM",
           items: [
-            '30 glass items',
-            '3 pieces of furniture',
-            '5 electronic devices'
+            "30 glass items",
+            "3 pieces of furniture",
+            "5 electronic devices",
           ],
-          difficulty: 'HARD'
+          difficulty: "HARD",
         },
         extreme: {
-          name: 'HARD',
+          name: "HARD",
           items: [
-            '50 glass items',
-            '5 pieces of furniture',
-            '10 electronic devices'
+            "50 glass items",
+            "5 pieces of furniture",
+            "10 electronic devices",
           ],
-          difficulty: 'EXTREME'
-        }
+          difficulty: "EXTREME",
+        },
       },
       people: {
-        '1-2': 'Max 2 people',
-        '1-4osoby': 'Max 4 people',
-        '1-4': 'Max 4 people',
-        '1-6': 'Max 6 people'
+        "1-2": "Max 2 people",
+        "1-4osoby": "Max 4 people",
+        "1-4": "Max 4 people",
+        "1-6": "Max 6 people",
       },
       duration: {
-        '30': 'up to 30 min',
-        '45': 'up to 45 min',
-        '90': 'up to 90 min',
-        '150': 'up to 150 min'
+        "30": "up to 30 min",
+        "45": "up to 45 min",
+        "90": "up to 90 min",
+        "150": "up to 150 min",
       },
       equipment: {
-        included: 'Included:',
+        included: "Included:",
         items: {
-          ubranie: 'Protective clothing',
-          kask: 'Safety helmet',
-          rękawice: 'Safety gloves'
+          ubranie: "Protective clothing",
+          kask: "Safety helmet",
+          rękawice: "Safety gloves",
         },
         tooltips: {
-          ubranie: 'Protects your clothes',
-          kask: 'Protects your head',
-          rękawice: 'Protects your eyes'
-        }
-      }
+          ubranie: "Protects your clothes",
+          kask: "Protects your head",
+          rękawice: "Protects your eyes",
+        },
+      },
     },
     lounge: {
-      title: 'RELAXATION ZONE',
-      subtitle: 'After intense smashing',
-      description: 'Relax in our lounge area after an exciting smashing session. We have prepared a comfortable space where you can cool down and share your impressions.',
+      title: "RELAXATION ZONE",
+      subtitle: "After intense smashing",
+      description:
+        "Relax in our lounge area after an exciting smashing session. We have prepared a comfortable space where you can cool down and share your impressions.",
       features: {
         sofa: {
-          title: 'Comfortable Lounge Area',
-          description: 'Cozy sofas and armchairs for complete relaxation after an active session.'
+          title: "Comfortable Lounge Area",
+          description:
+            "Cozy sofas and armchairs for complete relaxation after an active session.",
         },
         coffee: {
-          title: 'Drinks & Snacks',
-          description: 'Wide selection of refreshing drinks and light snacks.'
+          title: "Drinks & Snacks",
+          description: "Wide selection of refreshing drinks and light snacks.",
         },
         music: {
-          title: 'Music Ambiance',
-          description: 'Relaxing music to create a pleasant atmosphere.'
+          title: "Music Ambiance",
+          description: "Relaxing music to create a pleasant atmosphere.",
         },
         tv: {
-          title: 'Entertainment System',
-          description: 'Large screen for watching your session video.'
-        }
-      }
+          title: "Entertainment System",
+          description: "Large screen for watching your session video.",
+        },
+      },
     },
     voucher: {
-      title: 'GIFT VOUCHER',
-      subtitle: 'Give a unique experience',
-      description: 'Looking for an original gift? Give your loved one an unforgettable experience! A smashing voucher is the perfect gift for any occasion.',
-      cta: 'BUY VOUCHER',
+      title: "GIFT VOUCHER",
+      subtitle: "Give a unique experience",
+      description:
+        "Looking for an original gift? Give your loved one an unforgettable experience! A smashing voucher is the perfect gift for any occasion.",
+      cta: "BUY VOUCHER",
       benefits: [
-        'Perfect birthday gift idea',
-        'Voucher valid for 6 months',
-        'Choice of any package',
-        'Instant email delivery'
+        "Perfect birthday gift idea",
+        "Voucher valid for 6 months",
+        "Choice of any package",
+        "Instant email delivery",
       ],
       form: {
-        title: 'Voucher Order Form',
-        name: 'Full name',
-        namePlaceholder: 'Enter your full name',
-        email: 'Email',
-        emailPlaceholder: 'Enter your email address',
-        phone: 'Phone number',
-        phonePlaceholder: '+48 XXX XXX XXX',
-        package: 'Select package',
-        message: 'Message',
-        messagePlaceholder: 'Additional info or questions',
-        submit: 'Send request',
-        sending: 'Sending...',
-        success: 'Thank you! Your request has been sent.',
-        error: 'An error occurred while sending. Please try again.'
-      }
+        title: "Voucher Order Form",
+        name: "Full name",
+        namePlaceholder: "Enter your full name",
+        email: "Email",
+        emailPlaceholder: "Enter your email address",
+        phone: "Phone number",
+        phonePlaceholder: "+48 XXX XXX XXX",
+        package: "Select package",
+        message: "Message",
+        messagePlaceholder: "Additional info or questions",
+        submit: "Send request",
+        sending: "Sending...",
+        success: "Thank you! Your request has been sent.",
+        error: "An error occurred while sending. Please try again.",
+      },
     },
     reviews: {
-      title: 'CUSTOMER REVIEWS',
-      subtitle: 'What others say about us',
-      description: 'See what our customers think about their experience at Smash&Fun'
+      title: "CUSTOMER REVIEWS",
+      subtitle: "What others say about us",
+      description:
+        "See what our customers think about their experience at Smash&Fun",
     },
     partners: {
-      title: 'OUR PARTNERS',
-      subtitle: 'They trust us',
-      'wyjatkowy-prezent': {
-        name: 'Wyjątkowy Prezent',
-        description: 'The first company in Poland offering gift vouchers in the form of experiences.'
+      title: "OUR PARTNERS",
+      subtitle: "They trust us",
+      "wyjatkowy-prezent": {
+        name: "Wyjątkowy Prezent",
+        description:
+          "The first company in Poland offering gift vouchers in the form of experiences.",
       },
-      'super-prezenty': {
-        name: 'Super prezenty',
-        description: 'A shop with good emotions. Flights, active entertainment, speed and adrenaline.'
-      }
-    }
+      "super-prezenty": {
+        name: "Super prezenty",
+        description:
+          "A shop with good emotions. Flights, active entertainment, speed and adrenaline.",
+      },
+    },
   },
   blog: {
     hero: {
-      title: 'OUR BLOG',
-      subtitle: 'Learn about the best ways to deal with stress and negative emotions.'
+      title: "OUR BLOG",
+      subtitle:
+        "Learn about the best ways to deal with stress and negative emotions.",
     },
-    readTime: 'min read',
+    readTime: "min read",
     ctaSection: {
-      title: 'Ready to Release Your Stress?',
-      subtitle: 'Book your rage room session now and experience the most exciting way to let go of tension!',
-      cta: 'BOOK NOW'
-    }
+      title: "Ready to Release Your Stress?",
+      subtitle:
+        "Book your rage room session now and experience the most exciting way to let go of tension!",
+      cta: "BOOK NOW",
+    },
   },
   contact: {
     hero: {
-      title: 'CONTACT US',
-      subtitle: 'Have questions? We\'d love to hear from you!'
+      title: "CONTACT US",
+      subtitle: "Have questions? We'd love to hear from you!",
     },
     form: {
-      title: 'Send us a message',
+      title: "Send us a message",
       name: {
-        label: 'Full name',
-        placeholder: 'Enter your full name'
+        label: "Full name",
+        placeholder: "Enter your full name",
       },
       email: {
-        label: 'Email address',
-        placeholder: 'Enter your email address'
+        label: "Email address",
+        placeholder: "Enter your email address",
       },
       phone: {
-        label: 'Phone number',
-        placeholder: 'Enter your phone number'
+        label: "Phone number",
+        placeholder: "Enter your phone number",
       },
       subject: {
-        label: 'Subject',
-        placeholder: 'What is your message about?'
+        label: "Subject",
+        placeholder: "What is your message about?",
       },
       message: {
-        label: 'Message',
-        placeholder: 'Write your message here...'
+        label: "Message",
+        placeholder: "Write your message here...",
       },
-      submit: 'SEND MESSAGE',
-      success: 'Thank you! Your message has been sent successfully.',
+      submit: "SEND MESSAGE",
+      success: "Thank you! Your message has been sent successfully.",
       validation: {
-        name: 'Name must be at least 2 characters long',
-        email: 'Please enter a valid email address',
-        phone: 'Phone number must be at least 9 characters long',
-        subject: 'Subject must be at least 3 characters long',
-        message: 'Message must be at least 10 characters long'
-      }
+        name: "Name must be at least 2 characters long",
+        email: "Please enter a valid email address",
+        phone: "Phone number must be at least 9 characters long",
+        subject: "Subject must be at least 3 characters long",
+        message: "Message must be at least 10 characters long",
+      },
     },
     info: {
-      title: 'Contact Information',
+      title: "Contact Information",
       address: {
-        title: 'Address',
-        line1: 'ul. Postępu 19/4',
-        line2: '02-676 Warsaw'
+        title: "Address",
+        line1: "ul. Postępu 19/4",
+        line2: "02-676 Warsaw",
       },
       phone: {
-        title: 'Phone',
-        number: '+48 881 281 313'
+        title: "Phone",
+        number: "+48 881 281 313",
       },
       email: {
-        title: 'Email',
-        address: 'hello@smashandfun.pl'
+        title: "Email",
+        address: "hello@smashandfun.pl",
       },
       openingHours: {
-        title: 'Opening Hours',
-        weekdays: 'Monday - Friday: 14:00 - 20:30',
-        weekend: 'Saturday - Sunday: 12:00 - 20:30'
-      }
+        title: "Opening Hours",
+        weekdays: "Monday - Friday: 14:00 - 20:30",
+        weekend: "Saturday - Sunday: 12:00 - 20:30",
+      },
     },
     map: {
-      title: 'Find us on the map'
-    }
+      title: "Find us on the map",
+    },
   },
   faq: {
     hero: {
-      title: 'FREQUENTLY ASKED QUESTIONS',
-      subtitle: 'Find answers to the most common questions'
+      title: "FREQUENTLY ASKED QUESTIONS",
+      subtitle: "Find answers to the most common questions",
     },
     items: {
       general: {
-        questions: [
-          'What is a rage room?',
-          'Is it safe to use a rage room?'
-        ],
+        questions: ["What is a rage room?", "Is it safe to use a rage room?"],
         answers: [
-          'A rage room is a safe space where you can release stress and negative emotions by breaking and smashing various items. It\'s a unique form of stress relief that combines physical activity with emotional release.',
-          'Yes, it\'s completely safe! We provide all necessary protective equipment including coveralls, helmets, and gloves. Our staff will also give you a safety briefing before your session.'
-        ]
+          "A rage room is a safe space where you can release stress and negative emotions by breaking and smashing various items. It's a unique form of stress relief that combines physical activity with emotional release.",
+          "Yes, it's completely safe! We provide all necessary protective equipment including coveralls, helmets, and gloves. Our staff will also give you a safety briefing before your session.",
+        ],
       },
       booking: {
         questions: [
-          'How do I make a reservation?',
-          'What is your cancellation policy?'
+          "How do I make a reservation?",
+          "What is your cancellation policy?",
         ],
         answers: [
-          'You can make a reservation online through our booking system or by calling us directly. We recommend booking in advance to ensure availability for your preferred time slot.',
-          'Please review our Refund Policy.'
-        ]
+          "You can make a reservation online through our booking system or by calling us directly. We recommend booking in advance to ensure availability for your preferred time slot.",
+          "Please review our Refund Policy.",
+        ],
       },
       safety: {
         questions: [
-          'What protective equipment do you provide?',
-          'Are there any health restrictions?'
+          "What protective equipment do you provide?",
+          "Are there any health restrictions?",
         ],
         answers: [
-          'We provide complete protective equipment including coveralls, safety helmets with face shields, and heavy-duty gloves. All equipment is regularly inspected and maintained.',
-          'While rage rooms are generally safe, they may not be suitable for pregnant women, people with heart conditions, or those with certain physical limitations. Please consult your doctor if you have any concerns.'
-        ]
+          "We provide complete protective equipment including coveralls, safety helmets with face shields, and heavy-duty gloves. All equipment is regularly inspected and maintained.",
+          "While rage rooms are generally safe, they may not be suitable for pregnant women, people with heart conditions, or those with certain physical limitations. Please consult your doctor if you have any concerns.",
+        ],
       },
       payment: {
         questions: [
-          'What payment methods do you accept?',
-          'Do you offer gift cards?'
+          "What payment methods do you accept?",
+          "Do you offer gift cards?",
         ],
         answers: [
-          'We accept all major credit cards, debit cards, and cash payments. For corporate events, we can also arrange invoice payments.',
-          'Yes! We offer gift cards that make perfect presents for any occasion. They can be purchased online or at our location and are valid for 12 months.'
-        ]
-      }
+          "We accept all major credit cards, debit cards, and cash payments. For corporate events, we can also arrange invoice payments.",
+          "Yes! We offer gift cards that make perfect presents for any occasion. They can be purchased online or at our location and are valid for 12 months.",
+        ],
+      },
     },
     cta: {
-      title: 'Still have questions?',
-      description: 'Our team is here to help! Send us an email and we\'ll get back to you as soon as possible.',
-      email: 'hello@smashandfun.pl',
-      button: 'CONTACT US'
-    }
+      title: "Still have questions?",
+      description:
+        "Our team is here to help! Send us an email and we'll get back to you as soon as possible.",
+      email: "hello@smashandfun.pl",
+      button: "CONTACT US",
+    },
   },
   privacyPolicy: {
-    title: 'Privacy Policy',
-    lastUpdated: 'Last updated:',
+    title: "Privacy Policy",
+    lastUpdated: "Last updated:",
     sections: {
       general: {
-        title: 'General Information',
+        title: "General Information",
         content: [
-          'This Privacy Policy sets out the principles for processing and protecting personal data provided by Users in connection with using Smash&Fun services.',
-          'The personal data controller is Smash&Fun, located in Warsaw at ul. Postępu 19/4.',
-          'We make every effort to protect your privacy and the security of your personal data while using our services.'
-        ]
+          "This Privacy Policy sets out the principles for processing and protecting personal data provided by Users in connection with using Smash&Fun services.",
+          "The personal data controller is Smash&Fun, located in Warsaw at ul. Postępu 19/4.",
+          "We make every effort to protect your privacy and the security of your personal data while using our services.",
+        ],
       },
       dataCollection: {
-        title: 'Data Collection',
+        title: "Data Collection",
         content: [
-          'While using our services, we may collect the following information:',
-          '• Contact details (name, surname, email address, phone number)',
-          '• Booking information and preferences',
-          '• Payment data',
-          '• Technical information about your device and how you use our website',
-          '• Traffic source data (UTM parameters, referring page, landing page) — for analysing the effectiveness of marketing campaigns and attributing bookings to the relevant advertising channel. This data is processed on the basis of the legitimate interest of the controller (Art. 6(1)(f) GDPR) and stored in the browser\'s local storage (localStorage).',
-          'Data is collected only to the extent necessary for providing services and customer support.'
-        ]
+          "While using our services, we may collect the following information:",
+          "• Contact details (name, surname, email address, phone number)",
+          "• Booking information and preferences",
+          "• Payment data",
+          "• Technical information about your device and how you use our website",
+          "• Traffic source data (UTM parameters, referring page, landing page) — for analysing the effectiveness of marketing campaigns and attributing bookings to the relevant advertising channel. This data is processed on the basis of the legitimate interest of the controller (Art. 6(1)(f) GDPR) and stored in the browser's local storage (localStorage).",
+          "Data is collected only to the extent necessary for providing services and customer support.",
+        ],
       },
       dataUsage: {
-        title: 'Data Usage',
+        title: "Data Usage",
         content: [
-          'We use the collected data for the following purposes:',
-          '• Processing bookings and providing services',
-          '• Communication related to orders and customer service',
-          '• Sending information about promotions and new services (with consent only)',
-          '• Improving our service quality',
-          '• Meeting legal and security requirements'
-        ]
+          "We use the collected data for the following purposes:",
+          "• Processing bookings and providing services",
+          "• Communication related to orders and customer service",
+          "• Sending information about promotions and new services (with consent only)",
+          "• Improving our service quality",
+          "• Meeting legal and security requirements",
+        ],
       },
       cookies: {
-        title: 'Cookies',
+        title: "Cookies",
         content: [
-          'Our website uses cookies for:',
-          '• Ensuring proper website functionality',
-          '• Remembering user preferences',
-          '• Analyzing website traffic',
-          '• Customizing content to user needs',
-          'Users can change their cookie settings in their browser at any time.'
-        ]
+          "Our website uses cookies for:",
+          "• Ensuring proper website functionality",
+          "• Remembering user preferences",
+          "• Analyzing website traffic",
+          "• Customizing content to user needs",
+          "Users can change their cookie settings in their browser at any time.",
+        ],
       },
       rights: {
-        title: 'User Rights',
+        title: "User Rights",
         content: [
-          'According to GDPR, you have the following rights:',
-          '• Right to access your data',
-          '• Right to rectify your data',
+          "According to GDPR, you have the following rights:",
+          "• Right to access your data",
+          "• Right to rectify your data",
           '• Right to delete your data ("right to be forgotten")',
-          '• Right to restrict processing',
-          '• Right to data portability',
-          '• Right to object to data processing',
-          'To exercise these rights, please contact us at: hello@smashandfun.pl'
-        ]
-      }
-    }
+          "• Right to restrict processing",
+          "• Right to data portability",
+          "• Right to object to data processing",
+          "To exercise these rights, please contact us at: hello@smashandfun.pl",
+        ],
+      },
+    },
   },
   cookies: {
     banner: {
-      text: 'We use cookies to ensure the best experience on our website.',
-      settings: 'Settings',
-      acceptAll: 'Accept all',
-      rejectAll: 'Reject all'
+      text: "We use cookies to ensure the best experience on our website.",
+      settings: "Settings",
+      acceptAll: "Accept all",
+      rejectAll: "Reject all",
     },
     modal: {
-      title: 'Cookie Settings',
+      title: "Cookie Settings",
       necessary: {
-        title: 'Necessary',
-        description: 'These cookies are required for the website to function and cannot be disabled.'
+        title: "Necessary",
+        description:
+          "These cookies are required for the website to function and cannot be disabled.",
       },
       analytics: {
-        title: 'Analytics',
-        description: 'Help us understand how users interact with our website.'
+        title: "Analytics",
+        description: "Help us understand how users interact with our website.",
       },
       marketing: {
-        title: 'Marketing',
-        description: 'Used to display personalized ads and content.'
+        title: "Marketing",
+        description: "Used to display personalized ads and content.",
       },
-      save: 'Save settings',
-      cancel: 'Cancel'
-    }
+      save: "Save settings",
+      cancel: "Cancel",
+    },
   },
   errors: {
-    general: 'An error occurred. Please try again later.',
-    notFound: 'Page not found.',
-    serverError: 'Server error. Please try again later.',
+    general: "An error occurred. Please try again later.",
+    notFound: "Page not found.",
+    serverError: "Server error. Please try again later.",
     validation: {
-      required: 'This field is required.',
-      email: 'Please enter a valid email address.',
-      phone: 'Please enter a valid phone number.',
-      minLength: 'Minimum length is {min} characters.',
-      maxLength: 'Maximum length is {max} characters.'
-    }
+      required: "This field is required.",
+      email: "Please enter a valid email address.",
+      phone: "Please enter a valid phone number.",
+      minLength: "Minimum length is {min} characters.",
+      maxLength: "Maximum length is {max} characters.",
+    },
   },
   organizeParty: {
     hero: {
-      title: 'ORGANIZE AN UNFORGETTABLE PARTY',
-      subtitle: 'Choose one of our packages and create a unique event'
+      title: "ORGANIZE AN UNFORGETTABLE PARTY",
+      subtitle: "Choose one of our packages and create a unique event",
     },
     cta: {
-      title: 'Ready to Create an Unforgettable Event?',
-      description: 'Contact us now and let us help you organize a perfect party that everyone will remember!'
+      title: "Ready to Create an Unforgettable Event?",
+      description:
+        "Contact us now and let us help you organize a perfect party that everyone will remember!",
     },
     intro: {
-      subtitle: 'SERVICES',
-      title: 'EVENT ORGANIZATION',
+      subtitle: "SERVICES",
+      title: "EVENT ORGANIZATION",
       services: {
         events: {
-          title: 'Event Planning',
-          description: 'Looking for the perfect party venue? Dream of destroying an office or an entire apartment? Visit us! We will organize the whole event, and all you have to do is have a great time!'
+          title: "Event Planning",
+          description:
+            "Looking for the perfect party venue? Dream of destroying an office or an entire apartment? Visit us! We will organize the whole event, and all you have to do is have a great time!",
         },
         voucher: {
-          title: 'Gift Voucher',
-          description: 'Voucher of any value or package. Valid for 6 months. Non-refundable. Cannot be combined with other promotions or discounts.'
+          title: "Gift Voucher",
+          description:
+            "Voucher of any value or package. Valid for 6 months. Non-refundable. Cannot be combined with other promotions or discounts.",
         },
         space: {
-          title: 'Venue Rental',
-          description: 'You can also take advantage of the option to rent our space for your party, reception, or other occasion'
-        }
-      }
+          title: "Venue Rental",
+          description:
+            "You can also take advantage of the option to rent our space for your party, reception, or other occasion",
+        },
+      },
     },
     events: {
       party: {
-        title: 'ORGANIZE A PARTY!',
-        description: 'Looking for an idea for an evening with a larger group? Unforgettable birthday, crazy bachelorette or bachelor party, or maybe a casual meeting with friends? Want to organize an exciting evening at Smash&Fun but don\'t know where to start with the reservation?\n\nWith us, everything will be simple and quick!'
+        title: "ORGANIZE A PARTY!",
+        description:
+          "Looking for an idea for an evening with a larger group? Unforgettable birthday, crazy bachelorette or bachelor party, or maybe a casual meeting with friends? Want to organize an exciting evening at Smash&Fun but don't know where to start with the reservation?\n\nWith us, everything will be simple and quick!",
       },
       corporate: {
-        title: 'CORPORATE EVENT THAT WILL MAKE AN IMPRESSION!',
-        description: 'Dream of destroying an office or an entire apartment? Planning to organize a corporate meeting or team building event for your team? Want to provide unforgettable team building activities but don\'t know how to plan the perfect scenario for a larger group or how to choose the right package?\n\nDon\'t worry, we\'ll take care of everything!'
+        title: "CORPORATE EVENT THAT WILL MAKE AN IMPRESSION!",
+        description:
+          "Dream of destroying an office or an entire apartment? Planning to organize a corporate meeting or team building event for your team? Want to provide unforgettable team building activities but don't know how to plan the perfect scenario for a larger group or how to choose the right package?\n\nDon't worry, we'll take care of everything!",
       },
       kids: {
-        title: 'UNFORGETTABLE BIRTHDAY FOR YOUR CHILD!',
-        description: 'Want to organize an unforgettable birthday for your child? Choose one of our three packages that will provide lots of fun and unique memories, ensuring that none of the guests will be bored for a moment!\n\nContact us to create the birthday your child has always dreamed of!'
-      }
+        title: "UNFORGETTABLE BIRTHDAY FOR YOUR CHILD!",
+        description:
+          "Want to organize an unforgettable birthday for your child? Choose one of our three packages that will provide lots of fun and unique memories, ensuring that none of the guests will be bored for a moment!\n\nContact us to create the birthday your child has always dreamed of!",
+      },
     },
     services: {
-      title: 'OUR SERVICES',
+      title: "OUR SERVICES",
       items: {
         planning: {
-          title: 'Comprehensive Planning',
-          description: 'We\'ll help plan every detail of your event'
+          title: "Comprehensive Planning",
+          description: "We'll help plan every detail of your event",
         },
         catering: {
-          title: 'Catering',
-          description: 'We provide delicious snacks and beverages'
+          title: "Catering",
+          description: "We provide delicious snacks and beverages",
         },
         music: {
-          title: 'Music Setup',
-          description: 'Professional audio equipment and playlist'
-        }
-      }
-    }
+          title: "Music Setup",
+          description: "Professional audio equipment and playlist",
+        },
+      },
+    },
   },
   terms: {
     title: "Terms and Conditions",
@@ -488,7 +506,7 @@ export const en = {
       nip: "NIP: 521 407 2287",
       regon: "REGON: 528804913",
       krs: "KRS: 0001108915",
-      validFrom: "Valid from:"
+      validFrom: "Valid from:",
     },
     footer: "© 2025 Smashandfun. All rights reserved.",
     sections: {
@@ -500,8 +518,8 @@ export const en = {
           "1.3. Using Smashandfun's services implies full acceptance of these Terms and Conditions without any reservations.",
           "1.4. The Service Provider reserves the right to make changes to the Terms and Conditions. Users will be informed about any changes 14 days in advance via the website and email.",
           "1.5. The Terms and Conditions are available on the website www.smashandfun.pl and at the Service Provider's premises in written form.",
-          "1.6. In matters not regulated by these Terms and Conditions, Polish law shall apply, in particular the Civil Code."
-        ]
+          "1.6. In matters not regulated by these Terms and Conditions, Polish law shall apply, in particular the Civil Code.",
+        ],
       },
       services: {
         title: "2. Scope of Services",
@@ -523,8 +541,8 @@ export const en = {
           "d) Access to changing rooms and showers",
           "e) Cooling drinks",
           "2.4. The Service Provider reserves the right to modify the scope of services, including introducing new services and withdrawing existing ones, which will be announced in advance on the website.",
-          "2.5. Detailed description of services, including available packages and their contents, can be found on the website and at the premises."
-        ]
+          "2.5. Detailed description of services, including available packages and their contents, can be found on the website and at the premises.",
+        ],
       },
       reservations: {
         title: "3. Reservation Rules",
@@ -552,8 +570,8 @@ export const en = {
           "d) Other justified reasons",
           "3.6. Late arrival for reserved time:",
           "a) Up to 15 minutes - session is shortened by the delay time",
-          "b) Over 15 minutes - reservation is forfeited without refund"
-        ]
+          "b) Over 15 minutes - reservation is forfeited without refund",
+        ],
       },
       payments: {
         title: "4. Payments",
@@ -581,8 +599,8 @@ export const en = {
           "4.5. Gift vouchers:",
           "a) Full payment required at purchase",
           "b) Valid for 6 months from purchase date",
-          "c) Non-refundable and non-exchangeable for cash"
-        ]
+          "c) Non-refundable and non-exchangeable for cash",
+        ],
       },
       cancellation: {
         title: "5. Cancellation Policy",
@@ -592,8 +610,8 @@ export const en = {
           "5.3. Instead of a refund, we may, subject to availability and operational possibilities, offer a one-time change of the booking date or time. The customer should submit such a request as early as reasonably possible.",
           "5.4. If the service cannot be performed for reasons attributable to the Service Provider, or if mandatory law grants the customer a specific remedy, we apply the appropriate lawful solution, including rescheduling or a refund where required.",
           "5.5. These rules do not exclude or limit the customer's right to submit a complaint where the service has not been performed or has been performed improperly.",
-          "5.6. Detailed rules are described in the Refund Policy published on the website."
-        ]
+          "5.6. Detailed rules are described in the Refund Policy published on the website.",
+        ],
       },
       rules: {
         title: "6. Safety Rules",
@@ -629,8 +647,8 @@ export const en = {
           "c) Service denial to persons not complying with regulations",
           "6.6. Monitoring:",
           "a) Facility is monitored for participants' safety",
-          "b) Recordings are stored in accordance with GDPR regulations"
-        ]
+          "b) Recordings are stored in accordance with GDPR regulations",
+        ],
       },
       liability: {
         title: "7. Liability",
@@ -657,8 +675,8 @@ export const en = {
           "c) Lost locker key - 50 PLN fee",
           "7.5. Insurance:",
           "a) Facility has civil liability insurance",
-          "b) Personal accident insurance recommended for participants"
-        ]
+          "b) Personal accident insurance recommended for participants",
+        ],
       },
       final: {
         title: "8. Final Provisions",
@@ -681,260 +699,578 @@ export const en = {
           "a) Primary form - email",
           "b) Change notifications - email or SMS",
           "8.6. Invalidity of individual provisions does not affect the validity of the entire Terms and Conditions.",
-          "8.7. Terms and Conditions are available in Polish and English. In case of discrepancies, the Polish version shall prevail."
-        ]
-      }
-    }
+          "8.7. Terms and Conditions are available in Polish and English. In case of discrepancies, the Polish version shall prevail.",
+        ],
+      },
+    },
   },
   footer: {
     navigation: {
-      title: 'Navigation',
+      title: "Navigation",
       links: {
-        organizeParty: 'ORGANIZE PARTY',
-        blog: 'BLOG',
-        faq: 'FAQ',
-        contact: 'CONTACT'
-      }
+        booking: "BOOKING",
+        organizeParty: "ORGANIZE PARTY",
+        blog: "BLOG",
+        questRoom: "QUEST ROOM",
+        faq: "FAQ",
+        contact: "CONTACT",
+      },
     },
     contact: {
-      title: 'Contact',
-      phone: 'Tel: +48 881 281 313',
-      email: 'Email: hello@smashandfun.pl',
-      address: 'Address: Postępu 19/4, 02-676 Warsaw'
+      title: "Contact",
+      phone: "Tel: +48 881 281 313",
+      email: "Email: hello@smashandfun.pl",
+      address: "Address: Postępu 19/4, 02-676 Warsaw",
     },
     social: {
-      title: 'Social Media',
-      facebook: 'Facebook',
-      instagram: 'Instagram',
-      tiktok: 'TikTok'
+      title: "Social Media",
+      facebook: "Facebook",
+      instagram: "Instagram",
+      tiktok: "TikTok",
     },
-    description: 'A unique place on the map of Warsaw where you can release your emotions and have a great time!',
-    booking: 'BOOK NOW',
+    description:
+      "A unique place on the map of Warsaw where you can release your emotions and have a great time!",
+    booking: "BOOK NOW",
     legal: {
-      rights: 'Smash&Fun. All rights reserved.',
-      privacyPolicy: 'Privacy Policy',
-      terms: 'Terms & Conditions'
-    }
+      rights: "Smash&Fun. All rights reserved.",
+      privacyPolicy: "Privacy Policy",
+      terms: "Terms & Conditions",
+    },
   },
   happyHours: {
-    title: 'HAPPY HOURS',
-    subtitle: 'Special offer for early birds!',
+    title: "HAPPY HOURS",
+    subtitle: "Special offer for early birds!",
     schedule: {
-      title: 'Schedule',
-      weekdays: 'Monday - Friday',
-      time: '14:00 - 16:00',
+      title: "Schedule",
+      weekdays: "Monday - Friday",
+      time: "14:00 - 16:00",
       discountname: 'Discount by code "HAPPYHOURS"',
-      discount: '-20%'
+      discount: "-20%",
     },
     benefits: [
-      'Lower prices',
-      'Less crowded',
-      'Same great experience',
-      'Full equipment included'
+      "Lower prices",
+      "Less crowded",
+      "Same great experience",
+      "Full equipment included",
     ],
-    cta: 'BOOK HAPPY HOURS'
+    cta: "BOOK HAPPY HOURS",
   },
   holidayPromo: {
     aria: {
-      title: 'Holiday promotion'
+      title: "Holiday promotion",
     },
-    badge: 'Limited time',
-    discountBadge: '−50 zł',
-    title: 'Holiday special',
-    subtitle: 'Use promo code to get 50 zł off your booking.',
-    codeLabel: 'Promo code',
-    codeHint: 'at checkout',
-    copy: 'Copy',
-    copied: 'Copied',
-    terms: 'Discount applies once per booking. Cannot be combined with other promotions.',
-    cta: 'BOOK NOW',
-    secondaryCta: 'Not now'
+    badge: "Limited time",
+    discountBadge: "−50 zł",
+    title: "Holiday special",
+    subtitle: "Use promo code to get 50 zł off your booking.",
+    codeLabel: "Promo code",
+    codeHint: "at checkout",
+    copy: "Copy",
+    copied: "Copied",
+    terms:
+      "Discount applies once per booking. Cannot be combined with other promotions.",
+    cta: "BOOK NOW",
+    secondaryCta: "Not now",
   },
   b2b: {
     hero: {
-      title: 'CORPORATE EVENTS AND TEAM BUILDING',
-      subtitle: 'Create unforgettable experiences for your team',
-      cta: 'GET IN TOUCH'
+      title: "CORPORATE EVENTS AND TEAM BUILDING",
+      subtitle: "Create unforgettable experiences for your team",
+      cta: "GET IN TOUCH",
     },
     description: {
-      title: 'FOR BUSINESS',
-      uniqueExperiences: 'Unique Experiences',
-      forYourTeam: 'For Your Team',
-      paragraph1: 'We offer professional organization of corporate events, team building activities, and integration events that will help strengthen your team and create unforgettable memories.',
-      paragraph2: 'Our experienced team will take care of every detail, from planning to execution, ensuring your event is a complete success.'
+      title: "FOR BUSINESS",
+      uniqueExperiences: "Unique Experiences",
+      forYourTeam: "For Your Team",
+      paragraph1:
+        "We offer professional organization of corporate events, team building activities, and integration events that will help strengthen your team and create unforgettable memories.",
+      paragraph2:
+        "Our experienced team will take care of every detail, from planning to execution, ensuring your event is a complete success.",
     },
     benefits: {
       benefit1: {
-        title: 'Professional Organization',
-        description: 'Full support in planning and executing your event'
+        title: "Professional Organization",
+        description: "Full support in planning and executing your event",
       },
       benefit2: {
-        title: 'Customized Programs',
-        description: 'Tailored activities for your team\'s needs'
+        title: "Customized Programs",
+        description: "Tailored activities for your team's needs",
       },
       benefit3: {
-        title: 'Flexible Scheduling',
-        description: 'Convenient dates and times for your team'
-      }
+        title: "Flexible Scheduling",
+        description: "Convenient dates and times for your team",
+      },
     },
     serviceTypes: {
       teamBuilding: {
-        title: 'Team Building',
-        description: 'Strengthen team bonds through exciting activities',
+        title: "Team Building",
+        description: "Strengthen team bonds through exciting activities",
         features: [
-          '⁠Stress-relief sessions',
-          'Team integration challenges',
-          '⁠Coordination and reflex exercises',
-          '⁠100% adrenaline and fun',
-        ]
+          "⁠Stress-relief sessions",
+          "Team integration challenges",
+          "⁠Coordination and reflex exercises",
+          "⁠100% adrenaline and fun",
+        ],
       },
       corporateEvents: {
-        title: 'Corporate Events',
-        description: 'Professional events for your business needs',
+        title: "Corporate Events",
+        description: "Professional events for your business needs",
         features: [
-          'Company celebrations',
-          'Product launches',
-          'Team rewards',
-          'Client entertainment',
-          'Holiday parties',
-          'Annual meetings'
-        ]
+          "Company celebrations",
+          "Product launches",
+          "Team rewards",
+          "Client entertainment",
+          "Holiday parties",
+          "Annual meetings",
+        ],
       },
       integration: {
-        title: 'Team Integration',
-        description: 'Build stronger connections within your team',
+        title: "Team Integration",
+        description: "Build stronger connections within your team",
         features: [
-          '⁠Integration activities',
-          'Extreme stress relief',
-          'Team-based challenges',
-          'Engaging group activities',
-          'Unforgettable experiences',
-        ]
-      }
+          "⁠Integration activities",
+          "Extreme stress relief",
+          "Team-based challenges",
+          "Engaging group activities",
+          "Unforgettable experiences",
+        ],
+      },
     },
     stats: {
-      satisfiedClients: 'Satisfied Clients',
-      completedEvents: 'Completed Events',
-      participants: 'Participants',
-      yearsExperience: 'Years Experience'
+      satisfiedClients: "Satisfied Clients",
+      completedEvents: "Completed Events",
+      participants: "Participants",
+      yearsExperience: "Years Experience",
     },
     form: {
-      title: 'Contact Us',
-      subtitle: 'Let\'s discuss your event',
+      title: "Contact Us",
+      subtitle: "Let's discuss your event",
       name: {
-        label: 'Full Name',
-        placeholder: 'Enter your full name'
+        label: "Full Name",
+        placeholder: "Enter your full name",
       },
       email: {
-        label: 'Email Address',
-        placeholder: 'Enter your email address'
+        label: "Email Address",
+        placeholder: "Enter your email address",
       },
       phone: {
-        label: 'Phone Number',
-        placeholder: 'Enter your phone number'
+        label: "Phone Number",
+        placeholder: "Enter your phone number",
       },
       service: {
-        label: 'Service Type',
-        placeholder: 'Select service type',
-        teamBuilding: 'Team Building',
-        corporateEvents: 'Corporate Events',
-        integration: 'Team Integration'
+        label: "Service Type",
+        placeholder: "Select service type",
+        teamBuilding: "Team Building",
+        corporateEvents: "Corporate Events",
+        integration: "Team Integration",
       },
       people: {
-        label: 'Number of People',
-        placeholder: 'Enter number of participants'
+        label: "Number of People",
+        placeholder: "Enter number of participants",
       },
       date: {
-        label: 'Preferred Date',
-        placeholder: 'Select preferred date'
+        label: "Preferred Date",
+        placeholder: "Select preferred date",
       },
       dateFrom: {
-        label: 'Date',
-        placeholder: 'Pick a date or range'
+        label: "Date",
+        placeholder: "Pick a date or range",
       },
       dateTo: {
-        label: 'Date to (optional)',
-        placeholder: 'Select end date'
+        label: "Date to (optional)",
+        placeholder: "Select end date",
       },
       extraItems: {
-        label: 'Additional items',
-        subtitle: 'Select additional items for your event'
+        label: "Additional items",
+        subtitle: "Select additional items for your event",
       },
       message: {
-        label: 'Additional Information',
-        placeholder: 'Tell us more about your event...'
+        label: "Additional Information",
+        placeholder: "Tell us more about your event...",
       },
-      submit: 'Send Request',
-      submitting: 'Sending...',
-      success: 'Thank you! We\'ll contact you soon.',
-      error: 'An error occurred. Please try again.',
+      submit: "Send Request",
+      submitting: "Sending...",
+      success: "Thank you! We'll contact you soon.",
+      error: "An error occurred. Please try again.",
       validation: {
-        name: 'Name must be at least 2 characters long',
-        email: 'Please enter a valid email address',
-        phone: 'Phone number must be at least 9 characters long',
-        service: 'Please select a service type',
-        people: 'Please enter number of participants',
-        date: 'Please select a date',
-        dateFrom: 'Please select a start date'
+        name: "Name must be at least 2 characters long",
+        email: "Please enter a valid email address",
+        phone: "Phone number must be at least 9 characters long",
+        service: "Please select a service type",
+        people: "Please enter number of participants",
+        date: "Please select a date",
+        dateFrom: "Please select a start date",
       },
     },
     trust: {
-      title: 'Documentation & Formalities',
-      subtitle: 'Professional service from A to Z',
-      description: 'We provide full documentation compliant with Polish law and European Union regulations. We issue VAT invoices, assist with corporate paperwork, and ensure smooth and hassle-free cooperation.',
+      title: "Documentation & Formalities",
+      subtitle: "Professional service from A to Z",
+      description:
+        "We provide full documentation compliant with Polish law and European Union regulations. We issue VAT invoices, assist with corporate paperwork, and ensure smooth and hassle-free cooperation.",
       items: [
-        'VAT invoice for every service',
-        'Documentation compliant with Polish and EU law',
-        'Assistance with corporate paperwork',
-        'Contract for event execution'
-      ]
+        "VAT invoice for every service",
+        "Documentation compliant with Polish and EU law",
+        "Assistance with corporate paperwork",
+        "Contract for event execution",
+      ],
     },
     clients: {
-      title: 'Trusted by',
-      subtitle: 'Our clients include'
-    }
+      title: "Trusted by",
+      subtitle: "Our clients include",
+    },
   },
   booking: {
-    chooseDateTime: 'Choose date and time',
-    date: 'Date',
-    time: 'Time',
-    selectTime: 'Select time ✅',
-    loading: 'Loading...',
-    next: 'Next',
-    enterDetails: 'Enter your details',
-    name: 'Name',
-    email: 'E-mail',
-    phone: 'Phone',
-    extraItemsTitle: 'Extra options',
-    extraItemsSubtitle: 'Choose extra options',
-    noExtraItems: 'No extra options',
-    paymentTypeTitle: 'Payment type',
-    paymentTypeSubtitle: 'Choose payment method',
-    payFull: 'Pay full amount',
-    payDeposit: 'Pay deposit',
-    total: 'Total',
-    payNow: 'Pay now',
-    confirmTitle: 'Confirmation',
-    confirmSubtitle: 'Check your details before payment',
-    promo: 'Promo code',
-    promoCheck: 'Check',
-    promoChecking: 'Checking...',
-    promoValid: 'Code applied',
-    promoInvalid: 'Invalid code',
-    promoPlaceholder: 'Enter promo code (if you have one)',
-    promoBtn: 'Check',
-    promoNotFound: 'Code not found',
-    promoInactive: 'Code inactive',
-    promoUsed: 'Code already used',
-    promoApplied: 'Code applied',
-    promoDiscount: 'Discount',
-    promoPercent: 'percent',
-    paymentType: 'Payment type'
-  }
-  ,
+    chooseDateTime: "Choose date and time",
+    date: "Date",
+    time: "Time",
+    selectTime: "Select time ✅",
+    loading: "Loading...",
+    next: "Next",
+    enterDetails: "Enter your details",
+    name: "Name",
+    email: "E-mail",
+    phone: "Phone",
+    extraItemsTitle: "Extra options",
+    extraItemsSubtitle: "Choose extra options",
+    noExtraItems: "No extra options",
+    paymentTypeTitle: "Payment type",
+    paymentTypeSubtitle: "Choose payment method",
+    payFull: "Pay full amount",
+    payDeposit: "Pay deposit",
+    total: "Total",
+    payNow: "Pay now",
+    confirmTitle: "Confirmation",
+    confirmSubtitle: "Check your details before payment",
+    promo: "Promo code",
+    promoCheck: "Check",
+    promoChecking: "Checking...",
+    promoValid: "Code applied",
+    promoInvalid: "Invalid code",
+    promoPlaceholder: "Enter promo code (if you have one)",
+    promoBtn: "Check",
+    promoNotFound: "Code not found",
+    promoInactive: "Code inactive",
+    promoUsed: "Code already used",
+    promoApplied: "Code applied",
+    promoDiscount: "Discount",
+    promoPercent: "percent",
+    paymentType: "Payment type",
+  },
   thankYou: {
     title: "Thank you for your booking!",
-    subtitle: "Your booking has been received. We have sent a confirmation to your email.",
-    homeBtn: "Back to homepage"
-  }
+    subtitle:
+      "Your booking has been received. We have sent a confirmation to your email.",
+    homeBtn: "Back to homepage",
+  },
+  questRoom: {
+    meta: {
+      title:
+        "Quest Room Warsaw? Try Rage Room Smash&Fun — Better Than an Escape Room",
+      description:
+        "Looking for a quest room in Warsaw? Smash&Fun is a rage room — the alternative to a classic escape room. Smash everything with a sledgehammer instead of solving puzzles. 30–150 min sessions, up to 6 people, instant online booking.",
+      keywords:
+        "quest room warsaw, quest room, escape room warsaw, alternative to quest room, rage room warsaw, smash room warsaw",
+    },
+    hero: {
+      eyebrow: "ALTERNATIVE TO QUEST ROOM IN WARSAW",
+      titlePre: "LOOKING FOR A",
+      mainKeyword: "QUEST ROOM",
+      titlePost: "IN WARSAW?",
+      alternativeKeywords: ["ESCAPE ROOM", "PUZZLE ROOM", "RIDDLE ROOM"],
+      titleAccent: "WE HAVE SOMETHING BETTER — A RAGE ROOM",
+      subtitle:
+        "Smash&Fun is a rage room in the heart of Warsaw — the alternative to a classic quest room, escape room, or puzzle room for people tired of sitting with a notepad. Instead of looking for keys under the carpet, you smash, break, and demolish in full safety gear.",
+      primaryCta: "BOOK YOUR SESSION",
+      secondaryCta: "See the comparison",
+    },
+    stats: {
+      eyebrow: "SOMETIMES LIFE DOES IT FOR YOU",
+      title: "WHEN PEOPLE END UP HERE",
+      subtitle:
+        "Six situations that most often pick up our phone — and where a quest room just doesn't cut it.",
+      items: [
+        {
+          icon: "phone",
+          title: "After a frustrating week at work",
+          description:
+            "You click on Friday, book for Saturday. By Sunday your head is already reset and you have a story for Monday's coffee.",
+        },
+        {
+          icon: "sparkles",
+          title: "Hen or stag night",
+          description:
+            "Instead of another pub — a session no one forgets. Plus a GoPro clip ready for the group chat.",
+        },
+        {
+          icon: "heart-crack",
+          title: "After a breakup",
+          description:
+            "Cheaper than therapy, faster than the gym, more satisfying than the message you weren't going to send anyway.",
+        },
+        {
+          icon: "briefcase",
+          title: "Corporate team building",
+          description:
+            "Bosses get a hammer too. Office hierarchy cracks alongside the glass bottles — only people and adrenaline are left.",
+        },
+        {
+          icon: "cake",
+          title: "Birthdays for ages 10+",
+          description:
+            "For the kid who's outgrown play centers but isn't quite ready for an escape room. Safe scenario, adult supervision.",
+        },
+        {
+          icon: "lock",
+          title: "After your third quest room",
+          description:
+            "When puzzles stop impressing and your cursor types 'quest room Warsaw' on autopilot — stop and check us instead.",
+        },
+      ],
+    },
+    comparison: {
+      eyebrow: "QUEST ROOM VS RAGE ROOM",
+      title: "WHICH ONE WILL YOU PICK?",
+      subtitle:
+        "A classic quest room in Warsaw and our rage room share three things: a time limit, a team, and adrenaline. The difference is in what you actually do inside.",
+      tabs: {
+        questRoom: "CLASSIC QUEST ROOM",
+        rageRoom: "RAGE ROOM SMASH&FUN",
+      },
+      winnerBadge: "OUR PICK",
+      questRoom: {
+        title: "Puzzle room",
+        intro:
+          "You enter a sealed room, hunt for keys, solve logic puzzles, and try to escape against the clock.",
+        points: [
+          "Logic and observation — mostly your head",
+          "Static puzzles, codes, and padlocks",
+          "Low physical activity",
+          "Doesn't really release work-week stress",
+          "Once you finish it, you know the scenario",
+        ],
+      },
+      rageRoom: {
+        title: "Rage Room — what we do",
+        intro:
+          "You step into a fully secured zone, get a sledgehammer, a baseball bat, and a list of objectives to destroy. The clock starts, the adrenaline spikes.",
+        points: [
+          "Physical action — your whole body, not just your head",
+          "Real objects: glass, furniture, electronics",
+          "The best stress relief in the city",
+          "100% adrenaline, 0% passive sitting",
+          "Every session is different — different things to smash",
+          "Full safety gear included in the price",
+          "Online booking in 60 seconds, 7 days a week",
+          "GoPro recording add-on — a video for your social media",
+        ],
+      },
+      verdict:
+        'If you typed "quest room Warsaw" into Google but you actually want something you can feel — that\'s us.',
+    },
+    reasons: {
+      eyebrow: "WHY A RAGE ROOM INSTEAD OF A QUEST ROOM",
+      title: "5 REASONS TO COME IN",
+      items: [
+        {
+          icon: "zap",
+          title: "Adrenaline from second one",
+          description:
+            "In a classic quest room, you warm up halfway through. With us, the first swing of the hammer and your heart is already pounding.",
+        },
+        {
+          icon: "shield",
+          title: "100% safety",
+          description:
+            "Coverall, helmet with face shield, protective gloves. All gear included. Our staff trains you before you start.",
+        },
+        {
+          icon: "users",
+          title: "Team fun for 1 to 6 people",
+          description:
+            "Perfect for a night with friends, birthdays, hen or stag parties. For corporate groups bigger than 6, we set up private slots.",
+        },
+        {
+          icon: "brain",
+          title: "Real stress therapy",
+          description:
+            "A quest room sharpens your logic. A rage room releases a whole week's worth of tension in 30 minutes. A proven way to reset your head.",
+        },
+        {
+          icon: "video",
+          title: "A souvenir, not just a memory",
+          description:
+            "Add a GoPro recording to your booking. Walk out with a video you'll happily share on social media.",
+        },
+      ],
+    },
+    picker: {
+      eyebrow: "PICK YOUR INTENSITY",
+      title: "FOUR LEVELS OF DEMOLITION — PICK YOURS",
+      subtitle:
+        "Instead of four difficulty levels like in a quest room, we have four levels of demolition. The higher you go, the more stuff you destroy.",
+      durationLabel: "Time",
+      peopleLabel: "People",
+      includesLabel: "Included",
+      cta: "BOOK THIS PACKAGE",
+      popularBadge: "MOST POPULAR",
+      levels: [
+        {
+          name: "PIECE OF CAKE",
+          duration: "up to 30 min",
+          people: "1–2 people",
+          difficulty: "WARM-UP",
+          description:
+            "The perfect start. A short session, a soft introduction to rage rooms — for people worried it might be too much.",
+          items: ["25 glass items", "Full safety gear", "Staff briefing"],
+        },
+        {
+          name: "EASY",
+          duration: "up to 45 min",
+          people: "1–4 people",
+          difficulty: "NIGHT WITH FRIENDS",
+          description:
+            "The most popular choice. Longer session, more objects, perfect for a night out with your crew.",
+          items: [
+            "25 glass items",
+            "2 pieces of furniture",
+            "3 electronic devices",
+          ],
+        },
+        {
+          name: "MEDIUM",
+          duration: "up to 90 min",
+          people: "1–6 people",
+          difficulty: "FOR COMPANIES",
+          description:
+            "A session for larger groups and companies looking for a team building hit harder than a classic escape room.",
+          items: [
+            "30 glass items",
+            "3 pieces of furniture",
+            "5 electronic devices",
+          ],
+        },
+        {
+          name: "HARD",
+          duration: "up to 150 min",
+          people: "1–6 people",
+          difficulty: "EXTREME",
+          description:
+            "Full-length demolition. Maximum stuff, maximum adrenaline, zero compromises.",
+          items: [
+            "50 glass items",
+            "5 pieces of furniture",
+            "10 electronic devices",
+          ],
+        },
+      ],
+    },
+    process: {
+      eyebrow: "HOW IT WORKS",
+      title: "FROM CLICK TO FIRST SWING",
+      steps: [
+        {
+          title: "Pick a package and a date",
+          description:
+            "Online, in 60 seconds. BLIK, card, or transfer. Confirmation lands in your inbox immediately.",
+        },
+        {
+          title: "Come in",
+          description:
+            "ul. Postępu 19/4, Mokotów. Our staff welcomes you, hands you a coverall, helmet, and gloves.",
+        },
+        {
+          title: "Safety briefing",
+          description:
+            "5 minutes of rules, how to hold the tools, demolition basics. We don't start without it.",
+        },
+        {
+          title: "Demolition session",
+          description:
+            "The clock starts. You smash everything on the list. Staff monitors from the control room and is on call.",
+        },
+        {
+          title: "Lounge area",
+          description:
+            "After the session: cold drinks, comfy sofas, a photo with the hammer. Stay as long as you want.",
+        },
+      ],
+    },
+    trust: {
+      eyebrow: "WHY YOU CAN TRUST US",
+      title: "HARD FACTS",
+      items: {
+        rating: {
+          title: "4.5/5 on Google",
+          description:
+            "Over 320 reviews from real customers. All public — check them yourself before you book.",
+        },
+        safety: {
+          title: "Safety gear included",
+          description:
+            "Coverall, helmet with face shield, gloves. Plus full briefing and a staff member watching from the control room.",
+        },
+        location: {
+          title: "ul. Postępu 19/4, Mokotów",
+          description:
+            "Central Warsaw, parking next door, easy to reach from any district. Open 7 days a week.",
+        },
+        instant: {
+          title: "Online booking 24/7",
+          description:
+            "BLIK, card, transfer. Confirmation in 60 seconds. Cancel or reschedule under our refund policy.",
+        },
+        company: {
+          title: "Registered company",
+          description:
+            "SMASH&FUN sp. z o.o., NIP 521 407 2287, KRS 0001108915. VAT invoice on request.",
+        },
+        groups: {
+          title: "Companies, birthdays, parties",
+          description:
+            "Corporate events, team building, kids' birthdays 10+, hen and stag nights — all covered.",
+        },
+      },
+    },
+    faq: {
+      eyebrow: "FAQ",
+      title: "FREQUENTLY ASKED QUESTIONS",
+      items: [
+        {
+          q: "Is Smash&Fun a quest room?",
+          a: "No — we are a rage room, and we are proud of it. People searching for a quest room in Warsaw often end up here and keep coming back, because instead of cracking puzzles, they release stress physically. Same elements (time limit, team, briefing) — completely different emotions.",
+        },
+        {
+          q: "How is a rage room different from a quest room?",
+          a: "In a quest room you look for clues and solve puzzles. With us, you grab a sledgehammer, baseball bat, or crowbar and destroy real objects: glass, furniture, electronics. No riddles, no logic traps — just you, the tools, and a list of objectives.",
+        },
+        {
+          q: "How many people can join a session?",
+          a: "Our standard packages cover 1–6 people. For larger groups (corporate events, birthdays, hen/stag parties) we organize private slots — just get in touch.",
+        },
+        {
+          q: "Is it safe?",
+          a: "Safer than most escape rooms. Every player gets a coverall, helmet with face shield, and heavy-duty gloves. Staff runs a full briefing and watches the session from the control room. Zero accidental injuries in three years.",
+        },
+        {
+          q: "How much does it cost?",
+          a: "Price depends on the package and the length of the session. Every price includes safety gear, the briefing, and a staff member on call — see the full price list in the booking system.",
+        },
+        {
+          q: "Can I bring kids?",
+          a: "Yes, ages 10 and up with a legal guardian. For younger groups, contact us by email — we'll design a safe birthday scenario.",
+        },
+        {
+          q: "Do you do corporate events?",
+          a: "Yes. We have dedicated B2B packages, VAT invoices, full venue rental for private events, and end-to-end help organizing the event.",
+        },
+      ],
+    },
+    cta: {
+      title: "READY FOR SOMETHING HARDER THAN A QUEST ROOM?",
+      description:
+        "Pick a package, pick a time, show up. Booking confirmation in 60 seconds. Pay with BLIK, card, or bank transfer.",
+      button: "BOOK NOW",
+      phoneHint: "Prefer to talk? Call us: +48 881 281 313",
+    },
+  },
 };

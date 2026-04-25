@@ -9,6 +9,7 @@ import { useI18n } from '@/i18n/I18nContext';
 import LanguageSwitcher from './LanguageSwitcher';
 import { Clock, ChevronDown, Phone } from 'lucide-react';
 import HappyHoursModalLegacy from './HappyHoursModalLegacy';
+import { withQuestRoomUtm } from '@/lib/questRoomUtm';
 
 // Функция для установки куки
 const setCookie = (name: string, value: string, days: number) => {
@@ -101,6 +102,9 @@ export default function Header() {
     }
   }, [isMobileMenuOpen]);
 
+  const bookingHref =
+    pathname === '/quest-room' ? withQuestRoomUtm('/rezerwacja') : '/rezerwacja';
+
   const navLinks = [
     { href: '/', label: t('nav.home') },
     { href: '/rezerwacja', label: t('nav.booking') },
@@ -113,7 +117,13 @@ export default function Header() {
       ]
     },
     { href: '/blog', label: t('nav.blog') },
-    { href: '/faq', label: t('nav.faq') },
+    {
+      label: t('nav.faq'),
+      dropdown: [
+        { href: '/quest-room', label: t('nav.questRoom') },
+        { href: '/faq', label: t('nav.faq') },
+      ],
+    },
     { href: '/kontakt', label: t('nav.contact') },
   ];
 
@@ -256,7 +266,7 @@ export default function Header() {
               <Clock className="w-5 h-5" />
             </button>
             <Link
-              href="/rezerwacja"
+              href={bookingHref}
               className="hidden md:block bg-[#f36e21] text-white px-4 py-2 rounded-lg font-impact uppercase tracking-wide hover:bg-[#f36e21]/90 transition-colors"
             >
               {t('common.bookNow')}
@@ -376,7 +386,7 @@ export default function Header() {
                     className="pt-4"
                   >
                     <Link
-                      href="/rezerwacja"
+                      href={bookingHref}
                       className="bg-[#f36e21] text-white px-6 py-2.5 rounded-lg font-impact uppercase tracking-wide hover:bg-[#f36e21]/90 transition-colors text-lg"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >

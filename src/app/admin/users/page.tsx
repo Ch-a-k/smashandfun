@@ -662,18 +662,18 @@ function UsersPage() {
     if (dateFrom || dateTo) {
       result = result.filter(u => {
         if (dateMode === 'all') {
-          const hasBooking = u.bookings.some(b => {
-            if (dateFrom && b.date < dateFrom) return false;
-            if (dateTo && b.date > dateTo) return false;
-            return true;
-          });
-          const hasB2b = u.b2bRequests.some(r => {
-            if (dateFrom && r.date_from < dateFrom) return false;
-            if (dateTo && r.date_from > dateTo) return false;
-            return true;
-          });
+          // "Wszystkie daty" = data aktywności klienta (utworzenie):
+          // płatność, rezerwacja, zapytanie B2B lub voucher.
+          // Nie używamy b.date (data sesji w przyszłości) ani r.date_from
+          // (data wnioskowanego eventu B2B) — to oddzielne tryby filtrowania.
           const hasPaid = u.userPayments.some(p => {
             const d = (p.created_at || '').slice(0, 10);
+            if (dateFrom && d < dateFrom) return false;
+            if (dateTo && d > dateTo) return false;
+            return true;
+          });
+          const hasBookingCreated = u.bookings.some(b => {
+            const d = (b.created_at || '').slice(0, 10);
             if (dateFrom && d < dateFrom) return false;
             if (dateTo && d > dateTo) return false;
             return true;
@@ -690,7 +690,7 @@ function UsersPage() {
             if (dateTo && d > dateTo) return false;
             return true;
           });
-          return hasBooking || hasB2b || hasPaid || hasB2bCreated || hasVoucherCreated;
+          return hasPaid || hasBookingCreated || hasB2bCreated || hasVoucherCreated;
         } else if (dateMode === 'booking') {
           // Booking date OR B2B requested date range
           const hasBooking = u.bookings.some(b => {

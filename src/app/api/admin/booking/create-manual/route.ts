@@ -151,19 +151,21 @@ export async function POST(req: Request) {
   const peopleValue =
     num_people === '' || num_people == null ? null : Math.max(1, Math.round(num(num_people)));
 
-  // Intended paid amount: if admin set status=paid but didn't fill deposit,
-  // treat full price as paid. This drives both booking.status and the payment
-  // row so the calendar's auto-derived status matches what admin entered.
-  let intendedPaid = depositValue;
-  if (statusValue === 'paid' && intendedPaid < totalPriceValue) {
-    intendedPaid = totalPriceValue;
+  // Respect admin's explicit status — they are the source of truth for
+  // manual bookings. Only courtesy-promote 'deposit' to 'paid' when the
+  // deposit covers the full price.
+  let effectiveStatus: Status = statusValue;
+  if (statusValue === 'deposit' && depositValue >= totalPriceValue && totalPriceValue > 0) {
+    effectiveStatus = 'paid';
   }
 
-  let effectiveStatus: Status = statusValue;
-  if (intendedPaid > 0 && totalPriceValue > 0) {
-    effectiveStatus = intendedPaid >= totalPriceValue ? 'paid' : 'deposit';
-  } else if (statusValue === 'paid' && totalPriceValue === 0) {
-    effectiveStatus = 'paid';
+  // Decide how much money to record as a payment row. Only for statuses
+  // that imply money was received; pending/cancelled never create payments.
+  let intendedPaid = 0;
+  if (effectiveStatus === 'paid') {
+    intendedPaid = Math.max(depositValue, totalPriceValue);
+  } else if (effectiveStatus === 'deposit') {
+    intendedPaid = depositValue;
   }
 
   const insertPayload = {

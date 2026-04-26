@@ -670,17 +670,21 @@ function BookingsPage() {
     const depositValue = Number(editForm.deposit_amount) || 0;
     const submittedStatus = editForm.status || 'pending';
 
-    // Intended paid amount drives both DB status and payment row creation.
-    // If admin set status=paid but didn't fill deposit, treat full price as paid.
-    let intendedPaid = depositValue;
-    if (submittedStatus === 'paid' && intendedPaid < totalPrice) {
-      intendedPaid = totalPrice;
-    }
+    // Respect admin's explicit choice — they are the source of truth for
+    // manual bookings. Only courtesy-promote 'deposit' to 'paid' when the
+    // deposit they entered actually covers the full price.
     let effectiveStatus: string = submittedStatus;
-    if (intendedPaid > 0 && totalPrice > 0) {
-      effectiveStatus = intendedPaid >= totalPrice ? 'paid' : 'deposit';
-    } else if (submittedStatus === 'paid' && totalPrice === 0) {
+    if (submittedStatus === 'deposit' && depositValue >= totalPrice && totalPrice > 0) {
       effectiveStatus = 'paid';
+    }
+
+    // Decide how much money to record as a payment row. Only for statuses
+    // that imply money was received; pending/cancelled never create payments.
+    let intendedPaid = 0;
+    if (effectiveStatus === 'paid') {
+      intendedPaid = Math.max(depositValue, totalPrice);
+    } else if (effectiveStatus === 'deposit') {
+      intendedPaid = depositValue;
     }
 
     const updatePayload = {
@@ -1234,8 +1238,10 @@ function BookingsPage() {
           const rawPrice = Number(bk.total_price);
           const price = normalizeBookingTotal(rawPrice, paymentsSum);
           const diff = price - paymentsSum;
+          // Manual bookings: trust the explicit status set by admin
+          const isManual = !!bk.source || !bk.package_id;
           let st = bk.status || 'pending';
-          if (st !== 'cancelled') {
+          if (!isManual && st !== 'cancelled') {
             if (price === 0 && st === 'paid') st = 'paid';
             else if (diff <= 0 && price > 0) st = 'paid';
             else if (paymentsSum > 0) st = 'deposit';
@@ -1281,8 +1287,9 @@ function BookingsPage() {
                       const rawPrice = Number(bk.total_price);
                       const price = normalizeBookingTotal(rawPrice, paymentsSum);
                       const diff = price - paymentsSum;
+                      const isManual = !!bk.source || !bk.package_id;
                       let status = bk.status || 'pending';
-                      if (status !== 'cancelled') {
+                      if (!isManual && status !== 'cancelled') {
                         if (price === 0 && status === 'paid') {
                           status = 'paid';
                         } else if (diff <= 0 && price > 0) {
@@ -1406,8 +1413,9 @@ function BookingsPage() {
                   const rawPrice = Number(bks?.[0]?.total_price);
                   const price = normalizeBookingTotal(rawPrice, paymentsSum);
                   const diff = price - paymentsSum;
+                  const isManual = !!bks[0].source || !bks[0].package_id;
                   let status = bks[0].status || 'pending';
-                  if (status !== 'cancelled') {
+                  if (!isManual && status !== 'cancelled') {
                     if (price === 0 && status === 'paid') {
                       status = 'paid';
                     } else if (diff <= 0 && price > 0) {

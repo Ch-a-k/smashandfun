@@ -666,6 +666,23 @@ function BookingsPage() {
       return false;
     }
 
+    const totalPrice = Number(editForm.total_price) || 0;
+    const depositValue = Number(editForm.deposit_amount) || 0;
+    const submittedStatus = editForm.status || 'pending';
+
+    // Intended paid amount drives both DB status and payment row creation.
+    // If admin set status=paid but didn't fill deposit, treat full price as paid.
+    let intendedPaid = depositValue;
+    if (submittedStatus === 'paid' && intendedPaid < totalPrice) {
+      intendedPaid = totalPrice;
+    }
+    let effectiveStatus: string = submittedStatus;
+    if (intendedPaid > 0 && totalPrice > 0) {
+      effectiveStatus = intendedPaid >= totalPrice ? 'paid' : 'deposit';
+    } else if (submittedStatus === 'paid' && totalPrice === 0) {
+      effectiveStatus = 'paid';
+    }
+
     const updatePayload = {
       user_email: editForm.user_email,
       name: editForm.name,
@@ -676,9 +693,9 @@ function BookingsPage() {
       duration_minutes: duration,
       num_people: editForm.num_people ?? null,
       source: editForm.source || null,
-      total_price: Number(editForm.total_price) || 0,
-      deposit_amount: editForm.deposit_amount ?? null,
-      status: editForm.status || 'pending',
+      total_price: totalPrice,
+      deposit_amount: depositValue > 0 ? depositValue : null,
+      status: effectiveStatus,
       admin_note: editForm.admin_note || null,
     };
     const { error: updateErr } = await supabase
@@ -689,6 +706,35 @@ function BookingsPage() {
       setError('Błąd zapisu: ' + updateErr.message);
       return false;
     }
+
+    // Sync payment rows so the calendar's auto-derived status matches.
+    if (intendedPaid > 0) {
+      const { data: existingPayments } = await supabase
+        .from('payments')
+        .select('amount, status')
+        .eq('booking_id', editForm.id)
+        .returns<{ amount: number; status: string }[]>();
+      const validPayments = (existingPayments || []).filter(
+        (p) => p.status === 'paid' || p.status === 'deposit',
+      );
+      const paymentsSum = validPayments.reduce(
+        (sum, p) => sum + Number(p.amount) / 100,
+        0,
+      );
+      const shortfall = intendedPaid - paymentsSum;
+      if (shortfall > 0.01) {
+        const paymentStatus = intendedPaid >= totalPrice && totalPrice > 0 ? 'paid' : 'deposit';
+        await supabase.from('payments').insert([
+          {
+            booking_id: editForm.id,
+            status: paymentStatus,
+            amount: Math.round(shortfall * 100),
+            transaction_id: `manual-edit-${editForm.id.slice(0, 8)}-${Date.now()}`,
+          },
+        ]);
+      }
+    }
+
     return true;
   }
 

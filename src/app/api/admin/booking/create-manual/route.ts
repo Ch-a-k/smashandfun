@@ -151,13 +151,19 @@ export async function POST(req: Request) {
   const peopleValue =
     num_people === '' || num_people == null ? null : Math.max(1, Math.round(num(num_people)));
 
-  // Booking status follows the actual money flow when a deposit is entered:
-  // - deposit covers full price -> 'paid'
-  // - deposit > 0 but < full   -> 'deposit'
-  // - deposit == 0             -> use whatever the admin selected
+  // Intended paid amount: if admin set status=paid but didn't fill deposit,
+  // treat full price as paid. This drives both booking.status and the payment
+  // row so the calendar's auto-derived status matches what admin entered.
+  let intendedPaid = depositValue;
+  if (statusValue === 'paid' && intendedPaid < totalPriceValue) {
+    intendedPaid = totalPriceValue;
+  }
+
   let effectiveStatus: Status = statusValue;
-  if (depositValue > 0) {
-    effectiveStatus = depositValue >= totalPriceValue && totalPriceValue > 0 ? 'paid' : 'deposit';
+  if (intendedPaid > 0 && totalPriceValue > 0) {
+    effectiveStatus = intendedPaid >= totalPriceValue ? 'paid' : 'deposit';
+  } else if (statusValue === 'paid' && totalPriceValue === 0) {
+    effectiveStatus = 'paid';
   }
 
   const insertPayload = {
@@ -192,17 +198,16 @@ export async function POST(req: Request) {
     );
   }
 
-  // Always record an actual payment row when admin entered a deposit/paid
-  // amount, regardless of what they picked in the status dropdown — that
-  // way the calendar's "Zapł" sum reflects reality.
-  if (inserted?.id && depositValue > 0) {
+  // Insert a payment row matching intendedPaid so the calendar's "Zapł" sum
+  // and the auto-derived status agree with what admin entered.
+  if (inserted?.id && intendedPaid > 0) {
     const paymentStatus =
-      depositValue >= totalPriceValue && totalPriceValue > 0 ? 'paid' : 'deposit';
+      intendedPaid >= totalPriceValue && totalPriceValue > 0 ? 'paid' : 'deposit';
     await supabaseAdmin.from('payments').insert([
       {
         booking_id: inserted.id,
         status: paymentStatus,
-        amount: Math.round(depositValue * 100), // payments stored in cents
+        amount: Math.round(intendedPaid * 100), // payments stored in cents
         transaction_id: `manual-${inserted.id.slice(0, 8)}`,
       },
     ]);

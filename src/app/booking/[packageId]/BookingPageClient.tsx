@@ -938,10 +938,22 @@ export default function BookingPageClient({ packageId }: BookingPageClientProps)
     }
   }
 
-  // Сброс bookingId при изменении даты, времени или packageId
+  // Сброс bookingId при изменении любых данных, попадающих в DB или PayU.
+  // Предотвращает оплату с устаревшими полями, если юзер вернулся назад
+  // и поправил что-то после первой попытки оплаты.
   useEffect(() => {
     setBookingId(null);
-  }, [form.date, form.time, packageId]);
+  }, [
+    form.date,
+    form.time,
+    form.email,
+    form.name,
+    form.phone,
+    form.promoCode,
+    form.paymentType,
+    form.extraItems,
+    packageId,
+  ]);
 
   if (!packageId) {
     return <div style={{color:'#fff',textAlign:'center',marginTop:80}}>Nie znaleziono pakietu.</div>;

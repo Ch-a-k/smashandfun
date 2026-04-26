@@ -10,7 +10,8 @@ export type BookingWithPackage = {
   room_id: string;
   date: string;
   time: string;
-  package: { duration: number; cleanup_time?: number | null };
+  duration_minutes?: number | null;
+  package: { duration: number; cleanup_time?: number | null } | null;
 };
 
 function normalizePrice(value: unknown): number {
@@ -187,6 +188,7 @@ export async function POST(req: Request) {
         date,
         time,
         status,
+        duration_minutes,
         package:package_id (duration, cleanup_time)
       `)
       .in('room_id', sortedRooms)
@@ -206,9 +208,15 @@ export async function POST(req: Request) {
       const bookingsForRoom = getBookings.filter((b: BookingWithPackage) => b.room_id === roomId);
       const conflict = bookingsForRoom.some((b: BookingWithPackage) => {
         const bStart = dayjs(`${b.date} ${b.time}`);
-        const bDuration = b.package?.duration ? Number(b.package.duration) : durationMinutes;
-        const bCleanup = b.package?.cleanup_time ? Number(b.package.cleanup_time) : cleanupMinutes;
-        const bEnd = bStart.add(bDuration + bCleanup, 'm');
+        let bSpan: number;
+        if (b.duration_minutes && b.duration_minutes > 0) {
+          bSpan = Number(b.duration_minutes);
+        } else if (b.package?.duration) {
+          bSpan = Number(b.package.duration) + Number(b.package.cleanup_time ?? 15);
+        } else {
+          bSpan = durationMinutes + cleanupMinutes;
+        }
+        const bEnd = bStart.add(bSpan, 'm');
         return overlaps(targetStart, targetEnd, bStart, bEnd);
       });
 

@@ -32,7 +32,15 @@ interface Booking {
   extra_items?: object | null;
   change_token?: string;
   payments?: Payment[];
+  // Manual-booking fields (B2B/B2C ad-hoc reservations)
+  num_people?: number | null;
+  source?: 'b2c' | 'b2b' | 'walkin' | 'manual' | null;
+  duration_minutes?: number | null;
+  deposit_amount?: number | null;
+  admin_note?: string | null;
 }
+
+type BookingMode = 'package' | 'manual';
 interface Room {
   id: string;
   name: string;
@@ -66,7 +74,8 @@ interface BookingWithPackage {
   room_id: string;
   date: string;
   time: string;
-  package: { duration: number; cleanup_time?: number | null };
+  duration_minutes?: number | null;
+  package: { duration: number; cleanup_time?: number | null } | null;
 };
 
 function overlaps(aStart: dayjs.Dayjs, aEnd: dayjs.Dayjs, bStart: dayjs.Dayjs, bEnd: dayjs.Dayjs) {
@@ -259,8 +268,14 @@ function BookingsPage() {
     created_at: '',
     updated_at: '',
     extra_items: [],
+    num_people: null,
+    source: null,
+    duration_minutes: null,
+    deposit_amount: null,
+    admin_note: null,
   };
   const [isNew, setIsNew] = useState(false);
+  const [mode, setMode] = useState<BookingMode>('package');
   const [availableDates, setAvailableDates] = useState<string[]>([]);
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
@@ -353,9 +368,13 @@ function BookingsPage() {
       ...booking,
       change_token: booking.change_token || '',
     });
+    // Auto-detect mode: bookings with `source` or no package_id are manual
+    const detectedMode: BookingMode =
+      booking.source || booking.duration_minutes || !booking.package_id ? 'manual' : 'package';
+    setMode(detectedMode);
     setModalOpen(true);
     setError(null);
-    if (booking.package_id) {
+    if (detectedMode === 'package' && booking.package_id) {
       fetchPackageDetails(booking.package_id);
       setLoadingDates(true);
       setLoadingTimes(true);
@@ -373,11 +392,13 @@ function BookingsPage() {
     setEditForm(null);
     setError(null);
     setIsNew(false);
+    setMode('package');
   }
 
   function openNewModal() {
     setEditForm({ ...emptyBooking, date: (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })() });
     setIsNew(true);
+    setMode('package');
     setModalOpen(true);
     setError(null);
     if (emptyBooking.package_id) {
@@ -393,6 +414,16 @@ function BookingsPage() {
       });
     }
   }
+
+  // Close modal on ESC
+  useEffect(() => {
+    if (!modalOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeModal();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modalOpen]);
 
   // Получение пакета с allowed_rooms и room_priority
   async function fetchPackageDetails(packageId: string) {
@@ -487,11 +518,160 @@ function BookingsPage() {
     setEditForm(prev => prev ? { ...prev, time: e.target.value } : prev);
   }
 
+  async function refreshBookingsForDate(dateStr: string) {
+    const { data: bookingsData } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        payments (
+          id,
+          status,
+          amount,
+          transaction_id,
+          created_at
+        )
+      `)
+      .eq('date', dateStr)
+      .returns<Booking[]>();
+    setBookings(bookingsData || []);
+    setDatesCache({});
+    setTimesCache({});
+  }
+
+  async function handleSaveManual() {
+    if (!editForm) return false;
+    if (!editForm.room_id) {
+      setError('Wybierz pokój');
+      return false;
+    }
+    if (!editForm.date || !editForm.time) {
+      setError('Wybierz datę i godzinę');
+      return false;
+    }
+    const duration = Number(editForm.duration_minutes) || 0;
+    if (!duration || duration < 15) {
+      setError('Podaj czas trwania (min 15 min)');
+      return false;
+    }
+
+    if (isNew) {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('admin_token') : null;
+      const res = await fetch('/api/admin/booking/create-manual', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          email: editForm.user_email,
+          phone: editForm.phone,
+          room_id: editForm.room_id,
+          date: editForm.date,
+          time: editForm.time,
+          duration_minutes: duration,
+          num_people: editForm.num_people,
+          source: editForm.source,
+          total_price: editForm.total_price,
+          deposit_amount: editForm.deposit_amount,
+          status: editForm.status,
+          admin_note: editForm.admin_note,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data?.error || 'Błąd zapisu rezerwacji ręcznej');
+        return false;
+      }
+      return true;
+    }
+
+    // Edit existing manual booking — local conflict check + direct supabase update
+    const targetStart = dayjs(`${editForm.date} ${editForm.time}`);
+    const targetEnd = targetStart.add(duration, 'm');
+    const { data: dayBookings, error: fetchErr } = await supabase
+      .from('bookings')
+      .select(`
+        id,
+        room_id,
+        date,
+        time,
+        duration_minutes,
+        package:package_id (duration, cleanup_time)
+      `)
+      .eq('room_id', editForm.room_id)
+      .eq('date', editForm.date)
+      .neq('status', 'cancelled')
+      .neq('id', editForm.id)
+      .returns<BookingWithPackage[] & { duration_minutes?: number | null }[]>();
+    if (fetchErr) {
+      setError('Błąd sprawdzania dostępności');
+      return false;
+    }
+    const conflict = (dayBookings || []).some((b) => {
+      const bRow = b as unknown as BookingWithPackage & { duration_minutes?: number | null };
+      const bStart = dayjs(`${bRow.date} ${bRow.time}`);
+      let span: number;
+      if (bRow.duration_minutes && bRow.duration_minutes > 0) {
+        span = Number(bRow.duration_minutes);
+      } else if (bRow.package?.duration) {
+        span = Number(bRow.package.duration) + Number(bRow.package.cleanup_time ?? 15);
+      } else {
+        span = 60;
+      }
+      const bEnd = bStart.add(span, 'm');
+      return overlaps(targetStart, targetEnd, bStart, bEnd);
+    });
+    if (conflict) {
+      setError('Pokój zajęty w wybranym oknie czasowym');
+      return false;
+    }
+
+    const updatePayload = {
+      user_email: editForm.user_email,
+      name: editForm.name,
+      phone: editForm.phone,
+      room_id: editForm.room_id,
+      date: editForm.date,
+      time: editForm.time,
+      duration_minutes: duration,
+      num_people: editForm.num_people ?? null,
+      source: editForm.source || null,
+      total_price: Number(editForm.total_price) || 0,
+      deposit_amount: editForm.deposit_amount ?? null,
+      status: editForm.status || 'pending',
+      admin_note: editForm.admin_note || null,
+    };
+    const { error: updateErr } = await supabase
+      .from('bookings')
+      .update(updatePayload)
+      .eq('id', editForm.id);
+    if (updateErr) {
+      setError('Błąd zapisu: ' + updateErr.message);
+      return false;
+    }
+    return true;
+  }
+
   // --- При сохранении вычисляем room_id автоматически ---
   async function handleSave() {
     if (!editForm) return;
     setSaving(true);
     setError(null);
+
+    // Manual booking branch
+    if (mode === 'manual') {
+      const ok = await handleSaveManual();
+      if (ok) {
+        const dateStr = editForm.date;
+        closeModal();
+        setIsNew(false);
+        await refreshBookingsForDate(dateStr);
+      }
+      setSaving(false);
+      return;
+    }
+
     let roomId = editForm.room_id || '';
 
     // При изменении/создании брони пересчитываем room_id и проверяем конфликты,
@@ -536,6 +716,7 @@ function BookingsPage() {
           date,
           time,
           status,
+          duration_minutes,
           package:package_id (duration, cleanup_time)
         `)
         .in('room_id', orderedRooms)
@@ -559,9 +740,15 @@ function BookingsPage() {
         const bookingsForRoom = (getBookings || []).filter((b) => b.room_id === roomIdT);
         const conflict = bookingsForRoom.some((b: BookingWithPackage) => {
           const bStart = dayjs(`${b.date} ${b.time}`);
-          const bDuration = b.package?.duration ? Number(b.package.duration) : durationMinutes;
-          const bCleanup = b.package?.cleanup_time ? Number(b.package.cleanup_time) : cleanupMinutes;
-          const bEnd = bStart.add(bDuration + bCleanup, 'm');
+          let bSpan: number;
+          if (b.duration_minutes && b.duration_minutes > 0) {
+            bSpan = Number(b.duration_minutes);
+          } else if (b.package?.duration) {
+            bSpan = Number(b.package.duration) + Number(b.package.cleanup_time ?? 15);
+          } else {
+            bSpan = durationMinutes + cleanupMinutes;
+          }
+          const bEnd = bStart.add(bSpan, 'm');
           return overlaps(targetStart, targetEnd, bStart, bEnd);
         });
 
@@ -683,10 +870,11 @@ function BookingsPage() {
     fetchAll();
   }, []);
 
-  // --- Автоматический пересчет цены ---
+  // --- Автоматический пересчет цены (только в режиме пакета) ---
   useEffect(() => {
     async function recalc() {
       if (!editForm) return;
+      if (mode !== 'package') return;
       let total = 0;
       // Цена пакета
       if (editForm.package_id && packagePrices[editForm.package_id]) {
@@ -724,7 +912,7 @@ function BookingsPage() {
     }
     recalc();
   // eslint-disable-next-line
-  }, [editForm?.package_id, editForm?.extra_items, editForm?.promo_code]);
+  }, [editForm?.package_id, editForm?.extra_items, editForm?.promo_code, mode]);
 
   useEffect(() => {
     async function fetch() {
@@ -1179,10 +1367,45 @@ function BookingsPage() {
           </table>
       </div>
       {modalOpen && editForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-0 sm:p-4">
-          <div className="bg-gray-100 rounded-none sm:rounded-lg shadow-lg p-4 sm:p-6 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl relative overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-0 sm:p-4"
+          onClick={closeModal}
+        >
+          <div
+            className="bg-gray-100 rounded-none sm:rounded-lg shadow-lg p-4 sm:p-6 w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl relative overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button onClick={closeModal} className="absolute top-2 right-2 text-gray-500 hover:text-black text-2xl">×</button>
-            <h2 className="text-xl font-bold mb-4 text-gray-900">Edytuj rezerwację</h2>
+            <h2 className="text-xl font-bold mb-3 text-gray-900">
+              {isNew ? 'Dodaj rezerwację' : 'Edytuj rezerwację'}
+            </h2>
+
+            {/* Mode toggle */}
+            <div className="mb-4 inline-flex rounded-lg border border-gray-300 bg-white p-1">
+              <button
+                type="button"
+                onClick={() => setMode('package')}
+                className={`px-3 py-1 text-xs sm:text-sm rounded-md font-semibold transition ${
+                  mode === 'package'
+                    ? 'bg-blue-600 text-white shadow'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Standard (z pakietu)
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode('manual')}
+                className={`px-3 py-1 text-xs sm:text-sm rounded-md font-semibold transition ${
+                  mode === 'manual'
+                    ? 'bg-orange-600 text-white shadow'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Ręczna (B2B / B2C / Walk-in)
+              </button>
+            </div>
+
             <form className="space-y-2" onSubmit={e => {e.preventDefault(); handleSave();}}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
@@ -1197,6 +1420,8 @@ function BookingsPage() {
                   <label className="block text-xs text-gray-800">Telefon</label>
                   <input className="w-full border rounded px-2 py-1 bg-white text-gray-900" value={editForm.phone || ''} name="phone" onChange={handleChange} />
                 </div>
+                {mode === 'package' && (
+                <>
                 <div>
                   <label className="block text-xs text-gray-800">Pakiet</label>
                   <select
@@ -1269,6 +1494,115 @@ function BookingsPage() {
                   <label className="block text-xs text-gray-800">Cena</label>
                   <input className="w-full border rounded px-2 py-1 bg-white text-gray-900" value={editForm.total_price || ''} name="total_price" readOnly />
               </div>
+                </>
+                )}
+
+                {mode === 'manual' && (
+                <>
+                <div>
+                  <label className="block text-xs text-gray-800">Źródło</label>
+                  <select
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="source"
+                    value={editForm.source || ''}
+                    onChange={handleChange}
+                  >
+                    <option value="">Wybierz...</option>
+                    <option value="b2c">B2C (klient indywidualny)</option>
+                    <option value="b2b">B2B (firma)</option>
+                    <option value="walkin">Walk-in</option>
+                    <option value="manual">Inne (manual)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Pokój</label>
+                  <select
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="room_id"
+                    value={editForm.room_id || ''}
+                    onChange={handleChange}
+                  >
+                    <option value="">Wybierz pokój...</option>
+                    {rooms.map(r => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Data</label>
+                  <DatePicker
+                    selected={editForm.date ? parsePolandDate(editForm.date) : null}
+                    onChange={(d: Date | null) => setEditForm(prev => prev ? { ...prev, date: d ? formatDatePoland(d) : '' } : prev)}
+                    dateFormat="yyyy-MM-dd"
+                    className="border rounded px-2 py-1 bg-white text-gray-900 w-full"
+                    locale="pl"
+                    placeholderText="Wybierz datę"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Godzina (HH:MM)</label>
+                  <input
+                    type="time"
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="time"
+                    value={editForm.time || ''}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Czas trwania (min)</label>
+                  <input
+                    type="number"
+                    min={15}
+                    max={720}
+                    step={15}
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="duration_minutes"
+                    value={editForm.duration_minutes ?? ''}
+                    onChange={(e) => setEditForm(prev => prev ? { ...prev, duration_minutes: e.target.value === '' ? null : Number(e.target.value) } : prev)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Liczba osób</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="num_people"
+                    value={editForm.num_people ?? ''}
+                    onChange={(e) => setEditForm(prev => prev ? { ...prev, num_people: e.target.value === '' ? null : Number(e.target.value) } : prev)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Cena całkowita (zł)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="total_price"
+                    value={editForm.total_price || ''}
+                    onChange={handleChange}
+                    placeholder="np. 800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-800">Wpłacono / Zaliczka (zł)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="deposit_amount"
+                    value={editForm.deposit_amount ?? ''}
+                    onChange={(e) => setEditForm(prev => prev ? { ...prev, deposit_amount: e.target.value === '' ? null : Number(e.target.value) } : prev)}
+                    placeholder="np. 200 (zaliczka) lub pełna kwota"
+                  />
+                </div>
+                </>
+                )}
+
                 <div>
                   <label className="block text-xs text-gray-800">Status</label>
                   <select
@@ -1282,9 +1616,26 @@ function BookingsPage() {
                     ))}
                   </select>
                 </div>
+
+                {mode === 'manual' && (
+                <div className="sm:col-span-2">
+                  <label className="block text-xs text-gray-800">Notatka admina (wewnętrzna)</label>
+                  <textarea
+                    className="w-full border rounded px-2 py-1 bg-white text-gray-900"
+                    name="admin_note"
+                    rows={2}
+                    value={editForm.admin_note || ''}
+                    onChange={handleChange}
+                    placeholder="np. wieczór panieński Ola, faktura na firmę X"
+                  />
+                </div>
+                )}
+
+                {mode === 'package' && (
+                <>
                 <div className="sm:col-span-2">
                   <label className="block text-xs text-gray-800">Komentarz</label>
-                  <textarea 
+                  <textarea
                     className="w-full border rounded px-2 py-1 bg-white text-gray-900"
                     name="comment"
                     value={editForm.comment || ''}
@@ -1345,6 +1696,8 @@ function BookingsPage() {
                         </div>
                   </div>
                 </div>
+                </>
+                )}
               {/* Payments info */}
               {!isNew && Array.isArray(editForm.payments) && editForm.payments.length > 0 && (
                 <div className="sm:col-span-2 mt-2">

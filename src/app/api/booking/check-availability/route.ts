@@ -67,12 +67,15 @@ export async function POST(req: Request) {
     if (booking) ignoreBookingId = booking.id;
   }
 
-  const fiveMinutesAgo = dayjs().subtract(18, 'minute').toISOString();
+  // Pending bookings hold a slot until they're cleaned up; lower TTL = slot
+  // freed faster for the next customer if PayU was abandoned.
+  const PENDING_TTL_MINUTES = 10;
+  const pendingTtlCutoff = dayjs().subtract(PENDING_TTL_MINUTES, 'minute').toISOString();
   const { data: bookingToDelete, error: bookingToDeleteError } = await supabaseAdmin
     .from('bookings')
     .select('id, payu_id')
     .eq('status', 'pending')
-    .lt('created_at', fiveMinutesAgo);
+    .lt('created_at', pendingTtlCutoff);
 
   if (bookingToDeleteError || !bookingToDelete) {
     console.error('bookingToDeleteError', bookingToDeleteError);
@@ -226,6 +229,7 @@ export async function POST(req: Request) {
       id,
       room_id,
       status,
+      duration_minutes,
       package:package_id (duration, cleanup_time)
     `)
     .in('room_id', allowedRooms)
@@ -250,9 +254,15 @@ export async function POST(req: Request) {
       for (const b of roomBookings) {
         if (ignoreBookingId && b.id === ignoreBookingId) continue;
         const bStart = normalizeTime(b.time);
-        const bDuration = b.package && b.package.duration ? Number(b.package.duration) : duration;
-        const bCleanup = b.package && b.package.cleanup_time ? Number(b.package.cleanup_time) : cleanup;
-        const bEnd = addMinutes(bStart, bDuration + bCleanup);
+        let bSpan: number;
+        if (b.duration_minutes && b.duration_minutes > 0) {
+          bSpan = Number(b.duration_minutes);
+        } else if (b.package && b.package.duration) {
+          bSpan = Number(b.package.duration) + Number(b.package.cleanup_time ?? 15);
+        } else {
+          bSpan = duration + cleanup;
+        }
+        const bEnd = addMinutes(bStart, bSpan);
         // Проверяем пересечение интервалов
         if (!(slotEnd <= bStart || slotStart >= bEnd)) {
           overlap = true;

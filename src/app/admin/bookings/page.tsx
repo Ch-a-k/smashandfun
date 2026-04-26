@@ -97,6 +97,8 @@ function generateTimeSlots(start: string, end: string, stepMinutes: number) {
 }
 
 const GODZINY = generateTimeSlots("09:00", "21:00", 15);
+// Wider slot list for manual bookings (B2B may run before/after working hours)
+const MANUAL_TIME_SLOTS = generateTimeSlots("08:00", "23:45", 15);
 
 // Функция для выбора цвета по статусу
 function getStatusColor(status?: string) {
@@ -292,6 +294,35 @@ function BookingsPage() {
   const reconcileTo = reconcileRange[1];
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [reconcileStatus, setReconcileStatus] = useState<string | null>(null);
+
+  // Effective duration / cleanup for a booking — manual bookings store
+  // their full span in duration_minutes (no separate cleanup); package
+  // bookings derive from packages table.
+  function getBookingSpan(b: { duration_minutes?: number | null; package_id?: string | null }) {
+    if (b.duration_minutes && b.duration_minutes > 0) {
+      return { duration: Number(b.duration_minutes), cleanup: 0 };
+    }
+    const pkgId = b.package_id || '';
+    return {
+      duration: Number(packageDurations[pkgId]) || 60,
+      cleanup: Number(packageCleanupTimes[pkgId]) || 15,
+    };
+  }
+
+  function getBookingLabel(b: Booking): string {
+    if (b.package_id && packages[b.package_id]) return packages[b.package_id];
+    const sourceLabels: Record<string, string> = {
+      b2c: 'B2C',
+      b2b: 'B2B',
+      walkin: 'Walk-in',
+      manual: 'Ręczna',
+    };
+    if (b.source && sourceLabels[b.source]) {
+      const peopleSuffix = b.num_people ? ` · ${b.num_people} os.` : '';
+      return `${sourceLabels[b.source]}${peopleSuffix}`;
+    }
+    return 'Ręczna';
+  }
 
   // Загружаем даты с резервациями и extra items
   useEffect(() => {
@@ -540,6 +571,10 @@ function BookingsPage() {
 
   async function handleSaveManual() {
     if (!editForm) return false;
+    if (!editForm.source) {
+      setError('Wybierz źródło rezerwacji (B2B, B2C lub Walk-in)');
+      return false;
+    }
     if (!editForm.room_id) {
       setError('Wybierz pokój');
       return false;
@@ -550,7 +585,11 @@ function BookingsPage() {
     }
     const duration = Number(editForm.duration_minutes) || 0;
     if (!duration || duration < 15) {
-      setError('Podaj czas trwania (min 15 min)');
+      setError('Podaj czas trwania — minimum 15 minut');
+      return false;
+    }
+    if (duration > 720) {
+      setError('Czas trwania nie może przekraczać 720 minut (12 godzin)');
       return false;
     }
 
@@ -1217,11 +1256,11 @@ function BookingsPage() {
                           <div className="flex justify-between items-start">
                             <div className="font-bold text-sm">{bk.name || bk.user_email}</div>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white bg-opacity-50">{packageDurations[bk.package_id] || 60} min</span>
+                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white bg-opacity-50">{getBookingSpan(bk).duration} min</span>
                               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white bg-opacity-50">{getStatusLabel(status)}</span>
                             </div>
                           </div>
-                          <div className="text-xs mt-1">{bk.time.slice(0,5)} · {packages[bk.package_id] || '—'}</div>
+                          <div className="text-xs mt-1">{bk.time.slice(0,5)} · {getBookingLabel(bk)}</div>
                           <div className="text-xs mt-0.5">{price} zł · Zapł: {paymentsSum} zł · Saldo: {diff} zł</div>
                           {(() => {
                             const lastPayment = bk.payments?.filter(p => p.status === 'paid' || p.status === 'deposit').sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
@@ -1286,9 +1325,9 @@ function BookingsPage() {
                     const prevHour = GODZINY[prev];
                     const prevBks = getBooking(room.id, prevHour, formatDatePoland(date));
                     if (prevBks.length > 0) {
-                      const pkgId = prevBks[0].package_id;
-                      const duration = Number(packageDurations[pkgId]) || 60;
-                      const cleanup = Number(packageCleanupTimes[pkgId]) || 15;
+                      const span = getBookingSpan(prevBks[0]);
+                      const duration = span.duration;
+                      const cleanup = span.cleanup;
                       const slots = Math.floor(duration / 15);
                       const prevStartIdx = GODZINY.indexOf(prevBks[0].time.slice(0,5));
                       // Проверяем, перекрывает ли бронирование текущий слот
@@ -1296,8 +1335,8 @@ function BookingsPage() {
                         isCovered = true;
                         break;
                       }
-                      // Проверяем, нужно ли добавить уборку (может быть несколько слотов)
-                      if (prevStartIdx >= 0 && rowIdx >= prevStartIdx + slots && rowIdx < prevStartIdx + slots + Math.ceil(cleanup / 15)) {
+                      // Cleanup рисуем только для пакетных броней (для ручных cleanup = 0)
+                      if (cleanup > 0 && prevStartIdx >= 0 && rowIdx >= prevStartIdx + slots && rowIdx < prevStartIdx + slots + Math.ceil(cleanup / 15)) {
                         isCleanup = true;
                         cleanupMinutesForCell = cleanup;
                         break;
@@ -1314,8 +1353,7 @@ function BookingsPage() {
                   }
                   if (bks.length === 0) return <td key={room.id} className="border border-gray-300 px-1 py-1 align-top min-w-[160px] bg-white" />;
                   // Если есть бронирование, определяем slots
-                  const pkgId = bks[0].package_id;
-                  const duration = Number(packageDurations[pkgId]) || 60;
+                  const duration = getBookingSpan(bks[0]).duration;
                   const slots = Math.floor(duration / 15);
 
                   const paymentsSum = bks?.[0]?.payments?.reduce((sum, p) => sum + Number(p.amount) / 100, 0) ?? 0;
@@ -1346,7 +1384,7 @@ function BookingsPage() {
                         <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-white bg-opacity-50 whitespace-nowrap ml-1">{duration} min</span>
                       </div>
                       <div className="text-[11px] opacity-80">{rooms.find(r => r.id === bks[0].room_id)?.name || '—'}</div>
-                      <div className="text-xs">{packages[bks[0].package_id] || bks[0].package_id}</div>
+                      <div className="text-xs">{getBookingLabel(bks[0])}</div>
                       <div className="text-xs mt-0.5">{price} zł · Zapł: {paymentsSum} zł</div>
                       <div className="flex items-center gap-1 mt-0.5">
                         <span className={`inline-block w-2 h-2 rounded-full ${getStatusDotColor(status)}`} />
@@ -1508,10 +1546,10 @@ function BookingsPage() {
                     onChange={handleChange}
                   >
                     <option value="">Wybierz...</option>
-                    <option value="b2c">B2C (klient indywidualny)</option>
-                    <option value="b2b">B2B (firma)</option>
-                    <option value="walkin">Walk-in</option>
-                    <option value="manual">Inne (manual)</option>
+                    <option value="b2c">Klient indywidualny (B2C)</option>
+                    <option value="b2b">Firma (B2B)</option>
+                    <option value="walkin">Klient z ulicy (bez wcześniejszej rezerwacji)</option>
+                    <option value="manual">Inne</option>
                   </select>
                 </div>
                 <div>
@@ -1540,27 +1578,31 @@ function BookingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-800">Godzina (HH:MM)</label>
-                  <input
-                    type="time"
+                  <label className="block text-xs text-gray-800">Godzina rozpoczęcia</label>
+                  <select
                     className="w-full border rounded px-2 py-1 bg-white text-gray-900"
                     name="time"
-                    value={editForm.time || ''}
+                    value={(editForm.time || '').slice(0, 5)}
                     onChange={handleChange}
-                  />
+                  >
+                    <option value="">Wybierz godzinę...</option>
+                    {MANUAL_TIME_SLOTS.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-800">Czas trwania (min)</label>
+                  <label className="block text-xs text-gray-800">Czas trwania (minuty)</label>
                   <input
                     type="number"
-                    min={15}
-                    max={720}
                     step={15}
                     className="w-full border rounded px-2 py-1 bg-white text-gray-900"
                     name="duration_minutes"
                     value={editForm.duration_minutes ?? ''}
                     onChange={(e) => setEditForm(prev => prev ? { ...prev, duration_minutes: e.target.value === '' ? null : Number(e.target.value) } : prev)}
+                    placeholder="np. 90, 120, 180"
                   />
+                  <div className="text-[10px] text-gray-500 mt-0.5">Minimum 15 min, maksimum 720 min (12 godzin).</div>
                 </div>
                 <div>
                   <label className="block text-xs text-gray-800">Liczba osób</label>
@@ -1588,7 +1630,7 @@ function BookingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-800">Wpłacono / Zaliczka (zł)</label>
+                  <label className="block text-xs text-gray-800">Już wpłacone (zł)</label>
                   <input
                     type="number"
                     min={0}
@@ -1597,8 +1639,9 @@ function BookingsPage() {
                     name="deposit_amount"
                     value={editForm.deposit_amount ?? ''}
                     onChange={(e) => setEditForm(prev => prev ? { ...prev, deposit_amount: e.target.value === '' ? null : Number(e.target.value) } : prev)}
-                    placeholder="np. 200 (zaliczka) lub pełna kwota"
+                    placeholder="0"
                   />
+                  <div className="text-[10px] text-gray-500 mt-0.5">Kwota, którą klient już zapłacił (zaliczka lub pełna kwota). Zostaw 0 jeśli jeszcze nic nie wpłacił.</div>
                 </div>
                 </>
                 )}

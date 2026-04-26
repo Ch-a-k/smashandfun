@@ -146,11 +146,19 @@ export async function POST(req: Request) {
     );
   }
 
-  // Insert
   const totalPriceValue = num(total_price);
-  const depositValue = deposit_amount === '' || deposit_amount == null ? null : num(deposit_amount);
+  const depositValue = deposit_amount === '' || deposit_amount == null ? 0 : num(deposit_amount);
   const peopleValue =
     num_people === '' || num_people == null ? null : Math.max(1, Math.round(num(num_people)));
+
+  // Booking status follows the actual money flow when a deposit is entered:
+  // - deposit covers full price -> 'paid'
+  // - deposit > 0 but < full   -> 'deposit'
+  // - deposit == 0             -> use whatever the admin selected
+  let effectiveStatus: Status = statusValue;
+  if (depositValue > 0) {
+    effectiveStatus = depositValue >= totalPriceValue && totalPriceValue > 0 ? 'paid' : 'deposit';
+  }
 
   const insertPayload = {
     user_email: typeof email === 'string' ? email : null,
@@ -164,8 +172,8 @@ export async function POST(req: Request) {
     num_people: peopleValue,
     source: sourceValue,
     total_price: totalPriceValue,
-    deposit_amount: depositValue,
-    status: statusValue,
+    deposit_amount: depositValue > 0 ? depositValue : null,
+    status: effectiveStatus,
     admin_note: typeof admin_note === 'string' ? admin_note : null,
     change_token: crypto.randomBytes(16).toString('hex'),
   };
@@ -184,19 +192,17 @@ export async function POST(req: Request) {
     );
   }
 
-  // Optional: record deposit/paid as a payment row so analytics see it
-  if (
-    inserted?.id &&
-    (statusValue === 'deposit' || statusValue === 'paid') &&
-    (depositValue || totalPriceValue) > 0
-  ) {
-    const paymentAmount =
-      statusValue === 'paid' ? totalPriceValue : depositValue ?? totalPriceValue;
+  // Always record an actual payment row when admin entered a deposit/paid
+  // amount, regardless of what they picked in the status dropdown — that
+  // way the calendar's "Zapł" sum reflects reality.
+  if (inserted?.id && depositValue > 0) {
+    const paymentStatus =
+      depositValue >= totalPriceValue && totalPriceValue > 0 ? 'paid' : 'deposit';
     await supabaseAdmin.from('payments').insert([
       {
         booking_id: inserted.id,
-        status: statusValue === 'paid' ? 'paid' : 'deposit',
-        amount: Math.round(paymentAmount * 100), // payments stored in cents
+        status: paymentStatus,
+        amount: Math.round(depositValue * 100), // payments stored in cents
         transaction_id: `manual-${inserted.id.slice(0, 8)}`,
       },
     ]);

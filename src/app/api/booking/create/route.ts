@@ -117,12 +117,12 @@ export async function POST(req: Request) {
       .from('promo_codes')
       .select('*')
       .eq('code', promoCode)
-      .single()
+      .maybeSingle()
       .returns<{
         discount_amount: number | null;
         discount_percent: number | null;
         used_count: number | null;
-      }>();
+      } | null>();
 
     if (promoError) {
       console.error(promoError);
